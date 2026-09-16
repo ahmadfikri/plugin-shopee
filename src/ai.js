@@ -11,6 +11,7 @@
     "Kamu penulis prompt video Veo/Gemini untuk iklan Shopee affiliate. " +
     "Buatkan SATU prompt video sinematik siap-tempel ke Google Flow/Veo, format " +
     "9:16 vertikal (HP), durasi 8 detik, dari data produk ini:\n{{context}}\n\n" +
+    "{{CONCEPT}}" +
     "=== PRIORITAS TERTINGGI: 3 DETIK PERTAMA ===\n" +
     "3 detik pertama menentukan hidup-mati video ini. Rancang khusus dan jelaskan " +
     "DETIK-PER-DETIK (0.0-1.0s, 1.0-2.0s, 2.0-3.0s). Wajib penuhi:\n" +
@@ -190,6 +191,7 @@
     "Kamu penulis prompt video Veo/Gemini untuk iklan Shopee affiliate produk yang " +
     "bisa dipegang tangan. Buatkan SATU prompt video siap-tempel ke Google Flow/Veo, " +
     "format 9:16 VERTIKAL (HP), durasi 8 detik, dari data produk ini:\n{{context}}\n\n" +
+    "{{CONCEPT}}" +
     "=== PRIORITAS TERTINGGI: 3 DETIK PERTAMA ===\n" +
     "3 detik pertama menentukan hidup-mati video ini. Rancang khusus dan jelaskan " +
     "DETIK-PER-DETIK (0.0-1.0s, 1.0-2.0s, 2.0-3.0s). Wajib penuhi:\n" +
@@ -265,16 +267,19 @@
   const DEFAULT_CAPTION_PROMPT =
     "Kamu copywriter iklan Shopee affiliate Indonesia. Buatkan SATU caption " +
     "siap-posting (Facebook/Instagram/TikTok) dari data produk ini:\n{{context}}\n\n" +
+    "{{CONCEPT}}" +
     "Aturan caption: bahasa Indonesia kasual-santai (nada bestie, jangan lebay/" +
     "hard-selling), hook kuat di kalimat PERTAMA, 2-4 baris saja, akhiri dengan ajakan " +
     "cek link. SEBUT NAMA PRODUK-nya — jangan ragu. Kalau memakai bukti sosial, CUKUP " +
     "RATING saja; JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, " +
     "persentase bintang, atau jumlah favorit.\n\n" +
-    "HASHTAG — WAJIB ADA, taruh di baris terpisah setelah caption, 8-12 hashtag, " +
-    "gabungan dari:\n" +
-    "(a) WAJIB tag reach/FYP: #fyp #fypage #foryoupage #viral #masukberanda #fypindonesia\n" +
-    "(b) tag produk/kategori spesifik (turunkan dari nama produk)\n" +
-    "(c) tag belanja/affiliate: #shopeefinds #racunshopee #checkoutdulu #shopeehaul\n" +
+    "HASHTAG — WAJIB ADA, taruh di baris terpisah setelah caption, 6-9 hashtag " +
+    "(riset 2026: sedikit tapi bisa DICARI mengalahkan tumpukan tag). Struktur:\n" +
+    "(a) 2 tag reach: #fyp #viral\n" +
+    "(b) 2-4 tag NICHE yang benar-benar diketik pembeli (turunkan dari nama/kategori " +
+    "produk dalam bahasa Indonesia — mis. #casinghp #rakdapur #lamputidur), " +
+    "ini yang jadi SEO/temuan\n" +
+    "(c) 2-3 tag niat-beli: #racunshopee #shopeefinds #checkoutdulu #tiktokmademebuyit\n" +
     "Huruf kecil, dipisah spasi, tanpa tanda baca lain.\n\n" +
     "FORMAT OUTPUT — persis seperti ini, tanpa judul/penjelasan/nomor variasi:\n" +
     "<isi caption 2-4 baris>\n\n<baris hashtag>\n\n" +
@@ -284,8 +289,8 @@
     "di-copy-paste ke kolom caption.";
 
   // Guaranteed hashtag block, used as a safety net if the model omits hashtags.
-  const FYP_TAGS = "#fyp #fypage #foryoupage #viral #masukberanda #fypindonesia";
-  const SHOP_TAGS = "#shopeefinds #racunshopee #checkoutdulu #shopeehaul";
+  const FYP_TAGS = "#fyp #viral";
+  const SHOP_TAGS = "#shopeefinds #racunshopee #checkoutdulu";
 
   function slugTags(name) {
     // derive 2 product tags from the product name (first meaningful words)
@@ -332,6 +337,39 @@
     return t.replace(/\s*$/, "") + "\n\n" + block;
   }
 
+  // Build the CONCEPT directive injected into video/caption prompts. Forces THIS
+  // video to a specific concept archetype + its own visual set, so consecutive
+  // videos for a product never look alike (Andromeda diversity + TikTok
+  // anti-mass-production, research 2026-09-16). `c` is a RMConcepts concept.
+  function conceptBlock(c, forVideo) {
+    if (!c) return "";
+    let s = "=== KONSEP VIDEO INI: " + c.label.toUpperCase() + " ===\n" +
+      "Bangun SELURUH video/caption di sekitar SATU konsep ini, jangan campur: " +
+      c.angle + ".\n" +
+      "Hook pembuka pakai gaya: " + c.hook + ".\n";
+    if (forVideo) {
+      s += "Visual/kamera khas konsep ini: " + c.set + ".\n" +
+        "WAJIB VARIASI: konsep, sudut kamera, latar, dan pencahayaan HARUS beda " +
+        "dari video produk sebelumnya — JANGAN pakai template yang sama berulang " +
+        "(algoritma menghukum video yang mirip-mirip).\n";
+    }
+    s += "\n";
+    return s;
+  }
+
+  // Resolve the concept for a product: rotate via RMConcepts so a tag never
+  // repeats until the library cycles. Falls back to a random pick if the module
+  // or storage is unavailable.
+  async function pickConcept(product) {
+    try {
+      if (global.RMConcepts && global.RMConcepts.next) {
+        const tag = (product && (product.suggestedTag || product.name)) || "global";
+        return await global.RMConcepts.next(tag);
+      }
+    } catch (_) {}
+    return (global.RMConcepts && global.RMConcepts.pick) ? global.RMConcepts.pick() : null;
+  }
+
   async function generateCaption(cfg, product) {
     const ctx = productContext(product);
     // if the user customised captionPrompt in Admin Panel, honour it (with {{context}}
@@ -342,7 +380,9 @@
          !/{{context}}/.test(cfg.ai.captionPrompt)
           ? cfg.ai.captionPrompt + "\n\nData produk: {{context}}"
           : DEFAULT_CAPTION_PROMPT);
+    const concept = await pickConcept(product);
     const raw = await call(cfg, tpl.replace(/{{context}}/g, ctx)
+      .replace(/{{CONCEPT}}/g, conceptBlock(concept, false))
       .replace(/{{name}}/g, product.name || "")
       .replace(/{{price}}/g, product.price != null ? "Rp" + product.price.toLocaleString("id-ID") : ""));
     return ensureHashtags(raw, product);
@@ -383,9 +423,12 @@
     // phone — shake/tilt instead, because flipping makes the AI render a case on
     // both sides). Any other product drops the placeholder entirely.
     const caseBlock = isPhoneCase(product.name) ? CASE_RULES : "";
+    const concept = await pickConcept(product);
+    product.__concept = concept ? concept.id : null;   // for UI labelling / logging
     const instruction = tpl
       .replace(/{{SIZE_RULES}}/g, sizeBlock)
       .replace(/{{CASE_RULES}}/g, caseBlock)
+      .replace(/{{CONCEPT}}/g, conceptBlock(concept, true))
       .replace(/{{context}}/g, ctx)
       .replace(/{{name}}/g, product.name || "");
     // NOTE: no mode label is prefixed — the whole textarea gets pasted into

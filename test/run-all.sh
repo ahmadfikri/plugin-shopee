@@ -87,6 +87,10 @@ echo "=== 15. Test: auto-capture dataset + merge aman (listing vs detail) ==="
 node test/e2e-dataset-auto.js || fail=1
 
 echo
+echo "=== 16. Test: rotasi konsep video/caption (anti mass-production) ==="
+node test/e2e-concepts.js || fail=1
+
+echo
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else

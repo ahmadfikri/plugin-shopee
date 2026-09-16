@@ -80,6 +80,15 @@ jualan barang. Maka:
   Dikunci `test/e2e-case-prompt.js`.
 - **Caption: SATU saja** (bukan 3 variasi), teks biasa tanpa markdown, diakhiri
   blok 8–12 hashtag termasuk tag FYP.
+- **ROTASI KONSEP** (`concepts.js` → `{{CONCEPT}}` di video & caption prompt,
+  v0.6.0): 8 archetype (curiosity, price-shock, before/after, POV, mistake-warning,
+  satisfying, problem-solve, comparison). `RMConcepts.next(tag)` memutar konsep
+  supaya video berturut untuk satu produk TIDAK PERNAH sama konsepnya —
+  melawan penalti Meta Andromeda (reward diversitas) + TikTok anti-mass-production
+  (15 Sep 2025). Video prompt juga menuntut variasi angle/latar/lighting.
+  Aturan hashtag direvisi 8-12 → 6-9 (2 reach + niche searchable + buyer-intent),
+  sesuai riset 2026 (hashtag = SEO, bukan virality). Dikunci `test/e2e-concepts.js`.
+  BELUM: concept win-rate (tag creative→EPC di analytics) — butuh data hasil dulu.
 - Prompt video harus **berupa PERINTAH** ("Buatkan video vertikal 9:16…").
 
 ## 6. ARSITEKTUR SINGKAT
