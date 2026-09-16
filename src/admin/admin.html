@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Riset Market — Admin Panel</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <h1>📊 Riset Market — Admin Panel</h1>
+  <p class="sub">Semua konfigurasi tersimpan lokal di plugin (chrome.storage). Tidak terhubung ke sistem lain.</p>
+
+  <fieldset>
+    <legend>Ekonomi (dasar skor "Layak Iklan")</legend>
+    <label>Komisi Shopee (%) <input type="number" id="commissionPct" step="0.1"></label>
+    <label>Break-even CPC (Rp) <input type="number" id="breakEvenCPC"></label>
+    <label>Conversion rate (%) <input type="number" id="conversionRate" step="0.1"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Skor Peluang</legend>
+    <label>Ambang saturasi — top-3 share (%) <input type="number" id="saturationTop3Pct"></label>
+    <label>Momentum: umur maks (bulan) <input type="number" id="momentumMaxAgeMonths"></label>
+    <label>Momentum: min terjual/bln <input type="number" id="momentumMinPerMonth"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>DeepSeek AI (caption &amp; tag)</legend>
+    <label class="row"><input type="checkbox" id="aiEnabled"> Aktifkan AI</label>
+    <label>API Key <input type="password" id="aiApiKey" placeholder="sk-..."></label>
+    <label>Model <input type="text" id="aiModel"></label>
+    <label>Base URL <input type="text" id="aiBaseUrl"></label>
+    <label>Prompt Caption <textarea id="captionPrompt" rows="3"></textarea></label>
+    <label>Prompt Tag <textarea id="tagPrompt" rows="2"></textarea></label>
+    <p class="hint">Placeholder yang bisa dipakai: <code>{{name}}</code>, <code>{{price}}</code>. Panggilan AI hanya saat kamu klik, memakai token DeepSeek-mu.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Feedback Loop — data performa nyata</legend>
+    <p class="hint">Max CPC jadi AKURAT kalau plugin tahu hasil nyatamu. Tanpa ini,
+      Max CPC pakai rumus asumsi yang terukur melebih-lebihkan ~2,4x.</p>
+    <p class="hint">Cara pakai: jalankan
+      <code>export_perf_snapshot.py</code> di folder analisis, lalu tempel isi file
+      <code>riset-plugin/export/performance-snapshot.json</code> ke bawah ini.</p>
+    <label>Snapshot JSON <textarea id="perfJson" rows="5" placeholder='{"global":{...},"tags":{...}}'></textarea></label>
+    <div class="bar">
+      <button id="perfImport">Impor Snapshot</button>
+      <button id="perfClear" class="ghost">Hapus Snapshot</button>
+      <span id="perfStatus"></span>
+    </div>
+    <div id="perfSummary" class="hint"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>📦 Data Training (Collective Intelligence)</legend>
+    <p class="hint">Tiap klik <b>💾 Simpan Data Training</b> di panel produk menyimpan
+      fitur produk ke penyimpanan lokal. Sekali seminggu, export dan kirim ke
+      koordinator untuk digabung jadi dataset kolektif — nanti dipakai melatih
+      model prediksi bersama. (Cloud service menyusul; sekarang manual export.)</p>
+    <label class="row"><input type="checkbox" id="autoCapture">
+      <b>Kumpulkan otomatis</b> — simpan data tiap kali membuka halaman produk / memindai listing (tanpa pencet tombol)</label>
+    <p class="hint">Halaman <b>detail produk</b> memberi data terkaya (rating, review,
+      bintang, terjual, video). Halaman <b>listing / bulk scan</b> memberi data lebih
+      tipis tapi jumlahnya banyak. Data tipis TIDAK akan menimpa data kaya untuk
+      produk yang sama.</p>
+    <label>Nama/ID Kontributor
+      <input type="text" id="contributorId" placeholder="mis. fikri, rekan1, dst — dipakai untuk menandai asal data">
+    </label>
+    <div id="datasetSummary" class="hint">Memuat ringkasan…</div>
+    <div class="bar">
+      <button id="dsExportJson">⬇ Export JSON</button>
+      <button id="dsExportCsv">⬇ Export CSV</button>
+      <button id="dsClear" class="ghost">Kosongkan dataset</button>
+      <span id="dsStatus"></span>
+    </div>
+    <p class="hint">JSON untuk digabung otomatis (disarankan); CSV untuk dilihat di Excel.
+      File diberi nama <code>training-&lt;kontributor&gt;-&lt;tanggal&gt;.json</code>.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Tampilan</legend>
+    <label class="row"><input type="checkbox" id="showCharts"> Tampilkan grafik</label>
+  </fieldset>
+
+  <div class="bar">
+    <button id="save">Simpan</button>
+    <button id="reset" class="ghost">Reset ke default</button>
+    <span id="status"></span>
+  </div>
+
+  <script src="../storage.js"></script>
+  <script src="../perf.js"></script>
+  <script src="../dataset.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
