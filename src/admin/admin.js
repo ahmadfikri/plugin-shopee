@@ -67,6 +67,8 @@
     RMPerf.save(snap).then(() => {
       $("perfStatus").textContent = "✓ Snapshot diimpor";
       renderPerf(snap);
+      // AUTO: classify the Learning Ledger against the fresh snapshot, then refresh.
+      classifyLedger(snap);
       setTimeout(() => ($("perfStatus").textContent = ""), 2500);
     }).catch((e) => { $("perfStatus").textContent = e.message; });
   }
@@ -147,10 +149,65 @@
     });
   }
 
+  // ---- Learning Ledger: classify on import, render summary, export/clear ----
+  function classifyLedger(snap) {
+    if (!window.RMLedger) return;
+    RMStore.getConfig().then((cfg) => {
+      RMLedger.classify(snap, { breakEvenCpc: cfg.breakEvenCPC || 0, crFloor: 2.0 })
+        .then(renderLedgerFrom);
+    });
+  }
+  function renderLedgerFrom(rows) {
+    const box = $("ledgerSummary");
+    if (!box) return;
+    if (!rows || !rows.length) {
+      box.textContent = "Belum ada eksperimen tercatat. Generate video/caption (isi alasan) untuk mulai.";
+      return;
+    }
+    const done = rows.filter((r) => r.verdict && r.verdict !== "belum cukup data");
+    const win = done.filter((r) => r.verdict === "WINNER");
+    const prod = done.filter((r) => r.failure_mode === "produk-salah");
+    const crea = done.filter((r) => r.failure_mode === "creative-salah");
+    const L = RMLedger.lessons(rows);
+    let html = `<b>${rows.length} eksperimen</b> · ${win.length} WINNER · ` +
+      `${prod.length} produk-salah · ${crea.length} creative-salah · ` +
+      `${rows.length - done.length} belum cukup data<br>`;
+    const losing = Object.entries(L.losingCategories).sort((a,b)=>b[1]-a[1]).slice(0,4);
+    if (losing.length) html += "<br><b>Pola kalah:</b> " +
+      losing.map(([k,n]) => `${k} (${n}x)`).join(" · ");
+    const winc = Object.entries(L.winningConcepts).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    if (winc.length) html += "<br><b>Konsep menang:</b> " +
+      winc.map(([k,n]) => `${k} (${n}x)`).join(" · ");
+    box.innerHTML = html;
+  }
+  function renderLedger() {
+    if (window.RMLedger) RMLedger.all().then(renderLedgerFrom);
+  }
+  function ledgerExport() {
+    RMLedger.all().then((rows) => {
+      if (!rows.length) { $("ledgerStatus").textContent = "Ledger kosong."; return; }
+      const blob = new Blob([RMLedger.toCsv(rows)], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "learning-ledger-" + new Date().toISOString().slice(0,10) + ".csv";
+      a.click(); URL.revokeObjectURL(url);
+      $("ledgerStatus").textContent = `✓ ${rows.length} baris`;
+      setTimeout(() => ($("ledgerStatus").textContent = ""), 2500);
+    });
+  }
+  function ledgerClear() {
+    if (!confirm("Kosongkan Learning Ledger? Semua pelajaran tercatat hilang.")) return;
+    RMLedger.clear().then(() => { renderLedger(); $("ledgerStatus").textContent = "Dikosongkan"; });
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     load();
     if (window.RMPerf) RMPerf.load().then(renderPerf);
     if (window.RMDataset) renderDataset();
+    if (window.RMLedger) {
+      // classify against the stored snapshot on open, so verdicts are current
+      RMPerf.load().then((snap) => snap ? classifyLedger(snap) : renderLedger());
+    }
     $("save").addEventListener("click", save);
     $("reset").addEventListener("click", reset);
     $("perfImport").addEventListener("click", perfImport);
@@ -158,5 +215,7 @@
     $("dsExportJson").addEventListener("click", dsExportJson);
     $("dsExportCsv").addEventListener("click", dsExportCsv);
     $("dsClear").addEventListener("click", dsClear);
+    if ($("ledgerExport")) $("ledgerExport").addEventListener("click", ledgerExport);
+    if ($("ledgerClear")) $("ledgerClear").addEventListener("click", ledgerClear);
   });
 })();

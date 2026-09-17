@@ -360,14 +360,31 @@
   // Resolve the concept for a product: rotate via RMConcepts so a tag never
   // repeats until the library cycles. Falls back to a random pick if the module
   // or storage is unavailable.
-  async function pickConcept(product) {
+  async function pickConcept(product, cfg) {
+    const tag = (product && (product.suggestedTag || product.name)) || "global";
+    let concept = null;
     try {
-      if (global.RMConcepts && global.RMConcepts.next) {
-        const tag = (product && (product.suggestedTag || product.name)) || "global";
-        return await global.RMConcepts.next(tag);
+      // If the win-rate loop has a confident winner (from imported perf snapshot),
+      // bias ~60% of picks toward it; otherwise rotate freely. Never 100% — we
+      // still want variety so the mass-production penalty stays avoided AND we
+      // keep gathering signal on other concepts.
+      const snap = cfg && cfg.__perf;
+      if (snap && global.RMConceptPerf && Math.random() < 0.6) {
+        const bestId = await global.RMConceptPerf.bestConcept(snap);
+        if (bestId && global.RMConcepts && global.RMConcepts.byId) {
+          concept = global.RMConcepts.byId(bestId);
+        }
+      }
+      if (!concept && global.RMConcepts && global.RMConcepts.next) {
+        concept = await global.RMConcepts.next(tag);
       }
     } catch (_) {}
-    return (global.RMConcepts && global.RMConcepts.pick) ? global.RMConcepts.pick() : null;
+    if (!concept) concept = (global.RMConcepts && global.RMConcepts.pick) ? global.RMConcepts.pick() : null;
+    // record it for the win-rate loop
+    try {
+      if (concept && global.RMConceptPerf) await global.RMConceptPerf.log(tag, concept.id);
+    } catch (_) {}
+    return concept;
   }
 
   async function generateCaption(cfg, product) {
@@ -380,7 +397,7 @@
          !/{{context}}/.test(cfg.ai.captionPrompt)
           ? cfg.ai.captionPrompt + "\n\nData produk: {{context}}"
           : DEFAULT_CAPTION_PROMPT);
-    const concept = await pickConcept(product);
+    const concept = await pickConcept(product, cfg);
     const raw = await call(cfg, tpl.replace(/{{context}}/g, ctx)
       .replace(/{{CONCEPT}}/g, conceptBlock(concept, false))
       .replace(/{{name}}/g, product.name || "")
@@ -423,7 +440,7 @@
     // phone — shake/tilt instead, because flipping makes the AI render a case on
     // both sides). Any other product drops the placeholder entirely.
     const caseBlock = isPhoneCase(product.name) ? CASE_RULES : "";
-    const concept = await pickConcept(product);
+    const concept = await pickConcept(product, cfg);
     product.__concept = concept ? concept.id : null;   // for UI labelling / logging
     const instruction = tpl
       .replace(/{{SIZE_RULES}}/g, sizeBlock)

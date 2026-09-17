@@ -195,7 +195,13 @@
       `<button class="rm-star2" data-id="${product.id}">⭐ Simpan</button>` +
       `<button class="rm-ai2" data-id="${product.id}">✨ Caption</button>` +
       `<button class="rm-capture" data-id="${product.id}" title="Data produk ini sudah dikumpulkan otomatis. Klik untuk menyegarkan/memastikan tersimpan.">💾 Refresh Data Training</button>` +
-      `</div><div class="rm-out" style="display:none"></div></div></div>`;
+      `</div>` +
+      `<div class="rm-learn">` +
+      `<input class="rm-learn-tag" type="text" placeholder="campaign tag (= tag Shopee, mis. KupuA17)" value="${(product.suggestedTag||'').replace(/"/g,'')}">` +
+      `<input class="rm-learn-why" type="text" placeholder="kenapa coba ini? (wajib, singkat: murah+rating tinggi)">` +
+      `<button class="rm-learn-ext" title="Untuk konten yang kamu DOWNLOAD dari TikTok (bukan generate di sini): catat campaign + alasannya supaya tetap masuk learning ledger">+ Catat campaign eksternal</button>` +
+      `</div>` +
+      `<div class="rm-out" style="display:none"></div></div></div>`;
     return wrap;
   }
 

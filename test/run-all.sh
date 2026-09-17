@@ -91,6 +91,10 @@ echo "=== 16. Test: rotasi konsep video/caption (anti mass-production) ==="
 node test/e2e-concepts.js || fail=1
 
 echo
+echo "=== 17. Test: Learning Ledger (vonis CR-vs-CPC + warn pola) ==="
+node test/e2e-ledger.js || fail=1
+
+echo
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else
