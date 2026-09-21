@@ -19,9 +19,12 @@ const RMLedger = ctx.window.RMLedger;
 let ok=true; const chk=(n,c,d)=>{console.log(`${c?"PASS":"FAIL"}  ${n}${d?"  "+d:""}`);if(!c)ok=false;};
 
 (async()=>{
-  // reasoning wajib
-  const bad = await RMLedger.add({ tag:"KupuA17" });
-  chk("reasoning wajib (ditolak kalau kosong)", !!bad.error, bad.error||"");
+  // tag wajib; reasoning TIDAK lagi wajib (form manual dibuang 2026-09-21)
+  const bad = await RMLedger.add({ reasoning:"tanpa tag" });
+  chk("tag wajib (ditolak kalau kosong)", !!bad.error, bad.error||"");
+  const silent = await RMLedger.add({ tag:"KupuA17" });
+  chk("entri tanpa reasoning DITERIMA (auto-log senyap)", !silent.error && !!silent.entry,
+      silent.error || ("reasoning=\""+(silent.entry&&silent.entry.reasoning)+"\""));
 
   // catat beberapa eksperimen
   await RMLedger.add({ tag:"PolkadotMag", reasoning:"case magsafe lagi tren", concept:"before_after",

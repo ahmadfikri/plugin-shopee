@@ -161,7 +161,7 @@
     const box = $("ledgerSummary");
     if (!box) return;
     if (!rows || !rows.length) {
-      box.textContent = "Belum ada eksperimen tercatat. Generate video/caption (isi alasan) untuk mulai.";
+      box.textContent = "Belum ada eksperimen tercatat. Generate video/caption untuk mulai (tercatat otomatis).";
       return;
     }
     const done = rows.filter((r) => r.verdict && r.verdict !== "belum cukup data");

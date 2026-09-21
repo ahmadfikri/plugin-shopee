@@ -59,12 +59,6 @@
 .rm-epc-sub { font-size:10px; color:#777; margin-top:2px; white-space:nowrap; }
 .rm-capture { background:#6b4de6 !important; color:#fff; border:0; border-radius:6px;
   padding:6px 12px; cursor:pointer; font-weight:600; font-size:12px; }
-.rm-learn { display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 4px; align-items:center; }
-.rm-learn-tag, .rm-learn-why { flex:1; min-width:140px; padding:6px 9px;
-  border:1px solid #d9c9ff; border-radius:6px; font-size:12px; }
-.rm-learn-why { flex:2; }
-.rm-learn-ext { background:#8a6d1a !important; color:#fff; border:0; border-radius:6px;
-  padding:6px 10px; cursor:pointer; font-size:11px; white-space:nowrap; }
 .rm-sl-kwbar { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
 .rm-sl-kwinput { flex: 1; padding: 6px 10px; border: 1px solid #ffd6cc;
   border-radius: 6px; font-size: 12px; }

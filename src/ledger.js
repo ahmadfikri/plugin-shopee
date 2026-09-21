@@ -52,20 +52,24 @@
   }
 
   /* Add an experiment entry.
-   * e = { tag, reasoning, concept?, source?, product? }
+   * e = { tag, reasoning?, concept?, source?, product? }
    *   tag       (required) Shopee tag = Meta campaign name
-   *   reasoning (required, short) WHY this experiment — the hypothesis
+   *   reasoning (OPTIONAL since 2026-09-21) free-text hypothesis. Used to be
+   *             mandatory and collected via a form before every generate;
+   *             Fikri removed that form, so entries are now written silently
+   *             and this is normally empty. The verdict/failure-mode logic does
+   *             NOT depend on it — that comes from CR vs CPC on the snapshot.
    *   concept   the rotated concept id (auto for path A)
    *   source    "plugin" | "external"
    *   product   { category, price, rating } snapshot of features at launch
    */
   async function add(e) {
-    if (!e || !e.tag || !e.reasoning) return { error: "tag & reasoning wajib." };
+    if (!e || !e.tag) return { error: "tag wajib." };
     const rows = await _get();
     const entry = {
       id: uid(), day: today(), ts: Date.now(),
       tag: String(e.tag).trim(),
-      reasoning: String(e.reasoning).trim().slice(0, 200),
+      reasoning: e.reasoning ? String(e.reasoning).trim().slice(0, 200) : "",
       concept: e.concept || null,
       source: e.source || "plugin",
       category: (e.product && (e.product.category || e.product.category_l1)) || null,

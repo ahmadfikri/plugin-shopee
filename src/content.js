@@ -236,39 +236,28 @@
   }
 
   // wire modal-internal buttons (close, save, caption, video, video prompt)
-  // Read the mandatory campaign-tag + reasoning from the modal before generating
-  // content. Fikri's rule (2026-09-17): reasoning is MANDATORY (short ok) so every
-  // experiment produces a lesson. Records the experiment into the Learning Ledger.
-  // Returns true if OK to proceed, false if reasoning is missing.
-  async function learnGate(modal, p) {
-    const tagEl = modal.querySelector(".rm-learn-tag");
-    const whyEl = modal.querySelector(".rm-learn-why");
-    const tag = (tagEl && tagEl.value.trim()) || (p.suggestedTag || "").trim();
-    const why = (whyEl && whyEl.value.trim()) || "";
-    if (!why) {
-      if (whyEl) { whyEl.style.borderColor = "#c0392b"; whyEl.focus(); }
-      alert("Isi dulu ALASAN singkat kenapa coba produk ini (wajib) — biar tiap eksperimen menghasilkan pelajaran.\nContoh: murah + rating tinggi, bet impulse buy");
-      return false;
-    }
-    if (!tag) { alert("Isi campaign tag (sama dengan tag Shopee)."); return false; }
-    // stamp the tag so generateVideoPrompt/Caption + ledger join use the same key
-    p.suggestedTag = tag;
+  // NOTE (2026-09-21, Fikri): the mandatory campaign-tag + reasoning form was
+  // REMOVED — having to type a tag and a reason before every generate was pure
+  // friction. Generation now runs immediately. The Learning Ledger still gets
+  // fed, silently: we record the experiment with the tag we already know
+  // (suggestedTag) and the rotated concept. Reasoning is no longer collected.
+  // Never blocks, never alerts — a failure here must not stop generation.
+  async function autoLog(p) {
     try {
-      if (window.RMLedger) {
-        const cfg = await cfgP;
-        const detail = (window.RMDetailScrape && RMDetailScrape.isProductPage())
-          ? RMDetailScrape.scrapeDetail() : {};
-        await RMLedger.add({
-          tag, reasoning: why, source: "plugin",
-          concept: p.__concept || null,
-          product: {
-            category: (detail && (detail.categoryL1 || detail.category)) || null,
-            price: p.price, rating: p.rating != null ? p.rating : (detail && detail.rating)
-          }
-        });
-      }
+      if (!window.RMLedger) return;
+      const tag = (p.suggestedTag || "").trim();
+      if (!tag) return; // no tag known — nothing useful to key the entry on
+      const detail = (window.RMDetailScrape && RMDetailScrape.isProductPage())
+        ? RMDetailScrape.scrapeDetail() : {};
+      await RMLedger.add({
+        tag, source: "plugin",
+        concept: p.__concept || null,
+        product: {
+          category: (detail && (detail.categoryL1 || detail.category)) || null,
+          price: p.price, rating: p.rating != null ? p.rating : (detail && detail.rating)
+        }
+      });
     } catch (_) {}
-    return true;
   }
 
   function wireModal(modal, p) {
@@ -286,8 +275,8 @@
     });
     const ai = modal.querySelector(".rm-ai2");
     if (ai) ai.addEventListener("click", async () => {
-      if (!(await learnGate(modal, p))) return;
       const cfg = await cfgP; ai.textContent = "membuat…";
+      autoLog(p);
       try {
         const cap = await RMAi.generateCaption(cfg, p);
         await showOutput(modal, "Caption Iklan", cap,
@@ -311,9 +300,9 @@
     });
     const vp = modal.querySelector(".rm-vprompt");
     if (vp) vp.addEventListener("click", async () => {
-      if (!(await learnGate(modal, p))) return;
       const cfg = await cfgP;
       vp.textContent = "membuat…";
+      autoLog(p);
       try {
         const prompt = await RMAi.generateVideoPrompt(cfg, p);
         const mode = RMAi.videoMode ? RMAi.videoMode(cfg, p) : "";
@@ -323,28 +312,10 @@
       } catch (err) { alert("Prompt video: " + err.message); }
       vp.textContent = "🎬 Prompt Video";
     });
-    // ---- log an EXTERNAL campaign (content downloaded from TikTok, not generated) ----
-    const ext = modal.querySelector(".rm-learn-ext");
-    if (ext && window.RMLedger) ext.addEventListener("click", async () => {
-      const tagEl = modal.querySelector(".rm-learn-tag");
-      const whyEl = modal.querySelector(".rm-learn-why");
-      const tag = (tagEl && tagEl.value.trim()) || (p.suggestedTag || "").trim();
-      const why = (whyEl && whyEl.value.trim()) || "";
-      if (!tag || !why) {
-        alert("Isi campaign tag + alasan dulu (dua-duanya wajib) untuk mencatat campaign eksternal.");
-        return;
-      }
-      ext.textContent = "menyimpan…"; ext.disabled = true;
-      try {
-        const detail = (window.RMDetailScrape && RMDetailScrape.isProductPage())
-          ? RMDetailScrape.scrapeDetail() : {};
-        await RMLedger.add({ tag, reasoning: why, source: "external", concept: null,
-          product: { category: (detail && (detail.categoryL1 || detail.category)) || null,
-                     price: p.price, rating: p.rating } });
-        ext.textContent = "✓ Tercatat (eksternal)";
-      } catch (err) { ext.textContent = "gagal: " + (err && err.message || err); }
-      setTimeout(() => { ext.textContent = "+ Catat campaign eksternal"; ext.disabled = false; }, 3000);
-    });
+    // ---- (removed 2026-09-21) the "+ Catat campaign eksternal" button lived
+    // here. It existed only to collect a tag + reason by hand for content
+    // downloaded from TikTok. Fikri dropped the manual-entry feature, so the
+    // button and its handler are gone.
 
     // ---- capture training data (one click) ----
     const cap = modal.querySelector(".rm-capture");
