@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<!--
+  Replica of the affiliate.shopee.co.id Product Offer surface, built FROM the
+  selector contract the plugin actually relies on (src/scraper.js findCards /
+  parseCard, src/bulkscan.js findSearchInput / findSearchButton / pageLoading).
+
+  It is served AT the real URL by test/e2e-browser-bulk.js through request
+  interception, so the real content scripts match and inject exactly as they do
+  on Shopee — no login, no network.
+
+  What it deliberately reproduces, because these are what broke in production:
+    * a React-style controlled input: it only accepts a value set through the
+      native setter + input event, which is how bulkscan types.
+    * an ASYNC re-render with a visible .ant-spin-spinning between old and new
+      results, so waitForSearchResult has a real transition to verify.
+    * results that genuinely differ per keyword, so storing a STALE batch under
+      the wrong keyword label is detectable rather than invisible.
+-->
+<html lang="id">
+<head><meta charset="utf-8"><title>Product Offer</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 16px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ItemCard__contentSection { border: 1px solid #ddd; padding: 8px; width: 220px; }
+  .ItemCard__name { font-size: 13px; }
+  .ant-spin-spinning { padding: 8px; color: #888; }
+  .ant-tabs-tab { display: inline-block; padding: 4px 10px; }
+  .ant-tabs-tab-active { font-weight: 700; border-bottom: 2px solid #ee4d2d; }
+  a { text-decoration: none; color: inherit; }
+</style>
+</head>
+<body>
+
+<div class="ant-tabs">
+  <div class="ant-tabs-tab ant-tabs-tab-active" role="tab" aria-selected="true">All</div>
+  <div class="ant-tabs-tab" role="tab" aria-selected="false">Mobile &amp; Accessories</div>
+</div>
+
+<div class="ant-input-search">
+  <input type="text" class="ant-input" placeholder="Search Product" />
+  <button class="ant-btn" type="submit">Search</button>
+</div>
+
+<div id="spin" class="ant-spin-spinning" style="display:none">memuat…</div>
+<div id="grid" class="grid"></div>
+
+<script>
+(function () {
+  // A React-controlled input: the value only "counts" when it arrives through
+  // the native setter, which is what setInputValue() in bulkscan.js does. A
+  // plain .value assignment is ignored here on purpose, so a regression that
+  // stops using the native setter fails this test instead of passing quietly.
+  var committed = "";
+  var input = document.querySelector("input.ant-input");
+  var proto = Object.getPrototypeOf(input);
+  var nativeDesc = Object.getOwnPropertyDescriptor(proto, "value");
+  Object.defineProperty(input, "value", {
+    get: function () { return nativeDesc.get.call(this); },
+    set: function (v) { nativeDesc.set.call(this, v); }
+  });
+  input.addEventListener("input", function () { committed = input.value; });
+
+  function priceFor(i) { return (19 + i * 7) * 1000; }
+
+  function render(keyword, n) {
+    var grid = document.getElementById("grid");
+    grid.innerHTML = "";
+    var slug = (keyword || "default").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    // A stable per-keyword numeric namespace, so two different keywords can
+    // never mint the same Shopee item id. Same-length keywords collided when
+    // this used slug.length, which made one batch silently overwrite another
+    // and hid whether storage really keeps batches apart.
+    var ns = 0;
+    for (var c = 0; c < slug.length; c++) ns = (ns * 31 + slug.charCodeAt(c)) % 99991;
+    for (var i = 1; i <= n; i++) {
+      var a = document.createElement("a");
+      // Real Shopee shape: …-i.<shopid>.<itemid>
+      a.href = "https://shopee.co.id/" + slug + "-item-" + i + "-i." + ns + "." + (ns * 100 + i);
+      a.innerHTML =
+        '<div class="ItemCard__contentSection">' +
+          '<div class="ItemCard__name">' + (keyword ? keyword + " " : "") + 'produk ' + i + '</div>' +
+          '<div class="ItemCard__price"><span class="price">Rp' +
+             priceFor(i).toLocaleString("id-ID") + '</span></div>' +
+          '<div class="ItemCardSold__wrap">' + (i * 150) + ' terjual</div>' +
+          '<div class="commRate">' + (4 + i) + '.5%</div>' +
+        '</div>';
+      grid.appendChild(a);
+    }
+  }
+
+  function search() {
+    var kw = committed.trim();
+    if (!kw) return;
+    var spin = document.getElementById("spin");
+    document.getElementById("grid").innerHTML = "";
+    spin.style.display = "block";           // visible spinner = real transition
+    setTimeout(function () {
+      spin.style.display = "none";
+      render(kw, 8);
+    }, 600);
+  }
+
+  document.querySelector("button.ant-btn").addEventListener("click", search);
+  input.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.keyCode === 13) search();
+  });
+
+  render("", 12);   // the landing page already lists products, like Shopee does
+})();
+</script>
+</body>
+</html>

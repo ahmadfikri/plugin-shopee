@@ -64,8 +64,25 @@
     if (typeof expanded === "boolean") shortlistExpanded = expanded;
     if (arguments.length >= 3) shortlistKeywordFilter = keywordFilter || null;
     const isOpen = shortlistExpanded;
+    // Renders are async (getMeta), and several can be in flight at once: a bulk
+    // scan finishing, the observer re-saving a page, and the user clicking a
+    // control. Without ordering, an EARLIER render that resolves LATER wins and
+    // silently reverts the newer view — that is why "Lihat seluruh shortlist"
+    // appeared dead: the click cleared the filter, then a slower in-flight render
+    // repainted the filtered table over it. Only the newest render may write.
+    const myToken = ++shortlistRenderToken;
     RMShortlist.getMeta().then((meta) => {
+      if (myToken !== shortlistRenderToken) return;   // superseded — do not paint
       host.innerHTML = RMPanel.shortlistSection(meta, isOpen, shortlistKeywordFilter);
+      // The progress line lives inside this host, so every re-render destroys it.
+      // A finished scan re-rendered immediately, which wiped its own summary
+      // ("Selesai — 2/2 kata kunci") microseconds after writing it: the user
+      // could never read the result of a scan they just waited through. Re-paint
+      // the last note so it survives until the next scan replaces it.
+      if (shortlistNote) {
+        const prog = host.querySelector(".rm-sl-progress");
+        if (prog) { prog.textContent = shortlistNote; prog.style.display = "block"; }
+      }
       const t = host.querySelector(".rm-sl-toggle");
       if (t) t.addEventListener("click", () => renderShortlist(panel, !isOpen));
       const all = host.querySelector(".rm-sl-all");
@@ -153,6 +170,7 @@
           return;
         }
         kwScan.disabled = true; kwScan.textContent = "⏳ Memindai…";
+        shortlistNote = "";     // a new scan must not show the previous summary
         if (stopBtn) stopBtn.style.display = "";
         if (prog) prog.style.display = "block";
         suspend();
@@ -172,14 +190,22 @@
               } else if (s.phase === "skip") {
                 prog.textContent = `(${s.index}/${s.of}) "${s.label}" dilewati: ${s.note}`;
               } else {
-                prog.textContent = (s.note || s.phase) +
+                // Terminal line (done / stopped). Remember it: the re-render in
+                // finally rebuilds this element, and the summary the user waited
+                // for must survive that.
+                shortlistNote = (s.note || s.phase) +
                   (s.total != null ? ` — total ${s.total} produk` : "");
+                prog.textContent = shortlistNote;
               }
             }
           });
-          if (scanResult && scanResult.error && prog) prog.textContent = scanResult.error;
+          if (scanResult && scanResult.error && prog) {
+            shortlistNote = scanResult.error;
+            prog.textContent = shortlistNote;
+          }
         } catch (err) {
-          if (prog) prog.textContent = "Gagal: " + (err && err.message || err);
+          shortlistNote = "Gagal: " + (err && err.message || err);
+          if (prog) prog.textContent = shortlistNote;
         } finally {
           resume();
           lastSig = "";
@@ -644,7 +670,13 @@
   let suspended = false;
   let suspendDepth = 0;
   let shortlistExpanded = false;   // survives re-renders
+  // Monotonic render ticket: see renderShortlist(). Guarantees that of several
+  // concurrent async renders, only the most recently requested one paints.
+  let shortlistRenderToken = 0;
   let shortlistKeywordFilter = null; // latest successful bulk keyword batch
+  // Last terminal scan message, re-painted after each re-render so a finished
+  // scan's summary stays readable instead of vanishing with the element.
+  let shortlistNote = "";
 
   function currentSignature() {
     const cards = RMScraper.findCards();

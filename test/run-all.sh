@@ -111,6 +111,12 @@ node test/e2e-conceptperf-exact.js || fail=1
 echo
 echo "=== 21. Test: kolom 'Dari kata kunci' tidak pernah berisi URL path ==="
 node test/e2e-observed-label.js || fail=1
+
+echo
+echo "=== 22. Test: BROWSER NYATA — bulk keyword scan end-to-end ==="
+echo "    (Chromium asli + extension di-load; bukan stub. Ini satu-satunya test"
+echo "     yang bisa menangkap bug seperti seluruh halaman kolaps jadi 1 produk.)"
+node test/e2e-browser-bulk.js || fail=1
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else

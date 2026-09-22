@@ -76,13 +76,17 @@
     const commTxt = pick(el, [
       ".commRate", "[class*='commRate']", "[class*='CommRate']"
     ]);
-    // link/id: anchor may sit on an ancestor of the content section
-    let host = el;
-    for (let i = 0; i < 4 && host; i++) {
-      if (host.querySelector && host.querySelector("a[href]")) break;
-      host = host.parentElement || host.parentNode;
-    }
-    const link = (host && host.querySelector) ? host.querySelector("a[href]") : null;
+    // link/id: the anchor may sit INSIDE the card, or the card may be WRAPPED by
+    // it. The previous version walked up the tree and then called
+    // querySelector("a[href]") on each ancestor — so as soon as it reached a
+    // container shared by several cards (the results grid), it returned the
+    // FIRST anchor in that whole grid. Every product on the page then carried
+    // the same href and the same id, and because the shortlist and the dataset
+    // both key on id, an entire page collapsed into ONE row ("+1 baru, 11
+    // diperbarui"). closest() is the correct tool for the wrapper case: it can
+    // only ever return an ancestor of THIS card, never a sibling's anchor.
+    const link = (el.querySelector && el.querySelector("a[href]")) ||
+                 (el.closest && el.closest("a[href]")) || null;
     const href = link ? link.href : null;
     const idm = (href && href.match(/i\.(\d+)\.(\d+)/)) ||
                 (href && href.match(/product_offer\/(\d+)/));
