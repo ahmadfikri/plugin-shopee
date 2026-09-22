@@ -12,6 +12,7 @@
     "Buatkan SATU prompt video sinematik siap-tempel ke Google Flow/Veo, format " +
     "9:16 vertikal (HP), durasi 8 detik, dari data produk ini:\n{{context}}\n\n" +
     "{{CONCEPT}}" +
+    "{{GEMINI_RULES}}" +
     "=== PRIORITAS TERTINGGI: 3 DETIK PERTAMA ===\n" +
     "3 detik pertama menentukan hidup-mati video ini. Rancang khusus dan jelaskan " +
     "DETIK-PER-DETIK (0.0-1.0s, 1.0-2.0s, 2.0-3.0s). Wajib penuhi:\n" +
@@ -163,6 +164,26 @@
   //  1. Case products always use FEMALE hands, manicured — that is the audience.
   //  2. NEVER flip the phone front-to-back. When told to flip, the AI renders a
   //     case on BOTH sides (nonsense). A gentle shake/tilt shows the case just as
+
+  // Gemini/Veo quality contract. Product identity and temporal continuity beat
+  // fancy camera motion: an attractive shot is useless if the product morphs.
+  const GEMINI_RULES =
+    "=== GEMINI/VEO — FIDELITY & CONTINUITY CONTRACT ===\n" +
+    "- Gambar referensi adalah SATU-SATUNYA sumber kebenaran produk. Pertahankan " +
+    "siluet, warna, motif, material, logo, proporsi, dan posisi detail produk SAMA " +
+    "di setiap frame; jangan mengarang varian atau dekorasi baru.\n" +
+    "- Maksimal 3 shot dalam 8 detik. Setiap cut harus mempertahankan produk yang " +
+    "sama secara temporal — tidak morphing, tidak berubah warna/bentuk/ukuran.\n" +
+    "- Hanya SATU unit produk utama. Jangan menduplikasi produk, jangan membuat " +
+    "objek menyatu/menembus tangan, dan jangan memunculkan tangan/jari tambahan.\n" +
+    "- Anatomi tangan natural: lima jari per tangan, tidak menyatu, genggaman " +
+    "masuk akal, kontak tangan-produk stabil.\n" +
+    "- Utamakan controlled macro push-in, tilt kecil, atau rack focus. Hindari " +
+    "gerakan kamera ekstrem yang membuat geometri produk rusak.\n" +
+    "- Jangan menaruh tulisan pada permukaan fisik produk. On-screen text harus " +
+    "overlay digital sederhana, kontras, singkat, dan tidak menutupi produk.\n" +
+    "- Negative constraints wajib ditulis ulang di akhir prompt hasil agar Gemini " +
+    "tidak mengabaikannya.\n\n";
   //     well and never produces that artifact.
   const CASE_RULES =
     "- KHUSUS CASING HP — WAJIB, JANGAN DILANGGAR:\n" +
@@ -178,7 +199,13 @@
     "tekstur/kilau/motifnya terlihat jelas. Boleh macro push-in dan orbit KECIL " +
     "(maksimum ~30 derajat — jangan sampai memperlihatkan sisi sebaliknya).\n" +
     "  * Tampilkan casing HANYA dari satu sisi (sisi belakang HP tempat motifnya " +
-    "berada) sepanjang video.\n";
+    "berada) sepanjang video. Kunci kamera di rear hemisphere; jangan pernah " +
+    "melewati sudut samping menuju layar depan.\n" +
+    "  * Hanya SATU HP dengan SATU casing yang sudah terpasang. Posisi lubang kamera, " +
+    "bibir casing, tombol, motif, dan jumlah lensa harus identik dengan gambar " +
+    "referensi di semua frame — jangan berubah, hilang, berlipat, atau berpindah.\n" +
+    "  * Jari jangan menutup motif atau lubang kamera. Hindari cermin/refleksi kuat " +
+    "yang terlihat seperti HP atau casing kedua.\n";
 
   // Phone-case detector: narrower than isHandheld, used only to inject CASE_RULES.
   function isPhoneCase(name) {
@@ -192,6 +219,7 @@
     "bisa dipegang tangan. Buatkan SATU prompt video siap-tempel ke Google Flow/Veo, " +
     "format 9:16 VERTIKAL (HP), durasi 8 detik, dari data produk ini:\n{{context}}\n\n" +
     "{{CONCEPT}}" +
+    "{{GEMINI_RULES}}" +
     "=== PRIORITAS TERTINGGI: 3 DETIK PERTAMA ===\n" +
     "3 detik pertama menentukan hidup-mati video ini. Rancang khusus dan jelaskan " +
     "DETIK-PER-DETIK (0.0-1.0s, 1.0-2.0s, 2.0-3.0s). Wajib penuhi:\n" +
@@ -242,7 +270,7 @@
       .replace(/{{price}}/g, product.price != null ? "Rp" + product.price.toLocaleString("id-ID") : "");
   }
 
-  async function call(cfg, prompt) {
+  async function call(cfg, prompt, temperature) {
     if (!cfg.ai || !cfg.ai.enabled) throw new Error("AI dimatikan di Admin Panel.");
     if (!cfg.ai.apiKey) throw new Error("DeepSeek API key belum diisi di Admin Panel.");
     const res = await fetch(cfg.ai.baseUrl, {
@@ -254,7 +282,7 @@
       body: JSON.stringify({
         model: cfg.ai.model || "deepseek-chat",
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.8
+        temperature: temperature == null ? 0.8 : temperature
       })
     });
     if (!res.ok) throw new Error("DeepSeek error " + res.status);
@@ -362,6 +390,15 @@
   // or storage is unavailable.
   async function pickConcept(product, cfg) {
     const tag = (product && (product.suggestedTag || product.name)) || "global";
+    // Caption + video for one open experiment must use ONE concept. Reuse the
+    // concept already chosen on this product until "Eksperimen Baru" resets it.
+    try {
+      const held = product && (product.__experimentConcept || product.__concept);
+      if (held && global.RMConcepts && global.RMConcepts.byId) {
+        const same = global.RMConcepts.byId(held);
+        if (same) return same;
+      }
+    } catch (_) {}
     let concept = null;
     try {
       // If the win-rate loop has a confident winner (from imported perf snapshot),
@@ -380,10 +417,9 @@
       }
     } catch (_) {}
     if (!concept) concept = (global.RMConcepts && global.RMConcepts.pick) ? global.RMConcepts.pick() : null;
-    // record it for the win-rate loop
-    try {
-      if (concept && global.RMConceptPerf) await global.RMConceptPerf.log(tag, concept.id);
-    } catch (_) {}
+    // Concept-performance logging happens only after RMExperiment creates the
+    // exact campaign/tag ID. Logging the broad base tag here gave every concept
+    // the same lifetime ROAS and produced false "winning concept" signals.
     return concept;
   }
 
@@ -398,14 +434,16 @@
           ? cfg.ai.captionPrompt + "\n\nData produk: {{context}}"
           : DEFAULT_CAPTION_PROMPT);
     const concept = await pickConcept(product, cfg);
+    product.__concept = concept ? concept.id : null;
+    product.__experimentConcept = product.__concept;
     const raw = await call(cfg, tpl.replace(/{{context}}/g, ctx)
       .replace(/{{CONCEPT}}/g, conceptBlock(concept, false))
       .replace(/{{name}}/g, product.name || "")
-      .replace(/{{price}}/g, product.price != null ? "Rp" + product.price.toLocaleString("id-ID") : ""));
+      .replace(/{{price}}/g, product.price != null ? "Rp" + product.price.toLocaleString("id-ID") : ""), 0.75);
     return ensureHashtags(raw, product);
   }
   async function generateTag(cfg, product) {
-    const raw = await call(cfg, fill(cfg.ai.tagPrompt, product));
+    const raw = await call(cfg, fill(cfg.ai.tagPrompt, product), 0.2);
     return raw.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 20);
   }
 
@@ -442,7 +480,9 @@
     const caseBlock = isPhoneCase(product.name) ? CASE_RULES : "";
     const concept = await pickConcept(product, cfg);
     product.__concept = concept ? concept.id : null;   // for UI labelling / logging
+    product.__experimentConcept = product.__concept;  // caption/video share one experiment
     const instruction = tpl
+      .replace(/{{GEMINI_RULES}}/g, GEMINI_RULES)
       .replace(/{{SIZE_RULES}}/g, sizeBlock)
       .replace(/{{CASE_RULES}}/g, caseBlock)
       .replace(/{{CONCEPT}}/g, conceptBlock(concept, true))
@@ -451,7 +491,7 @@
     // NOTE: no mode label is prefixed — the whole textarea gets pasted into
     // Gemini/Veo, so any bracketed note would become noise in the prompt.
     // The mode is surfaced in the panel's section title instead (see content.js).
-    return call(cfg, instruction);
+    return call(cfg, instruction, 0.35);
   }
 
   // Which video template a product will use — for labelling in the UI.

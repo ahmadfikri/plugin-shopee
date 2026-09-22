@@ -13,6 +13,13 @@
 (function (global) {
   "use strict";
 
+
+  let mutationQueue = Promise.resolve();
+  function serialized(task) {
+    const run = mutationQueue.then(task, task);
+    mutationQueue = run.catch(() => {});
+    return run;
+  }
   const KEY = "rm_dataset";
   const CAP = 5000;
 
@@ -28,7 +35,10 @@
     if (d.starBreakdown && typeof d.starBreakdown === "object") {
       const b = d.starBreakdown;
       const tot = Object.values(b).reduce((s, n) => s + (Number(n) || 0), 0);
-      if (tot > 0) pct45 = ((Number(b[5]) || 0) + (Number(b[4]) || 0)) / tot;
+      const positive = Array.isArray(b)
+        ? (Number(b[3]) || 0) + (Number(b[4]) || 0)   // detail scraper: 1★..5★ at 0..4
+        : (Number(b[4]) || 0) + (Number(b[5]) || 0);  // object fixture: keys 1..5
+      if (tot > 0) pct45 = positive / tot;
     }
     const price = p.price || d.price || null;
     // Commission: PREFER the product's own scraped rate (listing cards expose the
@@ -38,12 +48,13 @@
     const commPct = (p.commissionPct != null) ? p.commissionPct
       : (d.commissionPct != null) ? d.commissionPct
       : null;
+    const idParts = String(p.id || "").split(".");
     return {
       captured_at: nowIso(),
       // identity
-      url: location.href,
-      shopid: d.shopid || null,
-      itemid: d.itemid || null,
+      url: p.href || location.href,
+      shopid: d.shopid || (idParts.length === 2 ? idParts[0] : null),
+      itemid: d.itemid || (idParts.length === 2 ? idParts[1] : null),
       name: d.name || p.name || null,
       // --- FEATURES (inputs a model would learn from) ---
       price: price,
@@ -85,13 +96,15 @@
     try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (_) { return []; }
   }
   async function _set(rows) {
-    try {
-      if (global.chrome && chrome.storage && chrome.storage.local) {
-        return await new Promise((res) =>
-          chrome.storage.local.set({ [KEY]: rows }, () => res(true)));
-      }
-    } catch (_) {}
-    try { localStorage.setItem(KEY, JSON.stringify(rows)); } catch (_) {}
+    if (global.chrome && chrome.storage && chrome.storage.local) {
+      return new Promise((res, reject) =>
+        chrome.storage.local.set({ [KEY]: rows }, () => {
+          const err = chrome.runtime && chrome.runtime.lastError;
+          if (err) reject(new Error("Dataset gagal disimpan: " + err.message));
+          else res(true);
+        }));
+    }
+    localStorage.setItem(KEY, JSON.stringify(rows));
     return true;
   }
 
@@ -116,7 +129,7 @@
     return out;
   }
 
-  async function capture(detail, product, cfg, opts) {
+  async function captureUnsafe(detail, product, cfg, opts) {
     const row = buildRow(detail, product, cfg);
     row.source = (opts && opts.source) || "detail";
     row.auto = !!(opts && opts.auto);
@@ -147,7 +160,7 @@
    * category are exactly the features a future model needs, and bulk scan
    * produces hundreds of them for free.
    * Returns {added, updated, total}. */
-  async function captureMany(products, cfg, opts) {
+  async function captureManyUnsafe(products, cfg, opts) {
     const list = Array.isArray(products) ? products : [];
     if (!list.length) return { added: 0, updated: 0, total: (await _get()).length };
     const rows = await _get();
@@ -197,6 +210,13 @@
     if (final.length > CAP) final = final.slice(final.length - CAP);
     await _set(final);
     return { added, updated, total: final.length };
+  }
+
+  function capture(detail, product, cfg, opts) {
+    return serialized(() => captureUnsafe(detail, product, cfg, opts));
+  }
+  function captureMany(products, cfg, opts) {
+    return serialized(() => captureManyUnsafe(products, cfg, opts));
   }
 
   async function all() { return _get(); }

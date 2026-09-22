@@ -86,7 +86,7 @@ function prod(id, name, proScore, epcScore, epc, conf, tag, zero) {
 
   // --- table renders the EPC column ---
   const html = RMPanel.shortlistSection(meta, true);
-  chk("tabel shortlist punya kolom EPC", /<th[^>]*>EPC<\/th>/.test(html));
+  chk("tabel shortlist punya kolom EPC sortable", /<th[^>]*>EPC\s+<button[^>]*rm-sort/.test(html));
   chk("tabel menampilkan Rp/klik", /Rp[\d.]+\/klik/.test(html));
   chk("skor EPC muncul di baris", html.includes(">100<"));
 

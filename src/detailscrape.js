@@ -83,6 +83,8 @@
     const starsSum = gotStars ? stars.reduce((a, b) => a + b, 0) : null;
 
     const { shopid, itemid } = idsFromUrl();
+    const inStock = /IN STOCK|stok tersedia/i.test(bodyTxt) ? true
+      : /OUT OF STOCK|stok habis|produk habis/i.test(bodyTxt) ? false : null;
     return {
       source: "dom-detail",
       shopid, itemid,
@@ -91,7 +93,7 @@
       totalReviews: starsSum != null ? starsSum : (ratingsMatch ? num(ratingsMatch[1]) : null),
       historicalSold: soldMatch ? num(soldMatch[1]) : null,
       likedCount: favMatch ? num(favMatch[1]) : null,
-      inStock: /IN STOCK|stok tersedia/i.test(bodyTxt),
+      inStock,
       starBreakdown: gotStars ? stars : null
     };
   }

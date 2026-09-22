@@ -95,6 +95,22 @@ echo "=== 17. Test: Learning Ledger (vonis CR-vs-CPC + warn pola) ==="
 node test/e2e-ledger.js || fail=1
 
 echo
+echo "=== 18. Test: Experiment ID zero-typing (Meta campaign = Shopee tag) ==="
+node test/e2e-experiment.js || fail=1
+
+echo
+echo "=== 19. Test: bulk keyword tahan stale-result / React submit ==="
+node test/e2e-bulk-keywords.js || fail=1
+
+echo
+
+echo
+echo "=== 20. Test: concept win-rate hanya dari exact Experiment ID ==="
+node test/e2e-conceptperf-exact.js || fail=1
+
+echo
+echo "=== 21. Test: kolom 'Dari kata kunci' tidak pernah berisi URL path ==="
+node test/e2e-observed-label.js || fail=1
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else

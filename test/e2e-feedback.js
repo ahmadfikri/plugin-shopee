@@ -31,7 +31,7 @@ for (const f of ["src/perf.js", "src/proscore.js"]) {
 }
 
 const cfg = { commissionPct: 5, breakEvenCPC: 100, conversionRate: 4.0,
-              saturationTop3Pct: 70, momentumMaxAgeMonths: 3, momentumMinPerMonth: 100 };
+              momentumMaxAgeMonths: 3, momentumMinPerMonth: 100 };
 
 function show(label, product, snap) {
   const calib = snap ? sb.RMPerf.calibrate(product, cfg, snap) : null;
@@ -64,3 +64,13 @@ show("3) PRODUK BARU (belum pernah dijalankan)", Object.assign({}, base,
 
 show("4) TANPA SNAPSHOT (rumus asumsi)", Object.assign({}, base,
   { name: "Casing Kupu Kupu A17 Soft Case Motif" }), null);
+
+const assert = require("assert");
+assert(sb.RMPerf.matchTag("Casing Kupu Kupu A17 Soft Case Motif", snapshot),
+  "specific multi-token winner should match");
+const genericOnly = { tags: { metal: {
+  trusted: true, verdict: "zero-converter", clicks: 500, orders: 0, epc: 0, roas: 0
+} } };
+assert.strictEqual(sb.RMPerf.matchTag("Rak metal stainless dapur", genericOnly), null,
+  "generic tag 'metal' must not zero-gate unrelated products");
+console.log("\nMATCH SAFETY OK — generic one-word tag ignored");

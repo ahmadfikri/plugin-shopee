@@ -1,18 +1,10 @@
-/* conceptperf.js — CONCEPT WIN-RATE LOOP.
+/* conceptperf.js — EXACT CONCEPT WIN-RATE LOOP.
  *
- * Closes the loop the Sept-16 assessment flagged as broken: the generator now
- * ROTATES concepts (concepts.js) but never learned which concept WINS. This
- * module records, per generated video, {tag, concept, date}, then JOINS that log
- * to the imported performance snapshot's per-tag EPC/ROAS so the panel can show
- * "for casing, before/after ROAS 2.1 vs price-shock 0.9" and bias future rotation
- * toward the winning concept per category.
- *
- * HONEST LIMITATION (must be surfaced in the UI, not hidden):
- *   EPC/ROAS is measured at the TAG level, not per video. So a concept's win-rate
- *   is only trustworthy when a tag ran ONE dominant concept over a period. If a
- *   tag mixed concepts on the same days, the signal is muddy. We therefore label
- *   every verdict with a confidence and NEVER claim more certainty than the data
- *   supports. This is a directional learning aid, not proof.
+ * v0.9 records one concept against the exact Experiment ID that is used as both
+ * Meta campaign name and Shopee tag. When that ID appears in a performance
+ * snapshot, EPC/ROAS is attributable 1:1. Legacy broad-tag logs are retained but
+ * ignored: assigning one tag's lifetime ROAS to several concepts was not causal
+ * evidence and could bias generation toward a false winner.
  *
  * Self-contained: chrome.storage.local only, no network.
  */
@@ -24,6 +16,13 @@
 
   function today() { return new Date().toISOString().slice(0, 10); }
 
+
+  let mutationQueue = Promise.resolve();
+  function serialized(task) {
+    const run = mutationQueue.then(task, task);
+    mutationQueue = run.catch(() => {});
+    return run;
+  }
   async function _get() {
     try {
       if (global.chrome && chrome.storage && chrome.storage.local) {
@@ -34,21 +33,32 @@
     try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (_) { return []; }
   }
   async function _set(v) {
-    try {
-      if (global.chrome && chrome.storage && chrome.storage.local) {
-        return await new Promise((r) => chrome.storage.local.set({ [KEY]: v }, () => r(true)));
-      }
-    } catch (_) {}
-    try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (_) {}
+    if (global.chrome && chrome.storage && chrome.storage.local) {
+      return new Promise((r, reject) => chrome.storage.local.set({ [KEY]: v }, () => {
+        const err = chrome.runtime && chrome.runtime.lastError;
+        if (err) reject(new Error("Concept performance gagal disimpan: " + err.message)); else r(true);
+      }));
+    }
+    localStorage.setItem(KEY, JSON.stringify(v));
+    return true;
   }
 
-  // Record that a video with `concept` was generated for `tag`.
-  async function log(tag, concept) {
-    if (!tag || !concept) return;
+  // Record one EXACT experiment. Caption + video reuse the same experiment ID,
+  // so repeated logging is deduplicated. Legacy broad-tag rows remain stored but
+  // are deliberately ignored by winRates (their attribution was not causal).
+  async function logUnsafe(tag, concept, experimentId) {
+    if (!tag || !concept || !experimentId) return;
     const rows = await _get();
-    rows.push({ tag: String(tag), concept: String(concept), day: today(), ts: Date.now() });
+    if (rows.some((r) => r.experimentId === experimentId)) return;
+    rows.push({ tag: String(tag), concept: String(concept),
+                experimentId: String(experimentId), attribution: "exact",
+                day: today(), ts: Date.now() });
     if (rows.length > CAP) rows.shift();
     await _set(rows);
+  }
+
+  function log(tag, concept, experimentId) {
+    return serialized(() => logUnsafe(tag, concept, experimentId));
   }
 
   async function all() { return _get(); }
@@ -61,8 +71,13 @@
    * confidence reflects the honest limitation above: HIGH only when the concept's
    * tags each ran that concept (near-)exclusively; LOW when tags mixed concepts. */
   async function winRates(snapshot) {
-    const rows = await _get();
-    if (!rows.length || !snapshot || !snapshot.tags) return { concepts: [], note: "belum ada data" };
+    const rowsAll = await _get();
+    const rows = rowsAll.filter((r) => r.attribution === "exact" && r.experimentId);
+    if (!rows.length || !snapshot || !snapshot.tags) return {
+      concepts: [],
+      note: rowsAll.length ? "menunggu hasil Experiment ID baru; log broad-tag lama diabaikan"
+                           : "belum ada data"
+    };
 
     // For each tag, how many DISTINCT concepts were logged? (mix detector)
     const conceptsPerTag = {};

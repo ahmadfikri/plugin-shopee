@@ -79,7 +79,7 @@ jualan barang. Maka:
   syarat "hanya jika BUKAN casing" agar tidak kontradiktif.
   Dikunci `test/e2e-case-prompt.js`.
 - **Caption: SATU saja** (bukan 3 variasi), teks biasa tanpa markdown, diakhiri
-  blok 8–12 hashtag termasuk tag FYP.
+  blok **6–9 hashtag** (2 reach + niche searchable + buyer-intent).
 - **ROTASI KONSEP** (`concepts.js` → `{{CONCEPT}}` di video & caption prompt,
   v0.6.0): 8 archetype (curiosity, price-shock, before/after, POV, mistake-warning,
   satisfying, problem-solve, comparison). `RMConcepts.next(tag)` memutar konsep
@@ -88,12 +88,13 @@ jualan barang. Maka:
   (15 Sep 2025). Video prompt juga menuntut variasi angle/latar/lighting.
   Aturan hashtag direvisi 8-12 → 6-9 (2 reach + niche searchable + buyer-intent),
   sesuai riset 2026 (hashtag = SEO, bukan virality). Dikunci `test/e2e-concepts.js`.
-  BELUM: concept win-rate (tag creative→EPC di analytics) — butuh data hasil dulu.
+  Concept win-rate sudah exact di v0.9: hanya Experiment ID 1:1 yang boleh
+  memengaruhi bias; menunggu campaign ID baru memperoleh data performa.
 - Prompt video harus **berupa PERINTAH** ("Buatkan video vertikal 9:16…").
 
 ## 6. ARSITEKTUR SINGKAT
 ```
-manifest.json          MV3, 14 content script (urutan muat penting)
+manifest.json          MV3, 20 content script (urutan muat penting)
 src/storage.js         config + migrasi prompt lama
 src/perf.js            FEEDBACK LOOP — kalibrasi dari hasil nyata
 src/epc.js             PREDIKSI EPC — Empirical Bayes shrinkage (P(untung)+rentang)
@@ -116,6 +117,11 @@ src/detailscrape.js    DOM halaman detail produk
 src/enrich.js          (fetch DIMATIKAN — lihat batasan #4)
 src/video.js           deteksi + unduh video produk (.mp4 langsung)
 src/proscore.js        mesin skor 4 pilar click-affiliate
+src/conceptperf.js     exact concept-performance loop; hanya Experiment ID 1:1,
+                       broad-tag log lama sengaja diabaikan
+src/experiment.js      v0.9 ZERO-TYPING identity: satu ID = nama campaign Meta =
+                       tag Shopee; caption/video reuse satu konsep+ID, hipotesis auto
+src/ledger.js          Learning Ledger; join outcome + CR-vs-CPC failure mode
 src/analytics.js       agregasi pasar + panggil proscore
 src/ai.js              template caption / prompt video (DeepSeek)
 src/charts.js          bar chart SVG tanpa library
@@ -178,6 +184,14 @@ diabaikan → UI diam). `test/e2e-rescan.js` mengunci ini.
 suspend, dan jaring pengaman retry. Ini BUKAN over-engineering: versi naif
 (debounce biasa) membuat panel **sering tidak muncul**, karena Shopee React SPA
 bermutasi terus sehingga `clearTimeout` mereset debounce selamanya. Bulk scan juga
+
+### BULK KEYWORD — HASIL BAWAH + SORT (v0.9)
+Setelah scan keyword selesai, Shopee/native list di atas dan plugin table punya
+peran berbeda: tabel bawah otomatis difilter ke `lastKeyword` yang benar-benar
+berhasil disimpan, sehingga batch baru tidak tersembunyi oleh top-20 global.
+`Lihat seluruh shortlist` menghapus filter. Semua header tabel punya tombol ↕
+(ascending/descending) dan sorting dilakukan in-place tanpa scan/reload.
+
 WAJIB memanggil `suspend()`/`resume()`, kalau tidak observer merusak scan sendiri.
 `test/e2e-scheduler.js` mengunci perilaku ini — jalankan setelah menyentuh bagian itu.
 
@@ -193,6 +207,20 @@ Lalu: Admin Panel → **Feedback Loop** → tempel isi JSON → **Impor Snapshot
 
 Kenapa penting (terukur): rumus `harga × komisi% × 4%` **melebihkan ~2,4x**.
 Untuk KupuA17 rumus bilang Rp 552/klik, EPC nyatanya **Rp 228/klik**.
+
+## 9b. EXPERIMENT ID + CAMPAIGN REGISTRY (v0.9)
+- Generate caption/video → plugin otomatis membuat `experimentId` aman (huruf kecil
+  + angka, maks 20 karakter). Nilai itu dipakai PERSIS sebagai nama campaign Meta
+  dan tag Shopee; tidak ada form ketik manual.
+- Caption dan prompt video pada produk yang sama memakai konsep + ID yang sama.
+  Klik `＋ Eksperimen Baru` untuk rotasi konsep dan ID berikutnya.
+- Hipotesis dibuat otomatis dari produk + archetype konsep dan dicatat ke Ledger.
+- Pipeline analisis otomatis membuat
+  `../analisis/campaign_registry.xlsx` setiap dashboard rebuild. Sheet:
+  `CampaignRegistry`, `Aliases`, `Unmatched`, `ReadMe`.
+- Kolom manual (`concept`, URL, hypothesis, notes, lifecycle) dipertahankan saat
+  rebuild berikutnya; kolom performa dibuat ulang dari master.
+
 Snapshot juga menandai **zero-converter** (mis. `alatPel`: 124 klik, 0 order) →
 produk mirip langsung di-gate **SKIP**.
 
@@ -201,17 +229,18 @@ produk mirip langsung di-gate **SKIP**.
    Bug "error setelah search" sudah diperbaiki (§7b). Yang belum: verifikasi
    selector tab di lebih banyak variasi halaman. Kalau tab tidak terdeteksi, minta
    Fikri kirim `outerHTML` tab-nya.
-2. **Bulk Scan Keyword belum diuji live** oleh Fikri (baru dibangun 2026-09-14).
-   Kalau kotak pencarian tidak terdeteksi, cek `findSearchInput()` — selector-nya
-   defensif tapi belum diverifikasi di DOM asli.
+2. **Bulk Scan Keyword sudah diuji live oleh Fikri (2026-09-21).** Search native
+   berhasil, tetapi hasil baru awalnya tersembunyi oleh ranking shortlist global;
+   v0.9 sekarang otomatis menampilkan batch keyword terakhir di tabel bawah.
+   Kalau input tidak terdeteksi setelah perubahan DOM Shopee, cek `findSearchInput()`.
 3. **MODE A tidak punya angka sold/bulan** → pilar `permintaan` pakai fallback
    total sold. Idealnya bawa `unitsPerMonth` dari listing via storage saat diklik.
 4. **`Umur listing` & `Lokasi toko` masih "?"** di panel detail (selector belum ada).
 5. **Nama toko tidak ada di `.ItemCard__contentSection`** (ada di elemen parent).
 6. **Ikon masih PNG placeholder** polos.
 7. **Hasil DeepSeek belum diuji live** — API key belum diisi Fikri.
-8. Fitur besar yang belum dibangun: **Link Builder + sub_id disiplin** (opsi ke-3
-   dari riset), dan integrasi **Shopee Affiliate Open API**
+8. **Experiment ID + sub_id disiplin SUDAH dibangun (v0.9).** Yang belum hanya
+   pembuatan custom link Shopee langsung via Open API
    (`open-api.affiliate.shopee.co.id/graphql`, GraphQL + HMAC-SHA256) — dashboard
    Fikri punya menu "Open API", tapi ada laporan program ditutup untuk pendaftar
    baru; harus dicek dari dashboard-nya.

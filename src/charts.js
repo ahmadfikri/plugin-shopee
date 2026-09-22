@@ -2,6 +2,12 @@
 (function (global) {
   "use strict";
 
+
+  function esc(v) {
+    return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[c]);
+  }
   function fmtRp(n) {
     if (n >= 1e9) return "Rp" + (n / 1e9).toFixed(1) + "M";
     if (n >= 1e6) return "Rp" + (n / 1e6).toFixed(1) + "jt";
@@ -24,13 +30,13 @@
       const x = pad + i * bw + 3, y = H - pad - h;
       const v = metric === "revenue" ? fmtRp(b[metric]) : fmtNum(b[metric]);
       const names = (b.names && b.names.length)
-        ? "\n" + b.names.map((n) => "• " + n.slice(0, 40)).join("\n") : "";
+        ? "\n" + b.names.map((n) => "• " + esc(n.slice(0, 40))).join("\n") : "";
       bars +=
         `<rect x="${x}" y="${y}" width="${bw - 6}" height="${h}" fill="#ee4d2d" rx="2">` +
         `<title>${fmtRp(b.lo)}–${fmtRp(b.hi)}: ${v} (${b.count} produk)${names}</title></rect>` +
         `<text x="${x + (bw - 6) / 2}" y="${y - 3}" font-size="9" text-anchor="middle" fill="#333">${v}</text>`;
     });
-    return `<div class="rm-chart"><div class="rm-chart-label">${label}</div>` +
+    return `<div class="rm-chart"><div class="rm-chart-label">${esc(label)}</div>` +
       `<svg viewBox="0 0 ${W} ${H}" width="100%">${bars}` +
       `<line x1="${pad}" y1="${H - pad}" x2="${W - pad}" y2="${H - pad}" stroke="#ccc"/></svg></div>`;
   }
@@ -44,12 +50,12 @@
     const rows = items.map((i) => {
       const pct = Math.round((i.value || 0) / max * 100);
       const val = fmt === "rp" ? fmtRp(i.value) : fmtNum(i.value);
-      return `<div class="rm-rank-row" title="${i.label}">` +
-        `<span class="rm-rank-name">${i.label.slice(0, 34)}</span>` +
+      return `<div class="rm-rank-row" title="${esc(i.label)}">` +
+        `<span class="rm-rank-name">${esc(i.label.slice(0, 34))}</span>` +
         `<div class="rm-rank-track"><div class="rm-rank-fill" style="width:${pct}%;background:${i.color || "#ee4d2d"}"></div></div>` +
         `<span class="rm-rank-val">${val}</span></div>`;
     }).join("");
-    return `<div class="rm-chart"><div class="rm-chart-label">${label}</div>${rows}</div>`;
+    return `<div class="rm-chart"><div class="rm-chart-label">${esc(label)}</div>${rows}</div>`;
   }
 
   global.RMCharts = { barChart, rankedBars, fmtRp, fmtNum };

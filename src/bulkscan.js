@@ -56,17 +56,60 @@
   function signature() {
     const cards = global.RMScraper ? global.RMScraper.findCards() : [];
     if (!cards.length) return "0";
-    return cards.length + "|" + (cards[0].textContent || "").slice(0, 40);
+    // Count + several card identities. The old first-card/40-char signature
+    // collided often, so a new result could look unchanged (or stale cards could
+    // look ready). href/data-id survive React text/layout churn better.
+    const ids = cards.slice(0, 6).map((c) =>
+      c.getAttribute && (c.getAttribute("data-itemid") || c.getAttribute("data-id")) ||
+      (c.querySelector && c.querySelector("a[href]") && c.querySelector("a[href]").href) ||
+      (c.textContent || "").trim().replace(/\s+/g, " ").slice(0, 90));
+    return cards.length + "|" + ids.join("|");
+  }
+
+  function pageLoading() {
+    const nodes = Array.from(document.querySelectorAll(
+      ".ant-spin-spinning, .ant-skeleton, [aria-busy='true'], [class*='loading' i]"));
+    // querySelector used to stop on a hidden/global spinner from another widget.
+    // Only a VISIBLE loading node can hold the product-search state machine.
+    return nodes.some((n) => n.offsetParent !== null &&
+      n.getAttribute("aria-hidden") !== "true");
   }
 
   // Wait until the visible product set actually changes (or timeout).
   async function waitForChange(prevSig, timeoutMs) {
     const t0 = Date.now();
     while (Date.now() - t0 < (timeoutMs || 8000)) {
+      if (stopRequested) return false;
       await sleep(400);
       if (signature() !== prevSig) { await sleep(600); return true; }
     }
     return false;
+  }
+
+  // Keyword searches must prove a transition away from the previous results,
+  // then settle on one non-loading signature twice. Never accept old stable cards.
+  async function waitForSearchResult(prevSig, timeoutMs) {
+    const t0 = Date.now();
+    let transitioned = false, stable = 0, last = null;
+    while (Date.now() - t0 < (timeoutMs || 15000)) {
+      if (stopRequested) return { ready: false, stopped: true, cards: 0 };
+      await sleep(450);
+      const sig = signature();
+      const loading = pageLoading();
+      if (loading || sig !== prevSig) transitioned = true;
+      if (transitioned && !loading && sig !== "0") {
+        if (sig === last) {
+          stable++;
+          if (stable >= 2) {
+            const cards = global.RMScraper ? global.RMScraper.findCards().length : 0;
+            return { ready: true, stopped: false, cards };
+          }
+        } else {
+          last = sig; stable = 0;
+        }
+      }
+    }
+    return { ready: false, stopped: false, cards: 0 };
   }
 
   async function scrapeAndStore(label, cfg) {
@@ -174,28 +217,41 @@
     return exact || partial;
   }
 
-  // The affiliate offer page's product search box.
+  // The affiliate offer page's product search box. Strong selectors first;
+  // generic text inputs are accepted only when product-offer context is nearby.
   function findSearchInput() {
-    const sels = [
+    const strong = [
+      "input[placeholder*='Search Product' i]",
+      "input[placeholder*='Cari Produk' i]",
       "input[placeholder*='Search' i]",
       "input[placeholder*='Cari' i]",
-      ".ant-input[type='text']",
-      "input.ant-input",
-      "input[type='search']",
-      "input[type='text']"
+      "input[type='search']"
     ];
-    for (const s of sels) {
+    for (const s of strong) {
       const n = document.querySelector(s);
-      if (n && n.offsetParent !== null) return n;   // must be visible
+      if (n && n.offsetParent !== null && !n.disabled) return n;
     }
-    return null;
+    const generic = Array.from(document.querySelectorAll("input.ant-input[type='text'], input[type='text']"))
+      .filter((n) => n.offsetParent !== null && !n.disabled);
+    return generic.find((n) => {
+      const box = n.closest("form, [class*='search' i], [class*='filter' i]") || n.parentElement;
+      return /produk|product|search|cari/i.test((box && box.textContent) || "");
+    }) || (generic.length === 1 ? generic[0] : null);
   }
 
-  function findSearchButton() {
-    const btns = Array.from(document.querySelectorAll("button, .ant-btn"));
-    return btns.find((b) => /^(search|cari)$/i.test((b.textContent || "").trim()))
-      || btns.find((b) => /search|cari/i.test((b.textContent || "").trim()))
-      || null;
+  function findSearchButton(input) {
+    if (!input) return null;
+    // Search beside THIS input, not a global button that merely contains "cari".
+    let scope = input.closest("form, [class*='search' i], .ant-input-search") || input.parentElement;
+    for (let depth = 0; scope && depth < 3; depth++, scope = scope.parentElement) {
+      const btns = Array.from(scope.querySelectorAll("button, .ant-btn"));
+      const found = btns.find((b) =>
+        !b.disabled && (/^(search|cari)$/i.test((b.textContent || "").trim()) ||
+        /search|cari/i.test(b.getAttribute("aria-label") || "") ||
+        b.type === "submit"));
+      if (found) return found;
+    }
+    return null;
   }
 
   // Type into a React-controlled input so the framework registers the value.
@@ -243,64 +299,75 @@
    */
   async function runKeywords(opts) {
     if (running) return { error: "Bulk scan sudah berjalan." };
-    const keywords = (opts.keywords || []).map((k) => String(k).trim()).filter(Boolean);
+    const seen = new Set();
+    const keywords = (opts.keywords || []).map((k) => String(k).trim()).filter((k) => {
+      const key = k.toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key); return true;
+    });
     if (!keywords.length) return { error: "Daftar kata kunci kosong." };
 
     running = true; stopRequested = false;
     const cfg = opts.cfg;
-    const delay = opts.delayMs || 3000;     // slower than tab-walking on purpose
+    const delay = opts.delayMs || 3000;
     const report = opts.onProgress || function () {};
-    let total = 0, done = 0;
+    let total = 0, done = 0, lastKeyword = null;
 
     try {
-      const input = findSearchInput();
-      if (!input) {
-        report({ phase: "error", note: "Kotak pencarian tidak ditemukan di halaman ini." });
+      if (!findSearchInput()) {
+        report({ phase: "error", note: "Kotak pencarian produk tidak ditemukan." });
         return { error: "no search input" };
       }
-
-      // Make sure the page is settled BEFORE the first search, so we never stack
-      // requests on a still-loading page.
       report({ phase: "start", note: "Menunggu halaman siap sebelum mulai…" });
       await waitForRender(1, 10000);
 
       for (let i = 0; i < keywords.length; i++) {
-        if (stopRequested) { report({ phase: "stopped", total }); break; }
+        if (stopRequested) break;
         const kw = keywords[i];
-        report({ phase: "search", label: kw, index: i + 1, of: keywords.length, total,
-                 note: "mencari…" });
+        let result = { ready: false, stopped: false, cards: 0 };
 
-        const live = findSearchInput();
-        if (!live) { report({ phase: "skip", label: kw, index: i + 1, of: keywords.length,
-                              total, note: "kotak pencarian hilang" }); continue; }
-        const prev = signature();
-        setInputValue(live, kw);
-        await sleep(500);                   // let React register the value
-        const btn = findSearchButton();
-        if (btn) { try { btn.click(); } catch (_) { pressEnter(live); } }
-        else pressEnter(live);
+        // One retry handles React occasionally swallowing Enter/click while its
+        // controlled input is being re-mounted. Each attempt re-queries both
+        // input and its LOCAL button; stale nodes are never reused.
+        for (let attempt = 0; attempt < 2 && !result.ready && !stopRequested; attempt++) {
+          report({ phase: "search", label: kw, index: i + 1, of: keywords.length,
+                   total, note: attempt ? "hasil belum berubah — coba ulang sekali…" : "mencari…" });
+          const live = findSearchInput();
+          if (!live) break;
+          const prev = signature();
+          setInputValue(live, "");
+          await sleep(80);
+          setInputValue(live, kw);
+          await sleep(450);
+          const btn = findSearchButton(live);
+          if (btn) {
+            try { btn.click(); } catch (_) { pressEnter(live); }
+          } else {
+            pressEnter(live);
+          }
+          result = await waitForSearchResult(prev, 15000);
+        }
 
-        // wait for the result set to change AND finish rendering
-        await waitForChange(prev, 10000);
-        const cards = await waitForRender(1, 12000);
-        if (!cards) {
-          report({ phase: "skip", label: kw, index: i + 1, of: keywords.length, total,
-                   note: "tidak ada hasil / gagal render" });
+        if (stopRequested || result.stopped) break;
+        if (!result.ready) {
+          report({ phase: "skip", label: kw, index: i + 1, of: keywords.length,
+                   total, note: "hasil baru tidak terverifikasi; data lama tidak disimpan" });
           await sleep(delay);
           continue;
         }
 
         total = await scrapeAndStore("cari: " + kw, cfg);
         done++;
+        lastKeyword = "cari: " + kw;
         report({ phase: "scan", label: kw, index: i + 1, of: keywords.length, total,
-                 note: `${cards} produk ter-render` });
+                 note: `${result.cards} produk baru selesai render` });
         await sleep(delay);
       }
 
       report({ phase: stopRequested ? "stopped" : "done", total,
                note: stopRequested ? "Dihentikan oleh pengguna."
                                    : `Selesai — ${done}/${keywords.length} kata kunci.` });
-      return { total, done, stopped: stopRequested };
+      return { total, done, lastKeyword, stopped: stopRequested };
     } finally {
       running = false; stopRequested = false;
     }
@@ -314,6 +381,7 @@
   }
 
   global.RMBulk = { run, runKeywords, stop, isRunning, findCategoryTabs,
-                    findTabByLabel, findNextPage, findSearchInput, waitForRender,
-                    currentLabel };
+                    findTabByLabel, findNextPage, findSearchInput, findSearchButton,
+                    waitForRender, waitForSearchResult, currentLabel,
+                    _signature: signature };
 })(typeof window !== "undefined" ? window : this);

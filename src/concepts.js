@@ -55,6 +55,13 @@
       set: "split-screen / dua produk berdampingan" }
   ];
 
+
+  let mutationQueue = Promise.resolve();
+  function serialized(task) {
+    const run = mutationQueue.then(task, task);
+    mutationQueue = run.catch(() => {});
+    return run;
+  }
   const KEY = "rm_concept_state";   // { tag: [lastConceptIds...] }
 
   function all() { return CONCEPTS.slice(); }
@@ -70,12 +77,14 @@
     try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (_) { return {}; }
   }
   async function _set(v) {
-    try {
-      if (global.chrome && chrome.storage && chrome.storage.local) {
-        return await new Promise((r) => chrome.storage.local.set({ [KEY]: v }, () => r(true)));
-      }
-    } catch (_) {}
-    try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (_) {}
+    if (global.chrome && chrome.storage && chrome.storage.local) {
+      return new Promise((r, reject) => chrome.storage.local.set({ [KEY]: v }, () => {
+        const err = chrome.runtime && chrome.runtime.lastError;
+        if (err) reject(new Error("Rotasi konsep gagal disimpan: " + err.message)); else r(true);
+      }));
+    }
+    localStorage.setItem(KEY, JSON.stringify(v));
+    return true;
   }
 
   /* Pick the next concept for a product/tag, ROTATING so a tag never repeats a
@@ -83,7 +92,7 @@
    * mass-production penalty: consecutive videos for the same product are forced
    * to be different concepts. Returns the concept object and records the choice.
    */
-  async function next(tagOrName) {
+  async function nextUnsafe(tagOrName) {
     const key = String(tagOrName || "global").trim().toLowerCase() || "global";
     const state = await _get();
     const recent = state[key] || [];
@@ -96,6 +105,8 @@
     await _set(state);
     return pick;
   }
+
+  function next(tagOrName) { return serialized(() => nextUnsafe(tagOrName)); }
 
   // Synchronous pick WITHOUT recording (for tests / previews).
   function pick(seed) {

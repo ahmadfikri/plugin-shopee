@@ -13,6 +13,13 @@
   const KEY = "rm_shortlist";
   const MAX_ENTRIES = 2000;    // hard cap so storage can't grow forever
 
+  let mutationQueue = Promise.resolve();
+  function serialized(task) {
+    const run = mutationQueue.then(task, task);
+    mutationQueue = run.catch(() => {});
+    return run;
+  }
+
   function getAll() {
     return new Promise((r) =>
       chrome.storage.local.get(KEY, (o) => r((o[KEY] || {}).items || [])));
@@ -27,7 +34,7 @@
 
   // Add a scanned batch. Existing ids are UPDATED (fresher score wins) rather
   // than duplicated, so re-visiting a page does not inflate the list.
-  function add(products, keyword) {
+  function addUnsafe(products, keyword) {
     return getMeta().then((meta) => {
       const items = meta.items || [];
       const byId = new Map(items.map((x) => [x.id, x]));
@@ -62,7 +69,17 @@
           href: p.href || "",
           at: now
         };
-        if (byId.has(entry.id)) { byId.set(entry.id, entry); updated++; }
+        if (byId.has(entry.id)) {
+          const old = byId.get(entry.id);
+          // After bulk finishes, the normal observer may re-save the same page
+          // using a generic pathname. Preserve the explicit `cari:` label so the
+          // latest-keyword lower-table filter does not disappear seconds later.
+          if (/^cari:\s*/i.test(old.keyword || "") &&
+              !/^cari:\s*/i.test(entry.keyword || "")) {
+            entry.keyword = old.keyword;
+          }
+          byId.set(entry.id, entry); updated++;
+        }
         else { byId.set(entry.id, entry); added++; }
       }
 
@@ -81,11 +98,18 @@
         keywords: keywords.slice(-50),
         updatedAt: now
       };
-      return new Promise((r) =>
-        chrome.storage.local.set({ [KEY]: out },
-          () => r({ added, updated, total: merged.length, scans: out.scans,
-                    keywords: out.keywords })));
+      return new Promise((r, reject) =>
+        chrome.storage.local.set({ [KEY]: out }, () => {
+          const err = chrome.runtime && chrome.runtime.lastError;
+          if (err) reject(new Error("Shortlist gagal disimpan: " + err.message));
+          else r({ added, updated, total: merged.length, scans: out.scans,
+                   keywords: out.keywords });
+        }));
     });
+  }
+
+  function add(products, keyword) {
+    return serialized(() => addUnsafe(products, keyword));
   }
 
   // Ranked view. `limit` null/0 = everything.

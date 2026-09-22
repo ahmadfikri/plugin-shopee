@@ -46,6 +46,10 @@ const chk = (n, c, d) => { console.log(`${c ? "PASS" : "FAIL"}  ${n}${d ? "  " +
   chk("ditandai source=detail & auto", rich.source === "detail" && rich.auto === true);
   chk("capture_count = 1", rich.capture_count === 1);
 
+  const arrStars = RMDataset.buildRow({ starBreakdown: [160, 200, 500, 2000, 20900] }, prodDetail, cfg);
+  chk("pct 4-5★ benar untuk ARRAY dari detail scraper",
+      Math.abs(arrStars.pct_4_5_star - (22900 / 23760)) < 0.0001,
+      `pct=${arrStars.pct_4_5_star.toFixed(3)}`);
   // ---- 2. BULK listing menyertakan produk yang SAMA (tipis) ----
   const listing = [
     { id: "111.999", name: richDetail.name, price: 25000, commissionPct: 11.5,
@@ -101,6 +105,15 @@ const chk = (n, c, d) => { console.log(`${c ? "PASS" : "FAIL"}  ${n}${d ? "  " +
   const csv = RMDataset.toCsv(rows);
   chk("CSV punya kolom source", csv.split("\n")[0].includes("source"));
 
+
+  // ---- 6. dua capture bersamaan tidak boleh saling menimpa ----
+  await Promise.all([
+    RMDataset.capture({}, { id: "444.444", name: "Produk paralel A", price: 10000, href: "u4" }, cfg),
+    RMDataset.capture({}, { id: "555.555", name: "Produk paralel B", price: 12000, href: "u5" }, cfg)
+  ]);
+  rows = await RMDataset.all();
+  chk("capture paralel tidak kehilangan update", rows.length === 5,
+      `n=${rows.length}`);
   console.log(ok ? "\nDATASET AUTO OK — data kaya aman dari timpa listing"
                  : "\nADA YANG GAGAL");
   process.exit(ok ? 0 : 1);

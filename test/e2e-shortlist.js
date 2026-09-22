@@ -8,6 +8,7 @@
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
+const assert = require("assert");
 
 const ROOT = path.join(__dirname, "..");
 const store = {};
@@ -87,8 +88,32 @@ function batch(keyword, n, startId, priceBase) {
   console.log(`  tombol toggle    : ${/rm-sl-toggle/.test(collapsed)}`);
   console.log(`  label "semua"    : ${/Tampilkan semua \(\d+\)/.test(collapsed)}`);
 
+  console.log(`\n=== 5. hasil keyword terakhir + sort ===`);
+  const filtered = sb.RMPanel.shortlistSection(meta, true, "casing hp");
+  console.log(`  filtered casing hp: ${rows(filtered)} baris`);
+  console.log(`  tombol lihat semua: ${/rm-sl-all/.test(filtered)}`);
+  console.log(`  icon sort          : ${(filtered.match(/rm-sort/g) || []).length}`);
+  assert.strictEqual(rows(filtered), 25, "lower table must show latest keyword batch");
+  assert(!/tumbler produk/.test(filtered), "old keyword rows must be hidden in latest view");
+  assert(/Hasil terakhir: casing hp/.test(filtered));
+  assert(/rm-sl-all/.test(filtered));
+  assert((filtered.match(/class="rm-sort"/g) || []).length >= 8);
+
   const csv = sb.RMShortlist.toCsv(items);
-  console.log(`\n=== 5. CSV ===`);
+  console.log(`\n=== 6. CSV ===`);
+  const one = batch("race", 1, 900, 50000);
+  await sb.RMShortlist.add(one, "cari: race");
+  await sb.RMShortlist.add(one, "/offer/product_offer");
+  const raceRow = (await sb.RMShortlist.getAll()).find((x) => x.id === "P900");
+  assert.strictEqual(raceRow.keyword, "cari: race",
+    "observer re-save must preserve explicit bulk keyword label");
   console.log(`  baris CSV (+header): ${csv.trim().split("\n").length} untuk ${items.length} produk`);
+  const hostileMeta = { items: [Object.assign({}, items[0], {
+    name: '<img src=x onerror="boom">', keyword: '<script>bad</script>'
+  })], scans: 1, keywords: [] };
+  const hostileHtml = sb.RMPanel.shortlistSection(hostileMeta, true);
+  assert(!hostileHtml.includes("<img src=x"), "product HTML must not execute");
+  assert(!hostileHtml.includes("<script>bad"), "keyword HTML must not execute");
+  assert(hostileHtml.includes("&lt;img"), "escaped product markup remains readable");
   console.log("\nE2E SHORTLIST OK");
 })().catch((e) => { console.error("GAGAL:", e); process.exit(1); });

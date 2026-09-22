@@ -24,7 +24,11 @@
         reject(new Error("Snapshot tidak valid: butuh field 'global' dan 'tags'."));
         return;
       }
-      chrome.storage.local.set({ [KEY]: snapshot }, () => resolve(snapshot));
+      chrome.storage.local.set({ [KEY]: snapshot }, () => {
+        const err = chrome.runtime && chrome.runtime.lastError;
+        if (err) reject(new Error("Snapshot gagal disimpan: " + err.message));
+        else resolve(snapshot);
+      });
     });
   }
   function load() {
@@ -42,8 +46,13 @@
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, " ")
       .split(/\s+/)
-      .filter((w) => w.length >= 4);            // drop noise like "a17", "kn1"
+      .filter((w) => w.length >= 3);
   }
+
+  const GENERIC_TAG_WORDS = new Set([
+    "case", "casing", "metal", "bling", "iphone", "samsung", "tumbler",
+    "produk", "bagus", "murah", "baru"
+  ]);
 
   // Find the best-matching historical tag for a product name.
   // Returns { tag, stats, score } or null. Only TRUSTED tags are matched, so a
@@ -51,14 +60,20 @@
   function matchTag(productName, snapshot) {
     if (!snapshot || !productName) return null;
     const name = String(productName).toLowerCase();
+    const compactName = name.replace(/[^a-z0-9]/g, "");
     let best = null;
     for (const [tag, stats] of Object.entries(snapshot.tags)) {
       if (!stats.trusted) continue;
       const kws = tagKeywords(tag);
       if (!kws.length) continue;
       const hits = kws.filter((k) => name.includes(k));
-      if (!hits.length) continue;
-      const score = hits.length / kws.length;   // share of tag keywords present
+      const compactTag = String(tag).toLowerCase().replace(/[^a-z0-9]/g, "");
+      const genericOnly = kws.every((k) => GENERIC_TAG_WORDS.has(k));
+      const exactCompact = compactTag.length >= 5 && compactName.includes(compactTag);
+      const enoughSpecific = hits.length >= 2 ||
+        (hits.length === 1 && kws.length === 1 && hits[0].length >= 6 && !genericOnly);
+      if ((!exactCompact && !enoughSpecific) || (genericOnly && hits.length < 2)) continue;
+      const score = hits.length / kws.length + (exactCompact ? 0.5 : 0);
       if (!best || score > best.score) best = { tag, stats, score, hits };
     }
     return best;

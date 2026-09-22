@@ -11,6 +11,32 @@
     return /\/search/.test(location.pathname) && /keyword=/.test(location.search);
   }
 
+  // Where did the observer's auto-captured products come from?
+  // NEVER location.pathname: that wrote "/offer/product_offer" into the
+  // "Dari kata kunci" column of every auto-saved product, which is not a
+  // keyword and made the column useless for deciding anything. Order of truth:
+  //   1. what is actually typed in the page's product search box right now
+  //   2. the marketplace ?keyword= parameter
+  //   3. the active category tab (honest: that IS where the rows came from)
+  //   4. nothing — a blank cell beats a misleading URL path
+  // A search term is prefixed "cari: " so it matches the label bulk keyword
+  // scans store, which is what the latest-batch lower-table filter compares.
+  function observedLabel(a) {
+    const urlKw = ((a && a.keyword) || "").trim();
+    if (urlKw) return "cari: " + urlKw;
+    try {
+      const finder = window.RMBulk && window.RMBulk.findSearchInput;
+      const box = typeof finder === "function" ? finder() : null;
+      const typed = box && String(box.value || "").trim();
+      if (typed) return "cari: " + typed;
+    } catch (_) { /* a missing/blocked search box is not an error here */ }
+    const tab = document.querySelector(
+      ".ant-tabs-tab-active, [role='tab'][aria-selected='true']");
+    const tabLabel = tab && (tab.textContent || "").trim();
+    if (tabLabel) return tabLabel;
+    return "";
+  }
+
   function csvEscape(s) { return '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"'; }
 
   async function exportWatchlist() {
@@ -31,16 +57,19 @@
 
   // Draw the cumulative shortlist into the panel host and wire its controls.
   // `expanded` false = top 20 only; true = every scanned product.
-  function renderShortlist(panel, expanded) {
+  function renderShortlist(panel, expanded, keywordFilter) {
     if (!window.RMShortlist || !panel) return;
     const host = panel.querySelector(".rm-sl-host");
     if (!host) return;
     if (typeof expanded === "boolean") shortlistExpanded = expanded;
+    if (arguments.length >= 3) shortlistKeywordFilter = keywordFilter || null;
     const isOpen = shortlistExpanded;
     RMShortlist.getMeta().then((meta) => {
-      host.innerHTML = RMPanel.shortlistSection(meta, isOpen);
+      host.innerHTML = RMPanel.shortlistSection(meta, isOpen, shortlistKeywordFilter);
       const t = host.querySelector(".rm-sl-toggle");
       if (t) t.addEventListener("click", () => renderShortlist(panel, !isOpen));
+      const all = host.querySelector(".rm-sl-all");
+      if (all) all.addEventListener("click", () => renderShortlist(panel, false, null));
       const ex = host.querySelector(".rm-sl-export");
       if (ex) ex.addEventListener("click", () => {
         const csv = RMShortlist.toCsv(meta.items || []);
@@ -128,8 +157,9 @@
         if (prog) prog.style.display = "block";
         suspend();
         await waitIdle();   // let any in-flight render finish before we take over
+        let scanResult = null;
         try {
-          const r = await RMBulk.runKeywords({
+          scanResult = await RMBulk.runKeywords({
             cfg: await loadCfg(),
             keywords,
             onProgress: (s) => {
@@ -147,7 +177,7 @@
               }
             }
           });
-          if (r && r.error && prog) prog.textContent = r.error;
+          if (scanResult && scanResult.error && prog) prog.textContent = scanResult.error;
         } catch (err) {
           if (prog) prog.textContent = "Gagal: " + (err && err.message || err);
         } finally {
@@ -155,10 +185,45 @@
           lastSig = "";
           kwScan.disabled = false; kwScan.textContent = "🔎 Bulk Scan Keyword";
           if (stopBtn) { stopBtn.style.display = "none"; stopBtn.textContent = "■ Stop"; }
-          renderShortlist(panel, shortlistExpanded);
+          if (scanResult && scanResult.lastKeyword) {
+            renderShortlist(panel, true, scanResult.lastKeyword);
+          } else {
+            renderShortlist(panel, shortlistExpanded);
+          }
         }
       });
     });
+  }
+
+  function sortTable(button) {
+    const table = button && button.closest("table");
+    const body = table && table.querySelector("tbody");
+    if (!body) return;
+    const col = Number(button.getAttribute("data-col"));
+    const type = button.getAttribute("data-type") || "text";
+    const prev = button.getAttribute("data-dir");
+    const dir = prev === "desc" ? "asc" : "desc";
+    table.querySelectorAll(".rm-sort").forEach((b) => {
+      b.textContent = "↕"; b.removeAttribute("data-dir");
+    });
+    button.setAttribute("data-dir", dir);
+    button.textContent = dir === "asc" ? "↑" : "↓";
+    const rows = Array.from(body.querySelectorAll("tr"));
+    const value = (row) => {
+      const cell = row.children[col];
+      const raw = cell ? (cell.getAttribute("data-sort") || cell.textContent || "") : "";
+      if (type === "number") {
+        const n = Number(String(raw).replace(/[^0-9.-]/g, ""));
+        return Number.isFinite(n) ? n : -Infinity;
+      }
+      return String(raw).toLocaleLowerCase("id-ID");
+    };
+    rows.sort((a, b) => {
+      const av = value(a), bv = value(b);
+      const cmp = type === "number" ? av - bv : av.localeCompare(bv, "id-ID");
+      return dir === "asc" ? cmp : -cmp;
+    });
+    rows.forEach((row) => body.appendChild(row));
   }
 
   function wire(panel, cfg) {
@@ -172,6 +237,8 @@
     panel.querySelector(".rm-export").addEventListener("click", exportWatchlist);
 
     panel.addEventListener("click", async (e) => {
+      const sorter = e.target.closest && e.target.closest(".rm-sort");
+      if (sorter) { sortTable(sorter); return; }
       // ---- drill-down: click a product name -> deep-analysis modal ----
       const drill = e.target.closest && e.target.closest(".rm-drill");
       if (drill) {
@@ -236,28 +303,66 @@
   }
 
   // wire modal-internal buttons (close, save, caption, video, video prompt)
-  // NOTE (2026-09-21, Fikri): the mandatory campaign-tag + reasoning form was
-  // REMOVED — having to type a tag and a reason before every generate was pure
-  // friction. Generation now runs immediately. The Learning Ledger still gets
-  // fed, silently: we record the experiment with the tag we already know
-  // (suggestedTag) and the rotated concept. Reasoning is no longer collected.
-  // Never blocks, never alerts — a failure here must not stop generation.
+
+  function showExperiment(modal, exp) {
+    const host = modal && modal.querySelector(".rm-exp");
+    if (!host || !exp) return;
+    if (exp.error) {
+      host.innerHTML = "";
+      const msg = document.createElement("span");
+      msg.className = "rm-red";
+      msg.textContent = "⚠ " + exp.error;
+      host.appendChild(msg);
+      return;
+    }
+    host.innerHTML = "";
+    const label = document.createElement("b");
+    label.textContent = "Campaign Meta = Tag Shopee";
+    const code = document.createElement("code");
+    code.textContent = exp.campaignTag;
+    const copy = document.createElement("button");
+    copy.className = "rm-exp-copy";
+    copy.textContent = "Copy ID";
+    copy.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(exp.campaignTag); } catch (_) {}
+      copy.textContent = "✓ Tersalin";
+      setTimeout(() => { copy.textContent = "Copy ID"; }, 1800);
+    });
+    const meta = document.createElement("span");
+    meta.textContent = `${exp.concept || "konsep"} · base ${exp.baseTag}`;
+    host.append(label, code, copy, meta);
+  }
+  // Zero typing: create/reuse one Experiment ID and feed its generated
+  // hypothesis to the Learning Ledger. Never block content generation.
   async function autoLog(p) {
     try {
-      if (!window.RMLedger) return;
-      const tag = (p.suggestedTag || "").trim();
-      if (!tag) return; // no tag known — nothing useful to key the entry on
-      const detail = (window.RMDetailScrape && RMDetailScrape.isProductPage())
-        ? RMDetailScrape.scrapeDetail() : {};
-      await RMLedger.add({
-        tag, source: "plugin",
-        concept: p.__concept || null,
-        product: {
-          category: (detail && (detail.categoryL1 || detail.category)) || null,
-          price: p.price, rating: p.rating != null ? p.rating : (detail && detail.rating)
-        }
-      });
-    } catch (_) {}
+      if (!window.RMExperiment) return null;
+      const exp = await RMExperiment.ensure(p, p.__concept || null);
+      if (window.RMConceptPerf && exp.concept) {
+        await RMConceptPerf.log(exp.campaignTag, exp.concept, exp.experimentId);
+      }
+      if (window.RMLedger) {
+        const detail = (window.RMDetailScrape && RMDetailScrape.isProductPage())
+          ? RMDetailScrape.scrapeDetail() : {};
+        await RMLedger.add({
+          tag: exp.campaignTag,
+          experimentId: exp.experimentId,
+          baseTag: exp.baseTag,
+          reasoning: exp.hypothesis,
+          source: "plugin",
+          concept: exp.concept,
+          product: {
+            name: p.name, href: p.href,
+            category: (detail && (detail.categoryL1 || detail.category)) || null,
+            price: p.price,
+            rating: p.rating != null ? p.rating : (detail && detail.rating)
+          }
+        });
+      }
+      return exp;
+    } catch (err) {
+      return { error: (err && err.message) || "Experiment ID gagal disimpan" };
+    }
   }
 
   function wireModal(modal, p) {
@@ -276,9 +381,10 @@
     const ai = modal.querySelector(".rm-ai2");
     if (ai) ai.addEventListener("click", async () => {
       const cfg = await cfgP; ai.textContent = "membuat…";
-      autoLog(p);
       try {
         const cap = await RMAi.generateCaption(cfg, p);
+        const exp = await autoLog(p);
+        showExperiment(modal, exp);
         await showOutput(modal, "Caption Iklan", cap,
           "Tempel ke caption Facebook/Instagram. Ingat: untuk Facebook, taruh link affiliate di BARIS PERTAMA (di atas fold 'See more').");
       } catch (err) { alert("AI: " + err.message); }
@@ -302,15 +408,25 @@
     if (vp) vp.addEventListener("click", async () => {
       const cfg = await cfgP;
       vp.textContent = "membuat…";
-      autoLog(p);
       try {
         const prompt = await RMAi.generateVideoPrompt(cfg, p);
+        const exp = await autoLog(p);
+        showExperiment(modal, exp);
         const mode = RMAi.videoMode ? RMAi.videoMode(cfg, p) : "";
         await showOutput(modal,
           "Prompt Video (Veo/Gemini)" + (mode ? " — " + mode : ""), prompt,
           "Buka Google Flow/Veo atau Gemini → tempel prompt (sudah berupa perintah 'Buatkan video…') → drag gambar produk sebagai referensi (Ingredients to Video) → generate.");
       } catch (err) { alert("Prompt video: " + err.message); }
       vp.textContent = "🎬 Prompt Video";
+    });
+    const freshExp = modal.querySelector(".rm-exp-new");
+    if (freshExp && window.RMExperiment) freshExp.addEventListener("click", () => {
+      RMExperiment.reset(p);
+      const host = modal.querySelector(".rm-exp");
+      if (host) host.innerHTML =
+        "<b>Eksperimen baru siap</b><span>Generate lagi: konsep diputar dan ID baru dibuat otomatis.</span>";
+      const out = modal.querySelector(".rm-out");
+      if (out) out.style.display = "none";
     });
     // ---- (removed 2026-09-21) the "+ Catat campaign eksternal" button lived
     // here. It existed only to collect a tag + reason by hand for content
@@ -361,7 +477,11 @@
       // matched too early). Pick the most common price value on the page.
       let price = null;
       const priceCounts = {};
-      document.querySelectorAll("div,span").forEach((el) => {
+      const priceRoot = document.querySelector(
+        "[class*='product-briefing' i], [class*='product-detail' i], main") || document.body;
+      priceRoot.querySelectorAll(
+        "[class*='price' i], [aria-label*='Rp'], span"
+      ).forEach((el) => {
         const t = (el.textContent || "").trim();
         if (/^Rp\s?\d{1,3}(?:\.\d{3})+$/.test(t)) {
           const n = parseInt(t.replace(/[^\d]/g, ""), 10);
@@ -392,6 +512,7 @@
         if (model) {
           const m = (window.RMPerf && RMPerf.matchTag)
             ? RMPerf.matchTag(product.name, cfg.__perf) : null;
+          if (m && m.tag) product.suggestedTag = m.tag;
           epcPred = RMEpc.predict(model, {
             tag: (m && m.tag) ? m.tag : null,        // .tag — matchTag returns an object
             breakEvenCpc: (cfg && cfg.breakEvenCPC) || 0
@@ -463,7 +584,7 @@
     lastAnalysis = a;
     RMStore.saveSnapshot({
       keyword: a.keyword, at: a.scrapedAt, marketSize: a.marketSize,
-      productCount: a.productCount, saturation: a.saturation
+      productCount: a.productCount
     });
 
     const panel = RMPanel.build(a, cfg);
@@ -476,7 +597,7 @@
     // it REPLACED the panel — which blanked the shortlist rendered into the first
     // one. One panel, one render.
     if (window.RMShortlist) {
-      RMShortlist.add(a.products, a.keyword || location.pathname)
+      RMShortlist.add(a.products, observedLabel(a))
         .then(() => renderShortlist(panel))
         .catch(() => renderShortlist(panel));
     } else {
@@ -523,6 +644,7 @@
   let suspended = false;
   let suspendDepth = 0;
   let shortlistExpanded = false;   // survives re-renders
+  let shortlistKeywordFilter = null; // latest successful bulk keyword batch
 
   function currentSignature() {
     const cards = RMScraper.findCards();

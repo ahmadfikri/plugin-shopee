@@ -33,31 +33,8 @@
     return product;
   }
 
-  async function fetchOne_DISABLED(product) {
-    const { shopid, itemid } = idsFrom(product);
-    if (!itemid) return product;
-    try {
-      const url = shopid
-        ? `https://shopee.co.id/api/v4/item/get?itemid=${itemid}&shopid=${shopid}`
-        : `https://shopee.co.id/api/v4/pdp/get_pc?item_id=${itemid}`;
-      const res = await fetch(url, { credentials: "include", headers: { "x-requested-with": "XMLHttpRequest" } });
-      if (!res.ok) return product;
-      const j = await res.json();
-      const d = (j && (j.data || (j.item && j.item))) || {};
-      const out = Object.assign({}, product);
-      if (d.item_rating && d.item_rating.rating_star != null)
-        out.rating = +d.item_rating.rating_star.toFixed ? +d.item_rating.rating_star.toFixed(2) : d.item_rating.rating_star;
-      if (d.item_rating && d.item_rating.rating_count)
-        out.reviewCount = Array.isArray(d.item_rating.rating_count) ? d.item_rating.rating_count[0] : d.item_rating.rating_count;
-      if (d.historical_sold != null) out.soldTotal = d.historical_sold;
-      if (d.stock != null) out.stock = d.stock;
-      if (d.ctime) out.ageMonths = Math.max(0, Math.round((Date.now() / 1000 - d.ctime) / (30 * 86400)));
-      if (d.shopid && d.is_official_shop != null) out.isOfficial = !!d.is_official_shop;
-      return out;
-    } catch (_) {
-      return product; // never throw — degrade gracefully
-    }
-  }
+  // No API implementation is retained here: detail data must come from the DOM
+  // of a product page the user opened themselves.
 
   // Throttled enrichment of the first N products (visible batch), so we don't
   // hammer Shopee. Returns a new products array.

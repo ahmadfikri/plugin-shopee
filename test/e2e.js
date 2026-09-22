@@ -131,18 +131,8 @@ for (const f of ["storage.js", "scraper.js", "proscore.js", "analytics.js", "ai.
   console.log("\n=== 2. ANALYZE ===");
   const cfg = await sandbox.RMStore.getConfig();
   const a = sandbox.RMAnalytics.analyze(snap, cfg);
-  console.log("Market Size:", a.marketSize.toLocaleString("id-ID"));
-  console.log("Price range:", a.priceMin, "-", a.priceMax, "| median", a.medianPrice);
-  console.log("Saturation:", a.saturation, "(" + a.top3Pct + "% top-3)");
-  console.log("Sweet-spot bucket:", a.sweetSpot ? (a.sweetSpot.lo + "-" + a.sweetSpot.hi) : "n/a");
-  console.log("\n  --- ADVANCED ---");
-  console.log("  Opportunity Score:", a.opportunityScore + "/100 ->", a.verdict);
-  console.log("  Breakdown:", JSON.stringify(a.scoreBreakdown));
-  console.log("  Quadrant:", a.quadrant);
-  console.log("  Est. affiliate profit/mo:", a.profitPerMonth.toLocaleString("id-ID"));
-  console.log("  Recommended entry price:", a.entryPrice ? a.entryPrice.toLocaleString("id-ID") : "n/a");
-  console.log("  Age dist:", JSON.stringify(a.ageDist));
-  console.log("\n  per-product verdicts:");
+  console.log("Products:", a.productCount, "| est. market demand:", a.marketSize.toLocaleString("id-ID"));
+  console.log("\n  per-product click economics:");
   a.products.forEach((p) =>
     console.log(`  - ${p.name.slice(0, 34).padEnd(34)} Rp${String(p.price).padStart(7)} | ` +
       `u/mo=${String(p.unitsPerMonth).padStart(5)} | rev/mo=${p.revenuePerMonth} | ` +

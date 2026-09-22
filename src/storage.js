@@ -8,9 +8,8 @@
     commissionPct: 3.5,        // Shopee affiliate commission % assumption
     breakEvenCPC: 100,         // Rp per click break-even target (Zaki-informed)
     conversionRate: 4.0,       // click -> order %, for value-per-click estimate
-    // --- opportunity scoring ---
-    saturationTop3Pct: 70,     // >= this % of omset held by top-3 shops => "jenuh"
-    momentumMaxAgeMonths: 3,   // listing younger than this ...
+    // --- demand timing (display aid, not a winner/kill decision) ---
+    momentumMaxAgeMonths: 3,
     momentumMinPerMonth: 100,  // ... but selling >= this/month => "momentum"
     // DeepSeek AI (caption + tag), off until a key is set.
     // captionPrompt/videoPrompt EMPTY = use the built-in templates in ai.js.

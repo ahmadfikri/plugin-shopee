@@ -113,3 +113,18 @@
 .rm-modal-hot .rm-out-ta { border-color: #9ae6b4; }
 .rm-vprompt { background: #6b3fa0; color: #fff; border: 0; border-radius: 6px;
   padding: 6px 12px; cursor: pointer; font-weight: 600; }
+.rm-exp { margin-top: 14px; padding: 10px 12px; border: 1px solid #cfe2ff;
+  background: #f4f8ff; border-radius: 8px; display: flex; align-items: center;
+  gap: 10px; font-size: 12px; flex-wrap: wrap; }
+.rm-exp b { color: #1f4e78; }
+.rm-exp span { color: #666; }
+.rm-exp code { font-size: 14px; font-weight: 700; color: #111; background: #fff;
+  border: 1px solid #b6d4fe; border-radius: 5px; padding: 4px 7px; }
+.rm-exp-copy, .rm-exp-new { border: 0; border-radius: 6px; padding: 6px 10px;
+  cursor: pointer; font-weight: 600; }
+.rm-exp-copy { background: #0a58ca; color: #fff; }
+.rm-exp-new { background: #e8e8e8; color: #333; }
+.rm-modal-hot .rm-exp { border-color: #9ae6b4; background: #f2fff6; }
+.rm-sort { border: 0; background: transparent; color: #9b3b2b; padding: 0 2px;
+  margin-left: 2px; cursor: pointer; font-size: 11px; line-height: 1; vertical-align: middle; }
+.rm-sort:hover { color: #ee4d2d; transform: scale(1.15); }

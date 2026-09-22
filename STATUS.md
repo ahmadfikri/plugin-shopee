@@ -1,6 +1,6 @@
-# syabab-affiliathor — STATUS (2026-09-13, akhir sesi)
+# syabab-affiliathor — STATUS (2026-09-21, v0.9.0)
 
-Chrome MV3 extension, 14 content script, self-contained (tanpa backend, tanpa
+Chrome MV3 extension, 20 content scripts, self-contained (tanpa backend, tanpa
 dependency npm). Verifikasi: `bash test/run-all.sh` → harus `SEMUA VERIFIKASI LULUS`.
 
 👉 **Sesi/device baru: baca `HANDOFF.md` lebih dulu.**
@@ -38,9 +38,25 @@ rating <3,8. Aksi: ≥70 IKLANKAN · ≥55 LAYAK COBA · ≥40 HATI-HATI · <40 
 7. **Prompt video Veo/Gemini** — 2 template (HANDS-ONLY+beat untuk barang yang bisa
    dipegang, presenter untuk lainnya), hook 3 detik jadi prioritas tertinggi,
    presenter dipilih AI sesuai target pasar, berupa PERINTAH siap-eksekusi.
-8. **Caption** — SATU caption + 8–12 hashtag (termasuk FYP), teks biasa, siap paste.
+8. **Caption** — SATU caption + 6–9 hashtag terstruktur, teks biasa, siap paste.
 9. **Admin Panel** — ekonomi, ambang, DeepSeek (key/model/prompt), impor snapshot.
 10. **Scheduler tahan-banting** — MAX_WAIT, re-entrancy guard, suspend, retry.
+11. **Experiment ID zero-typing (v0.9)** — satu ID otomatis = nama campaign Meta
+    = tag Shopee; caption/video reuse satu konsep+ID, `Eksperimen Baru` merotasi,
+    hipotesis otomatis masuk Learning Ledger.
+12. **Campaign Registry XLSX** — pipeline membuat `campaign_registry.xlsx`
+    otomatis saat dashboard rebuild; kolom manual aman, performa/alias direfresh.
+13. **Gemini fidelity contract** — maksimal 3 shot, identitas produk terkunci,
+    larangan morph/duplikasi/jari ekstra; casing mengunci rear hemisphere dan cutout.
+14. **Bulk keyword hardened** — selector input/tombol lokal, signature multi-card,
+    transition gate, stale-result skip, retry satu kali untuk React submit.
+15. **Latest-keyword lower table + Sort ↕** — setelah bulk keyword, tabel bawah
+    menampilkan batch terakhir (bukan top-20 global yang terlihat stale); tombol
+    kembali ke seluruh shortlist. Semua header bisa sort asc/desc.
+16. **Audit hardening selesai** — exact concept attribution, strict tag matching,
+    serialized storage writes + visible errors, escaped DOM/HTTP-only links,
+    correct array 4–5★, dead saturation scoring dan dead Shopee API dihapus,
+    detail price scan dipersempit.
 
 ## RIWAYAT PERBAIKAN PENTING (jangan diulang)
 - **Panel sering tidak muncul**: debounce di-reset tiap mutasi DOM (Shopee React SPA
@@ -66,6 +82,7 @@ yang dirujuk manifest ada · `e2e.js` (pipeline) · `e2e-feedback.js` (kalibrasi
 `e2e-shortlist.js` (bulk scan) · `e2e-scheduler.js` (determinisme).
 
 ## BELUM SELESAI
-Lihat `HANDOFF.md` §10 — ringkasnya: bulk scan belum diuji live, sold/bulan belum
-dibawa ke MODE A, umur listing & lokasi toko masih "?", nama toko di parent element,
-ikon placeholder, DeepSeek belum diuji live, Link Builder + Shopee Open API belum dibangun.
+Lihat `HANDOFF.md` §10 — ringkasnya: selector bulk perlu dipantau jika Shopee
+mengubah DOM, sold/bulan belum dibawa ke MODE A, umur listing & lokasi toko masih
+"?", nama toko di parent element, ikon placeholder, DeepSeek belum diuji live,
+dan pembuatan custom link Shopee via Open API belum dibangun.

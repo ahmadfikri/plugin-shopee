@@ -17,8 +17,7 @@
   </fieldset>
 
   <fieldset>
-    <legend>Skor Peluang</legend>
-    <label>Ambang saturasi — top-3 share (%) <input type="number" id="saturationTop3Pct"></label>
+    <legend>Momentum Produk (indikator tambahan)</legend>
     <label>Momentum: umur maks (bulan) <input type="number" id="momentumMaxAgeMonths"></label>
     <label>Momentum: min terjual/bln <input type="number" id="momentumMinPerMonth"></label>
   </fieldset>
@@ -52,12 +51,11 @@
 
   <fieldset>
     <legend>🧠 Learning Ledger — pelajaran tiap eksperimen</legend>
-    <p class="hint">Tiap kamu generate video/caption, plugin mencatat campaign tag +
-      konsep + ALASAN kamu coba (wajib). Saat kamu impor snapshot performa di atas,
-      plugin otomatis memvonis tiap campaign: <b>WINNER</b> vs <b>LEARNING COST</b>,
-      dan kalau learning cost — apakah <b>produk-salah</b> (CR rendah) atau
-      <b>creative-salah</b> (CR oke tapi klik mahal). Konten download TikTok bisa
-      dicatat manual lewat tombol "Catat campaign eksternal" di panel produk.</p>
+    <p class="hint">Tiap generate caption/video, plugin otomatis membuat satu
+      <b>Experiment ID</b> yang sama untuk nama campaign Meta + tag Shopee,
+      mencatat konsep dan hipotesis tanpa form manual. Saat snapshot performa
+      diimpor, plugin memvonis: <b>WINNER</b> vs <b>LEARNING COST</b>, lalu membedakan
+      <b>produk-salah</b> (CR rendah) dari <b>creative-salah</b> (CR oke, EPC kurang).</p>
     <div id="ledgerSummary" class="hint">Memuat…</div>
     <div class="bar">
       <button id="ledgerExport">⬇ Export CSV</button>

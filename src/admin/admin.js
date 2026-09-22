@@ -1,9 +1,12 @@
 /* admin.js — bind the Admin Panel form to plugin config in chrome.storage. */
 (function () {
   "use strict";
+  const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[c]);
   const $ = (id) => document.getElementById(id);
   const FIELDS = ["commissionPct", "breakEvenCPC", "conversionRate",
-    "saturationTop3Pct", "momentumMaxAgeMonths", "momentumMinPerMonth"];
+    "momentumMaxAgeMonths", "momentumMinPerMonth"];
 
   function load() {
     RMStore.getConfig().then((cfg) => {
@@ -50,12 +53,12 @@
     const g = snap.global || {};
     const w = (window.RMPerf ? RMPerf.winners(snap, 4) : []);
     box.innerHTML =
-      `<b>Snapshot aktif</b> (${snap.generatedAt || "?"}): ` +
+      `<b>Snapshot aktif</b> (${esc(snap.generatedAt || "?")}): ` +
       `${g.clicks || 0} klik · ${g.orders || 0} order · ` +
       `conversion ${g.conversionRate}% · <b>EPC Rp ${g.epc}</b> · ROAS ${g.roas}<br>` +
       `Tag terekam: ${Object.keys(snap.tags || {}).length}` +
       (w.length ? `<br>Winner: ` + w.map((x) =>
-        `${x.tag} (EPC Rp ${x.epc}, ROAS ${x.roas})`).join(" · ") : "");
+        `${esc(x.tag)} (EPC Rp ${x.epc}, ROAS ${x.roas})`).join(" · ") : "");
   }
 
   function perfImport() {
@@ -174,10 +177,10 @@
       `${rows.length - done.length} belum cukup data<br>`;
     const losing = Object.entries(L.losingCategories).sort((a,b)=>b[1]-a[1]).slice(0,4);
     if (losing.length) html += "<br><b>Pola kalah:</b> " +
-      losing.map(([k,n]) => `${k} (${n}x)`).join(" · ");
+      losing.map(([k,n]) => `${esc(k)} (${n}x)`).join(" · ");
     const winc = Object.entries(L.winningConcepts).sort((a,b)=>b[1]-a[1]).slice(0,3);
     if (winc.length) html += "<br><b>Konsep menang:</b> " +
-      winc.map(([k,n]) => `${k} (${n}x)`).join(" · ");
+      winc.map(([k,n]) => `${esc(k)} (${n}x)`).join(" · ");
     box.innerHTML = html;
   }
   function renderLedger() {

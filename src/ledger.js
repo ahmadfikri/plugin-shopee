@@ -12,10 +12,9 @@
  * his choice 2026-09-17, because realized EPC/ROAS only exists at tag level).
  *
  * TWO capture paths:
- *   A) generated in-plugin  -> tag + concept + product features + reasoning
- *      (reasoning MANDATORY, short is fine — his rule)
- *   B) external (TikTok download) -> manual "catat campaign eksternal": tag +
- *      reasoning, since it never passed through the generator.
+ *   A) generated in-plugin -> exact Experiment ID + concept + product features +
+ *      auto-generated hypothesis (zero typing)
+ *   B) historical/external entries may still exist from older plugin versions.
  *
  * On snapshot import we JOIN entries to per-tag performance and auto-classify
  * the failure mode — the single most valuable lesson:
@@ -30,6 +29,13 @@
   const KEY = "rm_ledger";
   const CAP = 3000;
 
+
+  let mutationQueue = Promise.resolve();
+  function serialized(task) {
+    const run = mutationQueue.then(task, task);
+    mutationQueue = run.catch(() => {});
+    return run;
+  }
   function today() { return new Date().toISOString().slice(0, 10); }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
@@ -43,12 +49,14 @@
     try { return JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (_) { return []; }
   }
   async function _set(v) {
-    try {
-      if (global.chrome && chrome.storage && chrome.storage.local) {
-        return await new Promise((r) => chrome.storage.local.set({ [KEY]: v }, () => r(true)));
-      }
-    } catch (_) {}
-    try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (_) {}
+    if (global.chrome && chrome.storage && chrome.storage.local) {
+      return new Promise((r, reject) => chrome.storage.local.set({ [KEY]: v }, () => {
+        const err = chrome.runtime && chrome.runtime.lastError;
+        if (err) reject(new Error("Learning Ledger gagal disimpan: " + err.message)); else r(true);
+      }));
+    }
+    localStorage.setItem(KEY, JSON.stringify(v));
+    return true;
   }
 
   /* Add an experiment entry.
@@ -63,13 +71,23 @@
    *   source    "plugin" | "external"
    *   product   { category, price, rating } snapshot of features at launch
    */
-  async function add(e) {
+  async function addUnsafe(e) {
     if (!e || !e.tag) return { error: "tag wajib." };
     const rows = await _get();
+    // Caption and video generation for one campaign reuse the same Experiment ID.
+    // Do not count that as two experiments in the learning ledger.
+    if (e.experimentId) {
+      const prior = rows.find((r) => r.experiment_id === e.experimentId);
+      if (prior) return { total: rows.length, entry: prior, reused: true };
+    }
     const entry = {
       id: uid(), day: today(), ts: Date.now(),
       tag: String(e.tag).trim(),
-      reasoning: e.reasoning ? String(e.reasoning).trim().slice(0, 200) : "",
+      experiment_id: e.experimentId || String(e.tag).trim(),
+      base_tag: e.baseTag || null,
+      product_name: (e.product && e.product.name) || null,
+      product_url: (e.product && e.product.href) || null,
+      reasoning: e.reasoning ? String(e.reasoning).trim().slice(0, 300) : "",
       concept: e.concept || null,
       source: e.source || "plugin",
       category: (e.product && (e.product.category || e.product.category_l1)) || null,
@@ -84,14 +102,15 @@
     return { total: rows.length, entry };
   }
 
+  function add(e) { return serialized(() => addUnsafe(e)); }
   async function all() { return _get(); }
-  async function clear() { await _set([]); return true; }
+  function clear() { return serialized(async () => { await _set([]); return true; }); }
 
   /* Join ledger entries to a performance snapshot and classify each.
    * snapshot.tags[tag] = { epc, roas, clicks, orders, conversionRate?, ... }
    * breakEvenCpc from config lets us split WRONG-PRODUCT vs WRONG-CREATIVE.
    * Returns the enriched entries AND writes verdicts back to storage. */
-  async function classify(snapshot, opts) {
+  async function classifyUnsafe(snapshot, opts) {
     const rows = await _get();
     if (!snapshot || !snapshot.tags) return rows;
     const breakEven = (opts && opts.breakEvenCpc) || 0;
@@ -130,6 +149,10 @@
     }
     await _set(rows);
     return rows;
+  }
+
+  function classify(snapshot, opts) {
+    return serialized(() => classifyUnsafe(snapshot, opts));
   }
 
   /* Human-readable lessons aggregated across classified entries.
@@ -177,7 +200,8 @@
   }
 
   function toCsv(rows) {
-    const head = ["day", "tag", "verdict", "failure_mode", "roas", "cr", "epc",
+    const head = ["day", "experiment_id", "tag", "base_tag", "product_name",
+                  "product_url", "verdict", "failure_mode", "roas", "cr", "epc",
                   "concept", "category", "price", "rating", "source", "reasoning"];
     const esc = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
     return head.join(",") + "\n" +

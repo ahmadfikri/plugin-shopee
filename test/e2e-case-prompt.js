@@ -47,6 +47,13 @@ const chk = (n, c, d) => { console.log(`${c ? "PASS" : "FAIL"}  ${n}${d ? "  " +
   chk("casing: menyebut alasan (casing di kedua sisi)", /KEDUA sisi/i.test(caseTxt));
   chk("casing: menyuruh digoyang/dimiringkan", /GOYANGKAN|miringkan/i.test(caseTxt));
   chk("casing: batasi orbit ~30 derajat", /30 derajat/.test(caseTxt));
+  chk("casing: kunci kamera di sisi belakang", /rear hemisphere/.test(caseTxt));
+  chk("casing: lubang kamera wajib stabil", /lubang kamera/.test(caseTxt));
+  chk("casing: hanya satu HP + casing", /SATU HP dengan SATU casing/.test(caseTxt));
+  chk("Gemini: reference image sumber kebenaran", /SATU-SATUNYA sumber kebenaran/.test(caseTxt));
+  chk("Gemini: larang morphing dan produk ganda", /tidak morphing/.test(caseTxt) && /Jangan menduplikasi produk/.test(caseTxt));
+  chk("Gemini: maksimal 3 shot", /Maksimal 3 shot/.test(caseTxt));
+  chk("Gemini: anatomi lima jari", /lima jari/.test(caseTxt));
   chk("casing: tetap HANDS-ONLY tanpa wajah", /TIDAK ADA wajah/.test(caseTxt));
   chk("casing: TIDAK ada instruksi putar 360 tanpa syarat",
       !/putar 360[,)]/.test(caseTxt) || /hanya jika produk BUKAN casing/.test(caseTxt));

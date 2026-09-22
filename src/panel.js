@@ -3,11 +3,25 @@
   "use strict";
   const { fmtRp, fmtNum, barChart, rankedBars } = global.RMCharts;
 
-  const VERDICT_CLASS = { "LAYAK": "rm-green", "HATI-HATI": "rm-yellow", "SUSAH": "rm-red", "?": "rm-grey" };
 
+  function esc(v) {
+    return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[c]);
+  }
+  function safeHref(v) {
+    try {
+      const u = new URL(String(v || ""), location.href);
+      return /^https?:$/.test(u.protocol) ? esc(u.href) : "";
+    } catch (_) { return ""; }
+  }
   function card(title, value, cls) {
     return `<div class="rm-card${cls ? " " + cls : ""}"><div class="rm-card-t">${title}</div>` +
            `<div class="rm-card-v">${value}</div></div>`;
+  }
+
+  function sortHead(label, col, type) {
+    return `<th>${label} <button class="rm-sort" data-col="${col}" data-type="${type || "text"}" title="Urutkan ${label}">↕</button></th>`;
   }
 
   function headerCards(a) {
@@ -29,7 +43,7 @@
     return `<div class="rm-verdict">${verdictLine} ` +
       `<b>${nGo} iklankan · ${nTry} coba · ${nSkip} lewati</b> dari ${scored.length} produk</div>` +
       `<div class="rm-cards">` +
-      card("Kandidat terbaik", best ? `${best.pro.pro} — ${best.name.slice(0, 22)}` : "—") +
+      card("Kandidat terbaik", best ? `${best.pro.pro} — ${esc(best.name.slice(0, 22))}` : "—") +
       card("Max CPC tertinggi", bestCpc ? "Rp" + fmtNum(bestCpc.pro.economics.maxProfitableCPC) : "—") +
       card("Komisi tertinggi", (() => {
         const c = scored.map((p) => p.pro.economics.commissionPct).filter((x) => x != null);
@@ -72,19 +86,21 @@
     const pro = p.pro || { pro: 0, action: "?", economics: {}, pillars: {} };
     const ec = pro.economics || {};
     const mom = p.momentum ? `<span class="rm-badge rm-green">🔥</span>` : "";
-    const gateTip = pro.gates && pro.gates.length ? ` title="${pro.gates.join("; ")}"` : "";
+    const gateTip = pro.gates && pro.gates.length ? ` title="${esc(pro.gates.join("; "))}"` : "";
     const rating = p.rating != null ? `⭐${p.rating}` : "";
+    const safeName = esc(p.name || "");
+    const safeId = esc(p.id || "");
     return `<tr>` +
-      `<td class="rm-name rm-drill" data-id="${p.id}" title="Klik untuk analisa mendalam: ${p.name}">${p.name.slice(0, 44)} ${mom} <span class="rm-drill-hint">🔍</span></td>` +
-      `<td>${fmtRp(p.price)}</td>` +
-      `<td>${ec.commissionPct != null ? ec.commissionPct + "%" : "?"}</td>` +
-      `<td>${p.unitsPerMonth != null ? fmtNum(p.unitsPerMonth) : "?"}</td>` +
-      `<td>${rating}</td>` +
-      `<td><b>Rp${fmtNum(ec.maxProfitableCPC || 0)}</b></td>` +
-      `<td><span class="rm-badge ${ACTION_CLASS[pro.action] || "rm-grey"}"${gateTip}>${pro.pro} ${pro.action}</span></td>` +
-      `<td>${epcCell(p.epcPred)}</td>` +
-      `<td class="rm-actions"><button class="rm-star" data-id="${p.id}">☆</button>` +
-      `<button class="rm-ai" data-id="${p.id}">✨</button></td>` +
+      `<td class="rm-name rm-drill" data-sort="${safeName}" data-id="${safeId}" title="Klik untuk analisa mendalam: ${safeName}">${esc((p.name || "").slice(0, 44))} ${mom} <span class="rm-drill-hint">🔍</span></td>` +
+      `<td data-sort="${p.price == null ? -1 : p.price}">${fmtRp(p.price)}</td>` +
+      `<td data-sort="${ec.commissionPct == null ? -1 : ec.commissionPct}">${ec.commissionPct != null ? ec.commissionPct + "%" : "?"}</td>` +
+      `<td data-sort="${p.unitsPerMonth == null ? -1 : p.unitsPerMonth}">${p.unitsPerMonth != null ? fmtNum(p.unitsPerMonth) : "?"}</td>` +
+      `<td data-sort="${p.rating == null ? -1 : p.rating}">${rating}</td>` +
+      `<td data-sort="${ec.maxProfitableCPC || 0}"><b>Rp${fmtNum(ec.maxProfitableCPC || 0)}</b></td>` +
+      `<td data-sort="${pro.pro || 0}"><span class="rm-badge ${ACTION_CLASS[pro.action] || "rm-grey"}"${gateTip}>${pro.pro} ${pro.action}</span></td>` +
+      `<td data-sort="${p.epcPred && p.epcPred.score != null ? p.epcPred.score : -1}">${epcCell(p.epcPred)}</td>` +
+      `<td class="rm-actions"><button class="rm-star" data-id="${safeId}">☆</button>` +
+      `<button class="rm-ai" data-id="${safeId}">✨</button></td>` +
       `</tr>`;
   }
 
@@ -111,11 +127,11 @@
       .slice()
       .sort((x, y) => ((y.pro && y.pro.pro) || 0) - ((x.pro && x.pro.pro) || 0))
       .map(productRow).join("");
-    return `<table class="rm-table"><thead><tr>` +
-      `<th>Produk</th><th>Harga</th><th>Komisi</th><th>Terjual/bln</th><th>Rating</th>` +
-      `<th title="CPC maksimum yang masih untung">Max CPC</th>` +
-      `<th title="Skor pro 0-100 + rekomendasi aksi">PRO SCORE</th>` +
-      `<th title="Prediksi EPC (Empirical Bayes) — angka = % peluang untung, di bawahnya Rp/klik prediksi">EPC SCORE</th>` +
+    return `<table class="rm-table rm-sortable"><thead><tr>` +
+      sortHead("Produk", 0, "text") + sortHead("Harga", 1, "number") +
+      sortHead("Komisi", 2, "number") + sortHead("Terjual/bln", 3, "number") +
+      sortHead("Rating", 4, "number") + sortHead("Max CPC", 5, "number") +
+      sortHead("PRO SCORE", 6, "number") + sortHead("EPC SCORE", 7, "number") +
       `<th></th></tr></thead>` +
       `<tbody>${rows}</tbody></table>` +
       `<div class="rm-note">Max CPC = batas biaya/klik yang masih untung (komisi × konversi). ` +
@@ -140,6 +156,9 @@
     const wrap = document.createElement("div");
     wrap.className = "rm-modal-bg";
     const d = detail || {};
+    const safeName = esc(d.name || product.name || "");
+    const href = safeHref(product.href);
+    const safeId = esc(product.id || "");
     const proVal = (pro && pro.pro) || 0;
     // PRO >= 75 -> green "hot pick" theme (75 itself counts as hot)
     const modalClass = proVal >= 75 ? "rm-modal rm-modal-hot" : "rm-modal";
@@ -148,10 +167,10 @@
     const ec = (pro && pro.economics) || {};
     wrap.innerHTML =
       `<div class="${modalClass}">` +
-      `<div class="rm-modal-head"><b>${d.name || product.name}</b>` +
+      `<div class="rm-modal-head"><b>${safeName}</b>` +
       `<button class="rm-modal-x">✕</button></div>` +
       `<div class="rm-modal-body">` +
-      (d.error ? `<div class="rm-note">Detail gagal dimuat: ${d.error}. Data kartu tetap dipakai.</div>` : "") +
+      (d.error ? `<div class="rm-note">Detail gagal dimuat: ${esc(d.error)}. Data kartu tetap dipakai.</div>` : "") +
       `<div class="rm-cards">` +
       card("PRO SCORE", (pro ? pro.pro + " " + pro.action : "?")) +
       (epc ? card("EPC SCORE", epc.score + " " + epc.action,
@@ -187,14 +206,16 @@
       (pro ? Object.entries(pro.pillars).map(([k, v]) =>
         `<div class="rm-pillar"><span>${k}</span><div class="rm-star-track"><div class="rm-star-fill" style="width:${v}%"></div></div><span>${v}</span></div>`).join("") : "") +
       `</div>` +
-      (pro && pro.gates && pro.gates.length ? `<div class="rm-note">⚠ ${pro.gates.join("; ")}</div>` : "") +
+      (pro && pro.gates && pro.gates.length ? `<div class="rm-note">⚠ ${esc(pro.gates.join("; "))}</div>` : "") +
+      `<div class="rm-exp"><b>Campaign Meta = Tag Shopee</b><span>Generate caption/video untuk membuat ID otomatis.</span></div>` +
       `<div class="rm-foot">` +
-      (product.href ? `<a class="rm-export" href="${product.href}" target="_blank">Buka di Shopee ↗</a> ` : "") +
-      (global.RMVideo && global.RMVideo.hasVideo() ? `<button class="rm-video" data-id="${product.id}">⬇ Video</button> ` : "") +
-      `<button class="rm-vprompt" data-id="${product.id}">🎬 Prompt Video</button> ` +
-      `<button class="rm-star2" data-id="${product.id}">⭐ Simpan</button>` +
-      `<button class="rm-ai2" data-id="${product.id}">✨ Caption</button>` +
-      `<button class="rm-capture" data-id="${product.id}" title="Data produk ini sudah dikumpulkan otomatis. Klik untuk menyegarkan/memastikan tersimpan.">💾 Refresh Data Training</button>` +
+      (href ? `<a class="rm-export" href="${href}" target="_blank" rel="noopener">Buka di Shopee ↗</a> ` : "") +
+      (global.RMVideo && global.RMVideo.hasVideo() ? `<button class="rm-video" data-id="${safeId}">⬇ Video</button> ` : "") +
+      `<button class="rm-vprompt" data-id="${safeId}">🎬 Prompt Video</button> ` +
+      `<button class="rm-exp-new" data-id="${safeId}" title="Buat ID baru dan rotasi ke konsep berikutnya">＋ Eksperimen Baru</button> ` +
+      `<button class="rm-star2" data-id="${safeId}">⭐ Simpan</button>` +
+      `<button class="rm-ai2" data-id="${safeId}">✨ Caption</button>` +
+      `<button class="rm-capture" data-id="${safeId}" title="Data produk ini sudah dikumpulkan otomatis. Klik untuk menyegarkan/memastikan tersimpan.">💾 Refresh Data Training</button>` +
       `</div>` +
       `<div class="rm-out" style="display:none"></div></div></div>`;
     return wrap;
@@ -216,7 +237,7 @@
       : x.epcScore >= 35 ? "rm-yellow" : "rm-red";
     const tip = `Prediksi Rp${fmtNum(x.epc)}/klik ` +
       `(rentang Rp${fmtNum(x.epcLow)}–Rp${fmtNum(x.epcHigh)}), keyakinan ${x.epcConfidence}` +
-      (x.epcTag ? `, dari riwayat tag "${x.epcTag}"` : ", prior global (produk baru)");
+      (x.epcTag ? `, dari riwayat tag &quot;${esc(x.epcTag)}&quot;` : ", prior global (produk baru)");
     return `<span class="rm-badge ${cls}" title="${tip}">${x.epcScore}</span>` +
       `<div class="rm-epc-sub">Rp${fmtNum(x.epc)}/klik · ${x.epcConfidence}</div>`;
   }
@@ -224,24 +245,30 @@
   function shortlistRow(x, i) {
     const cls = ACTION_CLASS[x.action] || "rm-grey";
     const basisIcon = x.basis === "tag" ? "✅" : x.basis === "global" ? "~" : "⚠️";
-    const nm = x.href
-      ? `<a href="${x.href}" target="_blank" class="rm-sl-link">${(x.name || "").slice(0, 46)}</a>`
-      : (x.name || "").slice(0, 46);
+    const href = safeHref(x.href);
+    const safeName = esc(x.name || "");
+    const safeKeyword = esc(x.keyword || "");
+    const nm = href
+      ? `<a href="${href}" target="_blank" rel="noopener" class="rm-sl-link">${esc((x.name || "").slice(0, 46))}</a>`
+      : esc((x.name || "").slice(0, 46));
     return `<tr>` +
-      `<td class="rm-sl-rank">${i + 1}</td>` +
-      `<td class="rm-name">${nm}</td>` +
-      `<td>${x.price != null ? fmtRp(x.price) : "?"}</td>` +
-      `<td>${x.commissionPct != null ? x.commissionPct + "%" : "?"}</td>` +
-      `<td><b>Rp${fmtNum(x.maxCPC || 0)}</b> ${basisIcon}</td>` +
-      `<td>${shortlistEpcCell(x)}</td>` +
-      `<td><span class="rm-badge ${cls}">${x.pro} ${x.action}</span></td>` +
-      `<td class="rm-sl-kw">${(x.keyword || "").slice(0, 18)}</td>` +
+      `<td class="rm-sl-rank" data-sort="${i + 1}">${i + 1}</td>` +
+      `<td class="rm-name" data-sort="${safeName}">${nm}</td>` +
+      `<td data-sort="${x.price == null ? -1 : x.price}">${x.price != null ? fmtRp(x.price) : "?"}</td>` +
+      `<td data-sort="${x.commissionPct == null ? -1 : x.commissionPct}">${x.commissionPct != null ? x.commissionPct + "%" : "?"}</td>` +
+      `<td data-sort="${x.maxCPC || 0}"><b>Rp${fmtNum(x.maxCPC || 0)}</b> ${basisIcon}</td>` +
+      `<td data-sort="${x.epcScore == null ? -1 : x.epcScore}">${shortlistEpcCell(x)}</td>` +
+      `<td data-sort="${x.pro || 0}"><span class="rm-badge ${cls}">${x.pro} ${x.action}</span></td>` +
+      `<td class="rm-sl-kw" data-sort="${safeKeyword}">${esc((x.keyword || "").slice(0, 18))}</td>` +
       `</tr>`;
   }
 
-  function shortlistSection(meta, expanded) {
-    const items = (meta && meta.items) || [];
-    if (!items.length) {
+  function shortlistSection(meta, expanded, filterKeyword) {
+    const allItems = (meta && meta.items) || [];
+    const items = filterKeyword
+      ? allItems.filter((x) => String(x.keyword || "") === String(filterKeyword))
+      : allItems;
+    if (!allItems.length) {
       return `<div class="rm-sl">` +
         `<div class="rm-sl-head"><b>🗂 Shortlist Kumulatif</b>` +
         `<span class="rm-sub">belum ada isinya</span>` +
@@ -264,11 +291,12 @@
 
     return `<div class="rm-sl">` +
       `<div class="rm-sl-head">` +
-      `<b>🗂 Shortlist Kumulatif</b> ` +
-      `<span class="rm-sl-stat">${s.total} produk · ${meta.scans || 0} scan · ` +
+      `<b>${filterKeyword ? `🔎 Hasil terakhir: ${esc(String(filterKeyword).replace(/^cari:\s*/, ""))}` : "🗂 Shortlist Kumulatif"}</b> ` +
+      `<span class="rm-sl-stat">${items.length} ditampilkan · ${allItems.length} total · ${meta.scans || 0} scan · ` +
       `<span class="rm-green">${s.iklankan} iklankan</span> · ` +
       `<span class="rm-yellow">${s.coba} coba</span> · ` +
       `<span class="rm-red">${s.skip} lewati</span></span>` +
+      (filterKeyword ? `<button class="rm-sl-all">Lihat seluruh shortlist</button>` : "") +
       `<button class="rm-sl-toggle">${expanded ? "Tampilkan 20 teratas" : "Tampilkan semua (" + s.total + ")"}</button>` +
       `<button class="rm-sl-bulk">▶ Bulk Scan Semua Kategori</button>` +
       `<label class="rm-sl-opt"><input type="checkbox" class="rm-sl-pages"> + halaman berikutnya</label>` +
@@ -281,10 +309,12 @@
       `<button class="rm-sl-kwscan">🔎 Bulk Scan Keyword</button>` +
       `</div>` +
       `<div class="rm-sl-progress" style="display:none"></div>` +
-      `<table class="rm-table rm-sl-table"><thead><tr>` +
-      `<th>#</th><th>Produk</th><th>Harga</th><th>Komisi</th><th>Max CPC</th>` +
-      `<th title="Prediksi EPC (Empirical Bayes): angka = % peluang untung">EPC</th>` +
-      `<th>PRO</th><th>Dari kata kunci</th></tr></thead><tbody>` +
+      `<table class="rm-table rm-sl-table rm-sortable"><thead><tr>` +
+      sortHead("#", 0, "number") + sortHead("Produk", 1, "text") +
+      sortHead("Harga", 2, "number") + sortHead("Komisi", 3, "number") +
+      sortHead("Max CPC", 4, "number") + sortHead("EPC", 5, "number") +
+      sortHead("PRO", 6, "number") + sortHead("Dari kata kunci", 7, "text") +
+      `</tr></thead><tbody>` +
       list.map(shortlistRow).join("") +
       `</tbody></table>` +
       (!expanded && hiddenCount > 0
@@ -297,7 +327,7 @@
     wrap.className = "rm-panel";
     wrap.innerHTML =
       `<div class="rm-head"><span class="rm-logo">📊 Riset Market</span>` +
-      `<span class="rm-kw">"${a.keyword}"</span>` +
+      `<span class="rm-kw">"${esc(a.keyword)}"</span>` +
       `<button class="rm-toggle">${cfg.panelCollapsed ? "Tampilkan" : "Sembunyikan"}</button></div>` +
       `<div class="rm-body" ${cfg.panelCollapsed ? 'style="display:none"' : ""}>` +
       headerCards(a) + charts(a, cfg) + productTable(a) +
