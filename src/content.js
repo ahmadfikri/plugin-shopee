@@ -539,6 +539,8 @@
           const m = (window.RMPerf && RMPerf.matchTag)
             ? RMPerf.matchTag(product.name, cfg.__perf) : null;
           if (m && m.tag) product.suggestedTag = m.tag;
+          // Cost per click, not the product's earnings ceiling — see the matching
+          // note in analytics.js.
           epcPred = RMEpc.predict(model, {
             tag: (m && m.tag) ? m.tag : null,        // .tag — matchTag returns an object
             breakEvenCpc: (cfg && cfg.breakEvenCPC) || 0

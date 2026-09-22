@@ -124,6 +124,7 @@
       epc, epc_low: low, epc_high: high, se,
       basis,                       // 'tag' | 'global'
       clicks,
+      kEff: model.K,               // shrinkage strength used by score()
       confidence: conf,
       breakEvenCpc: breakEven,
       pProfit,                     // 0..1 or null
@@ -144,13 +145,36 @@
   // NOT another arbitrary weighting: it is a monotone transform of P(profit)
   // (when breakeven known) or of EPC vs global (when not), so the score is a
   // faithful ranking of expected profitability, with a readable action band.
+  /* Score 0..100 for ranking products.
+   *
+   * This used to be P(EPC > breakEvenCpc) x 100, which sounds rigorous and is
+   * useless in practice: `se` is the standard error of the MEAN, so it shrinks
+   * with clicks, and the normal CDF then saturates on the thinnest margin.
+   * Measured against the real snapshot (60 tags, 21k clicks): 59% of possible
+   * outcomes landed at >=95 or <=5, only 19 distinct values existed, and a tag
+   * earning Rp107.5 against a Rp100 click cost — a 7% margin — scored a perfect
+   * 100. A column that reads 100 down the page cannot rank anything.
+   *
+   * The score now reports MARGIN, which is the actual decision: 50 = earnings
+   * exactly cover the click, 100 = earnings are twice the click cost, 0 = the
+   * click earns nothing. pProfit is kept on the prediction for the drill-down,
+   * because "how sure are we" is still worth showing — just not as the ranking.
+   */
   function score(pred) {
+    const be = pred.breakEvenCpc || 0;
     let s;
-    if (pred.pProfit != null) {
-      s = Math.round(pred.pProfit * 100);        // score = probability of profit
+    if (be > 0) {
+      s = clamp(pred.epc / be, 0, 2) / 2 * 100;
+      // Thin evidence must not shout. Shrink toward break-even in proportion to
+      // how much this tag was actually observed, so an unseen product sits near
+      // neutral instead of inheriting a confident-looking number from the prior.
+      const k = pred.kEff > 0 ? pred.kEff : 30;
+      const obs = pred.clicks || 0;
+      const w = clamp(obs / (obs + k), 0, 1);
+      s = Math.round(50 + (s - 50) * (0.35 + 0.65 * w));
     } else {
-      // no breakeven: rank by EPC relative to 2x global (100 = twice the average earner)
-      s = Math.round(clamp(pred.epc / (2 * (pred.epc_global || pred.epc || 1)), 0, 1) * 100);
+      // No click cost configured: refuse to invent a ranking.
+      s = 50;
     }
     if (pred.zeroConverter) s = Math.min(s, 15);   // proven loser cap
     let action;

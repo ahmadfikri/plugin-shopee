@@ -113,7 +113,11 @@ echo "=== 21. Test: kolom 'Dari kata kunci' tidak pernah berisi URL path ==="
 node test/e2e-observed-label.js || fail=1
 
 echo
-echo "=== 22. Test: BROWSER NYATA — bulk keyword scan end-to-end ==="
+echo "=== 22. Test: properti skor EPC — tidak boleh kolaps jadi konstanta ==="
+node test/e2e-epc-score.js || fail=1
+
+echo
+echo "=== 23. Test: BROWSER NYATA — bulk keyword scan end-to-end ==="
 echo "    (Chromium asli + extension di-load; bukan stub. Ini satu-satunya test"
 echo "     yang bisa menangkap bug seperti seluruh halaman kolaps jadi 1 produk.)"
 node test/e2e-browser-bulk.js || fail=1

@@ -81,6 +81,11 @@
           const m = (global.RMPerf && global.RMPerf.matchTag)
             ? global.RMPerf.matchTag(p.name, snap) : null;
           const tag = m && m.tag ? m.tag : null;
+          // breakEven here is deliberately the CONFIGURED cost per click, not the
+          // product's maxProfitableCPC. maxProfitableCPC is a ceiling on earnings
+          // (commission x conversion), so scoring EPC against it would compare
+          // earnings with earnings and land every product near neutral. The
+          // decision is earnings per click versus what a click actually costs.
           const pred = global.RMEpc.predict(epcModel, { tag, breakEvenCpc: breakEven });
           const sc = global.RMEpc.score(pred);
           pred.score = sc.score;
