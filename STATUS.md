@@ -81,6 +81,39 @@ rating <3,8. Aksi: ≥70 IKLANKAN · ≥55 LAYAK COBA · ≥40 HATI-HATI · <40 
 yang dirujuk manifest ada · `e2e.js` (pipeline) · `e2e-feedback.js` (kalibrasi) ·
 `e2e-shortlist.js` (bulk scan) · `e2e-scheduler.js` (determinisme).
 
+## RENCANA PENGERASAN (kerja otonom, mulai 23 Sep 2026)
+Perintah Fikri: "semua fitur dan functionality core harus consistent dan zero bug,
+fitur bulk search paling penting". Ledger sesi tidak reachable di install ini, jadi
+DAFTAR INI adalah state yang bertahan. Urutan dikerjakan dari atas.
+
+Prinsipnya: setiap fitur inti harus punya test di BROWSER NYATA, bukan stub Node.
+Stub tidak pernah bisa menangkap kolaps-anchor, race render, atau ringkasan scan
+yang terhapus — tiga bug yang baru ditemukan begitu test browser pertama ada.
+
+- [x] bulk keyword scan — `test/e2e-browser-bulk.js` (v0.9.1)
+- [x] skor EPC tidak boleh kolaps — `test/e2e-epc-score.js` (v0.9.2)
+- [ ] bulk scan SEMUA KATEGORI di browser nyata: pindah tab, "+ halaman
+      berikutnya", tombol Stop benar-benar menghentikan, label kategori tersimpan
+      per tab, tidak ada batch yang saling menimpa
+- [ ] tabel & kontrol panel di browser nyata: sort ↕ tiap kolom (asc/desc, angka
+      vs teks), "Tampilkan semua" / "Tampilkan 20 teratas", "Kosongkan" minta
+      konfirmasi dan benar-benar mengosongkan
+- [ ] Export CSV di browser nyata: file benar-benar terbentuk, kolom lengkap,
+      nama produk yang mengandung koma/kutip tidak merusak kolom
+- [ ] modal detail di browser nyata: terbuka dari tabel, harga/rating terbaca,
+      ditutup bersih, tidak menghapus panel (regresi lama)
+- [ ] Experiment ID di browser nyata: caption+video memakai SATU id, tombol
+      Eksperimen Baru memutar konsep, id tersimpan dan muncul di ledger sekali
+- [ ] realisme fixture: `test/fixtures/shopee-offer.html` dibangun dari kontrak
+      selector, BUKAN dari dump Shopee asli. Selama itu belum diganti dump nyata,
+      test browser membuktikan kontrak plugin sendiri — bukan bahwa markup Shopee
+      belum berubah. Minta Fikri satu dump HTML halaman Product Offer.
+
+Aturan rilis: tiap perubahan → `bash test/run-all.sh` harus hijau semua → bump
+`manifest.json` → commit → tag `vX.Y.Z` → push branch `integration` + tag.
+Branch `main` tidak bisa dipush oleh agen (policy), Fikri menjalankan sendiri:
+`git push origin main:main` setelah fast-forward dari `integration`.
+
 ## BELUM SELESAI
 Lihat `HANDOFF.md` §10 — ringkasnya: selector bulk perlu dipantau jika Shopee
 mengubah DOM, sold/bulan belum dibawa ke MODE A, umur listing & lokasi toko masih
