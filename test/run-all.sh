@@ -125,6 +125,10 @@ node test/e2e-browser-bulk.js || fail=1
 echo
 echo "=== 24. Test: BROWSER NYATA — bulk scan semua kategori ==="
 node test/e2e-browser-category.js || fail=1
+
+echo
+echo "=== 25. Test: BROWSER NYATA — sort tabel (angka vs teks, toggle) ==="
+node test/e2e-browser-sort.js || fail=1
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else
