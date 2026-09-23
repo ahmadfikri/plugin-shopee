@@ -133,6 +133,10 @@ node test/e2e-browser-sort.js || fail=1
 echo
 echo "=== 26. Test: BROWSER NYATA — export CSV (koma/kutip di nama) ==="
 node test/e2e-browser-csv.js || fail=1
+
+echo
+echo "=== 27. Test: BROWSER NYATA — modal detail (panel tidak blank) ==="
+node test/e2e-browser-modal.js || fail=1
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else
