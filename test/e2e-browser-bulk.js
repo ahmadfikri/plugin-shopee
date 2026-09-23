@@ -108,37 +108,42 @@ function loadPlaywright() {
     // one scan per keyword actually happened, on top of the initial page scan
     const stat = (await page.textContent(".rm-sl-stat")) || "";
     const scans = (stat.match(/(\d+)\s*scan/) || [])[1];
-    assert.strictEqual(scans, "3",
-      "harus 1 scan halaman awal + 2 scan keyword, dapat: " + stat);
+    // Bulk Scan Keyword now CLEARS the shortlist on start (Fikri: hasil baru tidak
+    // boleh nyampur scan lama), so only the 2 keyword scans remain — the initial
+    // page scan is wiped.
+    assert.strictEqual(scans, "2",
+      "auto-clear lalu 2 scan keyword, dapat: " + stat);
 
     // 4. the lower table must show the LAST batch, not the global ranking
     const head = (await page.textContent(".rm-sl-head")) || "";
-    assert(/Hasil terakhir:\s*casing iphone/.test(head),
+    assert(/🔎\s*casing iphone/.test(head),
       "tabel bawah harus fokus ke batch keyword terakhir, dapat: " + head.slice(0, 160));
 
     const rows = await page.$$eval(".rm-sl-table tbody tr", (trs) =>
       trs.map((tr) => ({
         name: (tr.children[1] && tr.children[1].textContent || "").trim(),
-        kw: (tr.children[7] && tr.children[7].textContent || "").trim()
+        kw: (tr.children[8] && tr.children[8].textContent || "").trim()
       })));
     assert(rows.length > 0, "batch terakhir tidak menghasilkan baris apa pun");
     assert(rows.every((r) => /casing iphone/i.test(r.name)),
       "ada produk dari batch lain yang bocor ke tampilan batch terakhir: " +
       JSON.stringify(rows.slice(0, 3)));
 
-    // 5. THE BUG FROM THE SCREEN RECORDING: never a URL path in this column
+    // 5. THE BUG FROM THE SCREEN RECORDING: never a URL path in this column.
+    // Display strips the internal "cari: " prefix for readability (opsi B), so
+    // the column shows the bare keyword — assert it is the keyword, not a path.
     for (const r of rows) {
       assert(!/\/offer|product_off|^\//.test(r.kw),
-        "kolom 'Dari kata kunci' berisi URL path: " + JSON.stringify(r));
-      assert(/^cari:/.test(r.kw),
-        "batch keyword harus berlabel 'cari: …', dapat: " + JSON.stringify(r));
+        "kolom 'Kata kunci' berisi URL path: " + JSON.stringify(r));
+      assert(/casing iphone/i.test(r.kw),
+        "batch keyword harus berlabel kata kuncinya, dapat: " + JSON.stringify(r));
     }
 
     // 6. the escape hatch back to the full cumulative shortlist works
     await page.click(".rm-sl-all");
     await page.waitForFunction(() => {
       const h = document.querySelector(".rm-sl-head");
-      return h && /Shortlist Kumulatif/.test(h.textContent || "");
+      return h && /Riset Produk/.test(h.textContent || "");
     }, { timeout: 15000 });
 
     const allRows = await page.$$eval(".rm-sl-table tbody tr", (t) => t.length);
@@ -151,10 +156,10 @@ function loadPlaywright() {
     //    its storage. Going through the UI is also what the user actually sees.
     const labels = await page.$$eval(".rm-sl-table tbody tr", (trs) =>
       [...new Set(trs.map((tr) =>
-        (tr.children[7] && tr.children[7].textContent || "").trim()))]);
-    assert(labels.some((l) => /^cari: tumbler/.test(l)),
+        (tr.children[8] && tr.children[8].textContent || "").trim()))]);
+    assert(labels.some((l) => /^tumbler/.test(l)),
       "batch keyword pertama hilang dari shortlist, label yang ada: " + JSON.stringify(labels));
-    assert(labels.some((l) => /^cari: casing iph/.test(l)),
+    assert(labels.some((l) => /^casing iph/.test(l)),
       "batch keyword kedua hilang dari shortlist, label yang ada: " + JSON.stringify(labels));
     assert(!labels.some((l) => /\/offer|product_off/.test(l)),
       "shortlist masih menyimpan URL path sebagai keyword: " + JSON.stringify(labels));

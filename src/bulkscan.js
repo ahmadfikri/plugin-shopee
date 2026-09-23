@@ -17,6 +17,11 @@
 (function (global) {
   "use strict";
 
+  // Hard ceiling on how many products one keyword bulk scan will analyse across
+  // all its result pages. Keeps a huge keyword ("case") from running away and
+  // from hammering Shopee's anti-bot. (Fikri: maksimal 200 produk.)
+  const MAX_ANALYZE = 200;
+
   let running = false;
   let stopRequested = false;
 
@@ -360,8 +365,36 @@
         done++;
         lastKeyword = "cari: " + kw;
         report({ phase: "scan", label: kw, index: i + 1, of: keywords.length, total,
-                 note: `${result.cards} produk baru selesai render` });
+                 note: `${result.cards} produk baru selesai render (hal 1)` });
         await sleep(delay);
+
+        // Walk THIS keyword's result pages (pagination "1 2 3 4 5 …"), not just
+        // page 1. Fikri: untuk keyword spesifik, ikuti halaman berikutnya, bukan
+        // pindah tab. Hard cap MAX_ANALYZE (200) products total so a huge result
+        // set never runs away or hammers Shopee's anti-bot.
+        for (let pg = 2; total < MAX_ANALYZE && !stopRequested; pg++) {
+          const next = findNextPage();
+          if (!next) break;                       // no more pages for this keyword
+          const prevP = signature();
+          try { next.click(); } catch (_) { break; }
+          const pageResult = await waitForSearchResult(prevP, 15000);
+          if (stopRequested || pageResult.stopped) break;
+          if (!pageResult.ready) {
+            report({ phase: "skip", label: kw + " · hal " + pg, index: i + 1,
+                     of: keywords.length, total, note: "halaman berikutnya tidak terverifikasi" });
+            break;
+          }
+          total = await scrapeAndStore("cari: " + kw, cfg);
+          report({ phase: "scan", label: kw + " · hal " + pg, index: i + 1,
+                   of: keywords.length, total,
+                   note: `${pageResult.cards} produk (hal ${pg}) · total ${total}/${MAX_ANALYZE}` });
+          await sleep(delay);
+        }
+        if (total >= MAX_ANALYZE) {
+          report({ phase: "scan", label: kw, index: i + 1, of: keywords.length, total,
+                   note: `batas ${MAX_ANALYZE} produk tercapai — berhenti menelusuri halaman` });
+          break;   // cap reached: stop scanning further keywords too
+        }
       }
 
       report({ phase: stopRequested ? "stopped" : "done", total,

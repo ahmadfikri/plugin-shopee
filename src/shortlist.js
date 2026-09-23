@@ -62,6 +62,8 @@
           action: p.pro.action,
           maxCPC: ec.maxProfitableCPC != null ? ec.maxProfitableCPC : null,
           basis: ec.basis || "formula",
+          rating: p.rating != null ? p.rating : null,
+          unitsPerMonth: p.unitsPerMonth != null ? p.unitsPerMonth : null,
           gated: !!(p.pro.gates && p.pro.gates.length),
           // ---- EPC prediction (null when no snapshot imported) ----
           epcScore: ep ? ep.score : null,
@@ -151,7 +153,7 @@
     const head = ["epcScore", "epcAction", "epc", "epcLow", "epcHigh",
                   "epcConfidence", "epcBasis", "epcTag", "epcZero",
                   "pro", "action", "name", "price", "commissionPct", "maxCPC",
-                  "basis", "keyword", "href"];
+                  "basis", "rating", "unitsPerMonth", "keyword", "href"];
     const esc = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
     const rows = ranked(items, 0).map((x) => head.map((k) => esc(x[k])).join(","));
     return head.join(",") + "\n" + rows.join("\n");

@@ -95,7 +95,7 @@ function batch(keyword, n, startId, priceBase) {
   console.log(`  icon sort          : ${(filtered.match(/rm-sort/g) || []).length}`);
   assert.strictEqual(rows(filtered), 25, "lower table must show latest keyword batch");
   assert(!/tumbler produk/.test(filtered), "old keyword rows must be hidden in latest view");
-  assert(/Hasil terakhir: casing hp/.test(filtered));
+  assert(/🔎 casing hp/.test(filtered));
   assert(/rm-sl-all/.test(filtered));
   assert((filtered.match(/class="rm-sort"/g) || []).length >= 8);
 

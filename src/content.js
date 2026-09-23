@@ -73,7 +73,10 @@
     const myToken = ++shortlistRenderToken;
     RMShortlist.getMeta().then((meta) => {
       if (myToken !== shortlistRenderToken) return;   // superseded — do not paint
-      host.innerHTML = RMPanel.shortlistSection(meta, isOpen, shortlistKeywordFilter);
+      // pageLabel = the label products from the CURRENTLY OPEN page carry, so the
+      // "Halaman ini" toggle can filter the one cumulative table down to them.
+      const pageLabel = lastAnalysis ? observedLabel(lastAnalysis) : "";
+      host.innerHTML = RMPanel.shortlistSection(meta, isOpen, shortlistKeywordFilter, pageLabel);
       // The progress line lives inside this host, so every re-render destroys it.
       // A finished scan re-rendered immediately, which wiped its own summary
       // ("Selesai — 2/2 kata kunci") microseconds after writing it: the user
@@ -87,6 +90,9 @@
       if (t) t.addEventListener("click", () => renderShortlist(panel, !isOpen));
       const all = host.querySelector(".rm-sl-all");
       if (all) all.addEventListener("click", () => renderShortlist(panel, false, null));
+      const pageBtn = host.querySelector(".rm-sl-page");
+      if (pageBtn) pageBtn.addEventListener("click", () =>
+        renderShortlist(panel, true, pageBtn.getAttribute("data-label") || null));
       const ex = host.querySelector(".rm-sl-export");
       if (ex) ex.addEventListener("click", () => {
         const csv = RMShortlist.toCsv(meta.items || []);
@@ -185,6 +191,10 @@
         }
         kwScan.disabled = true; kwScan.textContent = "⏳ Memindai…";
         shortlistNote = "";     // a new scan must not show the previous summary
+        // Fikri: pencet Bulk Scan Keyword -> bersihkan dulu daftar lama, biar
+        // hasil scan baru tidak nyampur/rusuh dengan produk scan sebelumnya.
+        try { if (window.RMShortlist) await RMShortlist.clear(); } catch (_) {}
+        shortlistKeywordFilter = null;   // start from a clean, unfiltered view
         if (stopBtn) stopBtn.style.display = "";
         if (prog) prog.style.display = "block";
         suspend();
@@ -284,7 +294,17 @@
       if (drill) {
         const id = drill.getAttribute("data-id");
         const p = lastAnalysis && lastAnalysis.products.find((x) => x.id === id);
-        if (!p) return;
+        if (!p) {
+          // Row is from an EARLIER page (bulk scan history), so we do not hold a
+          // full product object with rendered detail. Deep analysis needs the
+          // rendered product page — open it in Shopee rather than showing an
+          // empty modal.
+          const entry = await shortlistEntry(id);
+          const href = entry && entry.href;
+          if (href) window.open(href, "_blank", "noopener");
+          else alert("Produk ini dari scan halaman lain — buka lewat 🔗 untuk analisa mendalam.");
+          return;
+        }
         // open modal immediately with a loading state, then fill with detail
         document.querySelectorAll(".rm-modal-bg").forEach((n) => n.remove());
         let modal = RMPanel.buildDetailModal(p, { error: null }, p.pro, p.epcPred);
@@ -299,9 +319,20 @@
       }
 
       const id = e.target.getAttribute && e.target.getAttribute("data-id");
-      if (!id || !lastAnalysis) return;
-      const p = lastAnalysis.products.find((x) => x.id === id);
-      if (!p) return;
+      if (!id) return;
+      // Prefer the full product object from the current page; fall back to the
+      // stored shortlist entry (minimal shape) for rows from earlier scans.
+      let p = lastAnalysis && lastAnalysis.products.find((x) => x.id === id);
+      if (!p) {
+        const entry = await shortlistEntry(id);
+        if (!entry) return;
+        p = {
+          id: entry.id, name: entry.name, price: entry.price, href: entry.href,
+          rating: entry.rating, unitsPerMonth: entry.unitsPerMonth,
+          revenuePerMonth: null,
+          pro: { action: entry.action, pro: entry.pro, economics: {} }
+        };
+      }
 
       if (e.target.classList.contains("rm-star")) {
         let tag = "";
@@ -325,6 +356,16 @@
         e.target.textContent = "✨";
       }
     });
+  }
+
+  // Look up one stored shortlist entry by id (for action buttons on rows that
+  // came from an earlier page and are not in lastAnalysis).
+  async function shortlistEntry(id) {
+    if (!id || !window.RMShortlist) return null;
+    try {
+      const items = await RMShortlist.getAll();
+      return (items || []).find((x) => String(x.id) === String(id)) || null;
+    } catch (_) { return null; }
   }
 
   // Render generated text into the modal's shared output area, copy-ready.

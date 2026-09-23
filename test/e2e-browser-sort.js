@@ -50,20 +50,21 @@ const desc = (a) => a.every((v, i) => i === 0 || a[i - 1] >= v);
     page.on("pageerror", (e) => errors.push(String(e)));
 
     await page.goto(URL, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector(".rm-table", { timeout: 20000 });
+    await page.waitForSelector(".rm-sl-table tbody tr", { timeout: 20000 });
 
-    // main product table: it has >1 row from the 12-product landing page
-    const priceColHeader = await page.$$eval(".rm-panel .rm-table thead th",
+    // single merged research table (opsi B): product-table lama sudah dibuang,
+    // sort sekarang diuji pada .rm-sl-table.
+    const priceColHeader = await page.$$eval(".rm-sl-table thead th",
       (ths) => ths.findIndex((t) => /Harga/.test(t.textContent || "")));
-    assert(priceColHeader >= 0, "kolom Harga tidak ditemukan di tabel utama");
+    assert(priceColHeader >= 0, "kolom Harga tidak ditemukan di tabel");
 
     const readCol = (col) => page.$$eval(
-      ".rm-panel .rm-table:not(.rm-sl-table) tbody tr",
+      ".rm-sl-table tbody tr",
       (trs, c) => trs.map((tr) => (tr.children[c] && tr.children[c].textContent || "").trim()),
       col);
 
     // click the Harga sort button once -> descending
-    const sortBtns = await page.$$(".rm-panel .rm-table:not(.rm-sl-table) thead .rm-sort");
+    const sortBtns = await page.$$(".rm-sl-table thead .rm-sort");
     assert(sortBtns.length >= 5, "tombol sort tidak ada di setiap kolom, dapat " + sortBtns.length);
     await sortBtns[priceColHeader].click();
     await page.waitForTimeout(150);
@@ -81,19 +82,19 @@ const desc = (a) => a.every((v, i) => i === 0 || a[i - 1] >= v);
     prices = nums(await readCol(priceColHeader));
     assert(asc(prices), "sort kedua harus menaik (asc) & numerik: " + prices.join(","));
     const arrow2 = await page.$eval(
-      `.rm-panel .rm-table:not(.rm-sl-table) thead .rm-sort[data-col="${priceColHeader}"]`,
+      `.rm-sl-table thead .rm-sort[data-col="${priceColHeader}"]`,
       (b) => b.textContent);
     assert(/↑/.test(arrow2), "panah harus ↑ setelah sort asc, dapat: " + arrow2);
 
     // only ONE column may show an active arrow at a time
-    const active = await page.$$eval(".rm-panel .rm-table:not(.rm-sl-table) thead .rm-sort",
+    const active = await page.$$eval(".rm-sl-table thead .rm-sort",
       (bs) => bs.filter((b) => b.hasAttribute("data-dir")).length);
     assert.strictEqual(active, 1, "hanya satu kolom boleh aktif ter-sort, dapat " + active);
 
     // text column sorts lexically (Produk = col of the name)
-    const nameCol = await page.$$eval(".rm-panel .rm-table:not(.rm-sl-table) thead th",
+    const nameCol = await page.$$eval(".rm-sl-table thead th",
       (ths) => ths.findIndex((t) => /Produk/.test(t.textContent || "")));
-    await page.click(`.rm-panel .rm-table:not(.rm-sl-table) thead .rm-sort[data-col="${nameCol}"]`);
+    await page.click(`.rm-sl-table thead .rm-sort[data-col="${nameCol}"]`);
     await page.waitForTimeout(150);
     const names = await readCol(nameCol);
     const sorted = [...names].sort((a, b) => b.localeCompare(a, "id-ID"));

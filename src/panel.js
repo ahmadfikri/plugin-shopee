@@ -82,62 +82,6 @@
     "LEWATI": "rm-red", "HINDARI": "rm-red"
   };
 
-  function productRow(p) {
-    const pro = p.pro || { pro: 0, action: "?", economics: {}, pillars: {} };
-    const ec = pro.economics || {};
-    const mom = p.momentum ? `<span class="rm-badge rm-green">🔥</span>` : "";
-    const gateTip = pro.gates && pro.gates.length ? ` title="${esc(pro.gates.join("; "))}"` : "";
-    const rating = p.rating != null ? `⭐${p.rating}` : "";
-    const safeName = esc(p.name || "");
-    const safeId = esc(p.id || "");
-    return `<tr>` +
-      `<td class="rm-name rm-drill" data-sort="${safeName}" data-id="${safeId}" title="Klik untuk analisa mendalam: ${safeName}">${esc((p.name || "").slice(0, 44))} ${mom} <span class="rm-drill-hint">🔍</span></td>` +
-      `<td data-sort="${p.price == null ? -1 : p.price}">${fmtRp(p.price)}</td>` +
-      `<td data-sort="${ec.commissionPct == null ? -1 : ec.commissionPct}">${ec.commissionPct != null ? ec.commissionPct + "%" : "?"}</td>` +
-      `<td data-sort="${p.unitsPerMonth == null ? -1 : p.unitsPerMonth}">${p.unitsPerMonth != null ? fmtNum(p.unitsPerMonth) : "?"}</td>` +
-      `<td data-sort="${p.rating == null ? -1 : p.rating}">${rating}</td>` +
-      `<td data-sort="${ec.maxProfitableCPC || 0}"><b>Rp${fmtNum(ec.maxProfitableCPC || 0)}</b></td>` +
-      `<td data-sort="${pro.pro || 0}"><span class="rm-badge ${ACTION_CLASS[pro.action] || "rm-grey"}"${gateTip}>${pro.pro} ${pro.action}</span></td>` +
-      `<td data-sort="${p.epcPred && p.epcPred.score != null ? p.epcPred.score : -1}">${epcCell(p.epcPred)}</td>` +
-      `<td class="rm-actions"><button class="rm-star" data-id="${safeId}">☆</button>` +
-      `<button class="rm-ai" data-id="${safeId}">✨</button></td>` +
-      `</tr>`;
-  }
-
-  // EPC cell for the listing table. When no snapshot is imported we say so
-  // EXPLICITLY rather than rendering an empty cell — a blank column looks like a
-  // broken feature, and the real cause is "Feedback Loop belum diimpor".
-  function epcCell(pred) {
-    if (!pred) {
-      return `<span class="rm-badge rm-grey" title="Impor snapshot performa di Admin Panel → Feedback Loop supaya prediksi EPC aktif">— impor snapshot</span>`;
-    }
-    const cls = pred.zeroConverter ? "rm-red"
-      : pred.score >= 65 ? "rm-green"
-      : pred.score >= 50 ? "rm-yellow"
-      : pred.score >= 35 ? "rm-yellow" : "rm-red";
-    const tip = `Prediksi EPC Rp${fmtNum(Math.round(pred.epc))}/klik ` +
-      `(rentang Rp${fmtNum(Math.round(pred.epc_low))}–Rp${fmtNum(Math.round(pred.epc_high))}), ` +
-      `keyakinan ${pred.confidence}, basis ${pred.basis === "tag" ? "riwayat tag" : "prior global"}`;
-    return `<span class="rm-badge ${cls}" title="${tip}">${pred.score} ${pred.action}</span>` +
-      `<div class="rm-epc-sub">Rp${fmtNum(Math.round(pred.epc))}/klik · ${pred.confidence}</div>`;
-  }
-
-  function productTable(a) {
-    const rows = a.products
-      .slice()
-      .sort((x, y) => ((y.pro && y.pro.pro) || 0) - ((x.pro && x.pro.pro) || 0))
-      .map(productRow).join("");
-    return `<table class="rm-table rm-sortable"><thead><tr>` +
-      sortHead("Produk", 0, "text") + sortHead("Harga", 1, "number") +
-      sortHead("Komisi", 2, "number") + sortHead("Terjual/bln", 3, "number") +
-      sortHead("Rating", 4, "number") + sortHead("Max CPC", 5, "number") +
-      sortHead("PRO SCORE", 6, "number") + sortHead("EPC SCORE", 7, "number") +
-      `<th></th></tr></thead>` +
-      `<tbody>${rows}</tbody></table>` +
-      `<div class="rm-note">Max CPC = batas biaya/klik yang masih untung (komisi × konversi). ` +
-      `Jangan bayar iklan di atas angka ini. Rating/umur dari data publik Shopee (best-effort).</div>`;
-  }
-
   // ---- drill-down modal: deep per-product analysis ----
   function starBars(breakdown, total) {
     if (!breakdown || !breakdown.length || !total) return "<div class='rm-sub'>Rincian rating tidak tersedia</div>";
@@ -247,23 +191,31 @@
     const basisIcon = x.basis === "tag" ? "✅" : x.basis === "global" ? "~" : "⚠️";
     const href = safeHref(x.href);
     const safeName = esc(x.name || "");
+    const safeId = esc(x.id || "");
     const safeKeyword = esc(x.keyword || "");
-    const nm = href
-      ? `<a href="${href}" target="_blank" rel="noopener" class="rm-sl-link">${esc((x.name || "").slice(0, 46))}</a>`
-      : esc((x.name || "").slice(0, 46));
+    const rating = x.rating != null ? `⭐${x.rating}` : "";
+    // Name is a DRILL target (deep-analysis modal), same as the old product
+    // table. It carries data-id so content.js can resolve the product; the
+    // Shopee link moves into the 🔗 action button so the name stays clickable
+    // for drill-down.
     return `<tr>` +
       `<td class="rm-sl-rank" data-sort="${i + 1}">${i + 1}</td>` +
-      `<td class="rm-name" data-sort="${safeName}">${nm}</td>` +
+      `<td class="rm-name rm-drill" data-sort="${safeName}" data-id="${safeId}" title="Klik untuk analisa mendalam: ${safeName}">${esc((x.name || "").slice(0, 44))} <span class="rm-drill-hint">🔍</span></td>` +
       `<td data-sort="${x.price == null ? -1 : x.price}">${x.price != null ? fmtRp(x.price) : "?"}</td>` +
       `<td data-sort="${x.commissionPct == null ? -1 : x.commissionPct}">${x.commissionPct != null ? x.commissionPct + "%" : "?"}</td>` +
+      `<td data-sort="${x.rating == null ? -1 : x.rating}">${rating}</td>` +
       `<td data-sort="${x.maxCPC || 0}"><b>Rp${fmtNum(x.maxCPC || 0)}</b> ${basisIcon}</td>` +
       `<td data-sort="${x.epcScore == null ? -1 : x.epcScore}">${shortlistEpcCell(x)}</td>` +
       `<td data-sort="${x.pro || 0}"><span class="rm-badge ${cls}">${x.pro} ${x.action}</span></td>` +
-      `<td class="rm-sl-kw" data-sort="${safeKeyword}">${esc((x.keyword || "").slice(0, 18))}</td>` +
+      `<td class="rm-sl-kw" data-sort="${safeKeyword}">${esc((x.keyword || "").replace(/^cari:\s*/, "").slice(0, 16))}</td>` +
+      `<td class="rm-actions">` +
+      (href ? `<a class="rm-sl-open" href="${href}" target="_blank" rel="noopener" title="Buka di Shopee">🔗</a>` : "") +
+      `<button class="rm-star" data-id="${safeId}" title="Simpan ke watchlist">☆</button>` +
+      `<button class="rm-ai" data-id="${safeId}" title="Generate caption">✨</button></td>` +
       `</tr>`;
   }
 
-  function shortlistSection(meta, expanded, filterKeyword) {
+  function shortlistSection(meta, expanded, filterKeyword, pageLabel) {
     const allItems = (meta && meta.items) || [];
     const items = filterKeyword
       ? allItems.filter((x) => String(x.keyword || "") === String(filterKeyword))
@@ -283,20 +235,25 @@
         `<div class="rm-sl-progress" style="display:none"></div>` +
         `</div>`;
     }
-    const s = global.RMShortlist ? RMShortlist.stats(items) : { total: items.length };
+    const s = global.RMShortlist ? global.RMShortlist.stats(items) : { total: items.length };
     const list = global.RMShortlist
-      ? RMShortlist.ranked(items, expanded ? 0 : SHORT_TOP)
+      ? global.RMShortlist.ranked(items, expanded ? 0 : SHORT_TOP)
       : items.slice(0, SHORT_TOP);
     const hiddenCount = items.length - list.length;
 
     return `<div class="rm-sl">` +
       `<div class="rm-sl-head">` +
-      `<b>${filterKeyword ? `🔎 Hasil terakhir: ${esc(String(filterKeyword).replace(/^cari:\s*/, ""))}` : "🗂 Shortlist Kumulatif"}</b> ` +
+      `<b>${filterKeyword ? `🔎 ${esc(String(filterKeyword).replace(/^cari:\s*/, ""))}` : "🗂 Riset Produk (kumulatif)"}</b> ` +
       `<span class="rm-sl-stat">${items.length} ditampilkan · ${allItems.length} total · ${meta.scans || 0} scan · ` +
       `<span class="rm-green">${s.iklankan} iklankan</span> · ` +
       `<span class="rm-yellow">${s.coba} coba</span> · ` +
       `<span class="rm-red">${s.skip} lewati</span></span>` +
-      (filterKeyword ? `<button class="rm-sl-all">Lihat seluruh shortlist</button>` : "") +
+      // "Halaman ini" filters to products from the page currently open; "Semua"
+      // clears back to the whole cumulative research list. Shown only when we
+      // know the current page's label and are not already filtered to it.
+      (pageLabel && !filterKeyword
+        ? `<button class="rm-sl-page" data-label="${esc(pageLabel)}">Halaman ini</button>` : "") +
+      (filterKeyword ? `<button class="rm-sl-all">Semua produk</button>` : "") +
       `<button class="rm-sl-toggle">${expanded ? "Tampilkan 20 teratas" : "Tampilkan semua (" + s.total + ")"}</button>` +
       `<button class="rm-sl-bulk">▶ Bulk Scan Semua Kategori</button>` +
       `<label class="rm-sl-opt"><input type="checkbox" class="rm-sl-pages"> + halaman berikutnya</label>` +
@@ -312,8 +269,9 @@
       `<table class="rm-table rm-sl-table rm-sortable"><thead><tr>` +
       sortHead("#", 0, "number") + sortHead("Produk", 1, "text") +
       sortHead("Harga", 2, "number") + sortHead("Komisi", 3, "number") +
-      sortHead("Max CPC", 4, "number") + sortHead("EPC", 5, "number") +
-      sortHead("PRO", 6, "number") + sortHead("Dari kata kunci", 7, "text") +
+      sortHead("Rating", 4, "number") + sortHead("Max CPC", 5, "number") +
+      sortHead("EPC", 6, "number") + sortHead("PRO", 7, "number") +
+      sortHead("Kata kunci", 8, "text") + `<th></th>` +
       `</tr></thead><tbody>` +
       list.map(shortlistRow).join("") +
       `</tbody></table>` +
@@ -330,7 +288,7 @@
       `<span class="rm-kw">"${esc(a.keyword)}"</span>` +
       `<button class="rm-toggle">${cfg.panelCollapsed ? "Tampilkan" : "Sembunyikan"}</button></div>` +
       `<div class="rm-body" ${cfg.panelCollapsed ? 'style="display:none"' : ""}>` +
-      headerCards(a) + charts(a, cfg) + productTable(a) +
+      headerCards(a) + charts(a, cfg) +
       `<div class="rm-sl-host"></div>` +
       `<div class="rm-note">Angka Terjual/bln & Omset = ESTIMASI dari data publik Shopee, bukan angka resmi. Untuk arah, bukan presisi.</div>` +
       `<div class="rm-foot"><button class="rm-export">⬇ Export watchlist (CSV)</button></div>` +
