@@ -59,7 +59,87 @@
       const n = document.querySelector(s);
       if (n && !/disabled/i.test(n.className || "")) return n;
     }
+    // Fallback: a chevron inside whatever container holds the page numbers. The
+    // Product Offer page has no antd pagination classes and no aria-label, which
+    // is exactly why the keyword crawl used to stop after page 1.
+    const box = findPaginationContainer();
+    if (box) {
+      const chevron = Array.from(box.querySelectorAll("span,button,a,li,i,div"))
+        .filter((el) => el.children.length === 0 && el.offsetParent !== null &&
+                        !isPluginNode(el))
+        .find((el) => /^(›|»|>|next|berikutnya)$/i.test((el.textContent || "").trim()) ||
+                      /next/i.test(el.className || ""));
+      if (chevron && !/disabled/i.test(chevron.className || "")) {
+        return chevron.closest("li,button,a,[role='button']") || chevron;
+      }
+    }
     return null;
+  }
+
+  /* Locate the element that holds the page numbers ("1 2 3 4 5 …").
+   * Identified STRUCTURALLY rather than by class name: find visible leaf nodes
+   * whose entire text is a small integer, then pick the ancestor that contains
+   * the most of them. Shopee ships no stable pagination class here, so matching
+   * on markup names is what kept failing.
+   *
+   * CRITICAL: our OWN panel is excluded. The research table renders a rank column
+   * (1, 2, 3 … 20), which are numeric leaves too and outnumber the real pager —
+   * so the detector picked the plugin's own <tbody>, "clicked" a rank cell, and
+   * the crawl reported "halaman berikutnya tidak terverifikasi". */
+  function isPluginNode(el) {
+    return !!(el.closest && el.closest(".rm-panel, .rm-modal-bg, .rm-diag, .rm-sl"));
+  }
+
+  function findPaginationContainer() {
+    const leaves = Array.from(document.querySelectorAll("li,button,a,span,div"))
+      .filter((el) => el.children.length === 0 && el.offsetParent !== null &&
+                      /^\d{1,3}$/.test((el.textContent || "").trim()) &&
+                      !isPluginNode(el));
+    if (leaves.length < 3) return null;
+    const score = new Map();
+    for (const el of leaves) {
+      let p = el.parentElement;
+      for (let up = 0; p && up < 3; up++, p = p.parentElement) {
+        if (isPluginNode(p)) break;
+        score.set(p, (score.get(p) || 0) + 1);
+      }
+    }
+    let best = null, bestN = 0;
+    for (const [el, n] of score) {
+      if (n > bestN) { bestN = n; best = el; }
+    }
+    // Need several consecutive-looking page numbers to call it pagination.
+    return bestN >= 3 ? best : null;
+  }
+
+  /* The control for ONE specific page number, e.g. page 3. Clicking the number
+   * is what a human does and survives icon/markup churn far better than trying
+   * to identify which glyph is the "next" chevron. */
+  function findPageButton(n) {
+    const box = findPaginationContainer();
+    if (!box) return null;
+    const want = String(n);
+    const el = Array.from(box.querySelectorAll("li,button,a,span,div"))
+      .find((x) => x.children.length === 0 && x.offsetParent !== null &&
+                   !isPluginNode(x) && (x.textContent || "").trim() === want);
+    if (!el) return null;
+    if (/disabled/i.test(el.className || "")) return null;
+    return el.closest("li,button,a,[role='button']") || el;
+  }
+
+  /* The control for ONE specific page number, e.g. page 3. Clicking the number
+   * is what a human does and survives icon/markup churn far better than trying
+   * to identify which glyph is the "next" chevron. */
+  function findPageButton(n) {
+    const box = findPaginationContainer();
+    if (!box) return null;
+    const want = String(n);
+    const el = Array.from(box.querySelectorAll("li,button,a,span,div"))
+      .find((x) => x.children.length === 0 && x.offsetParent !== null &&
+                   (x.textContent || "").trim() === want);
+    if (!el) return null;
+    if (/disabled/i.test(el.className || "")) return null;
+    return el.closest("li,button,a,[role='button']") || el;
   }
 
   function signature() {
@@ -409,7 +489,9 @@
         // consecutive pages that added nothing.
         let noProgress = 0;
         for (let pg = 2; total < MAX_ANALYZE && pg <= MAX_PAGES + 1 && !stopRequested; pg++) {
-          const next = findNextPage();
+          // Click the PAGE NUMBER first (what a human does); fall back to a
+          // next/chevron control when the number is outside the visible window.
+          const next = findPageButton(pg) || findNextPage();
           if (!next) break;                       // no more pages for this keyword
           const prevP = signature();
           try { next.click(); } catch (_) { break; }
@@ -459,7 +541,9 @@
   }
 
   global.RMBulk = { run, runKeywords, stop, isRunning, findCategoryTabs,
-                    findTabByLabel, findNextPage, findSearchInput, findSearchButton,
+                    findTabByLabel, findNextPage, findPageButton,
+                    findPaginationContainer, findSearchInput, findSearchButton,
                     waitForRender, waitForSearchResult, currentLabel,
+                    MAX_ANALYZE, MAX_PAGES,
                     _signature: signature };
 })(typeof window !== "undefined" ? window : this);

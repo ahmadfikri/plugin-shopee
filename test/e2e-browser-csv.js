@@ -23,9 +23,9 @@ const EXT = path.resolve(__dirname, "..");
 // Fixture with one hostile product name (comma + quote + newline-ish text).
 let FIXTURE = fs.readFileSync(__dirname + "/fixtures/shopee-offer.html", "utf8");
 FIXTURE = FIXTURE.replace(
-  'render("", 12);',
+  'render("", 12, 1);',
   // inject a product whose NAME would break a naive CSV writer
-  'render("", 12); (function(){var g=document.getElementById("grid");' +
+  'render("", 12, 1); (function(){var g=document.getElementById("grid");' +
   'var a=document.createElement("a");' +
   'a.href="https://shopee.co.id/evil-i.777.7";' +
   'a.innerHTML=\'<div class="ItemCard__contentSection">\' +' +

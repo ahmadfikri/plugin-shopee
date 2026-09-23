@@ -107,6 +107,10 @@ echo "=== 19b. Test: REGRESSI node 'loading' nyangkut tidak menggantung keyword 
 node test/e2e-loading-guard.js || fail=1
 
 echo
+echo "=== 19c. Test: BROWSER NYATA — keyword scan menelusuri halaman 2,3 (pager non-antd) ==="
+node test/e2e-browser-pagination.js || fail=1
+
+echo
 
 echo
 echo "=== 20. Test: concept win-rate hanya dari exact Experiment ID ==="

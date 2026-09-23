@@ -27,6 +27,12 @@
   .ant-tabs-tab { display: inline-block; padding: 4px 10px; }
   .ant-tabs-tab-active { font-weight: 700; border-bottom: 2px solid #ee4d2d; }
   a { text-decoration: none; color: inherit; }
+  /* Numbered pagination, deliberately NOT antd markup ("‹ 1 2 3 ›"), because the
+     real Product Offer page does not expose .ant-pagination-next — that is why
+     the crawl used to stop after page 1. */
+  .pager { margin-top: 12px; }
+  .pager span { display: inline-block; padding: 4px 9px; cursor: pointer; }
+  .pager .active { color: #ee4d2d; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -43,6 +49,7 @@
 
 <div id="spin" class="ant-spin-spinning" style="display:none">memuat…</div>
 <div id="grid" class="grid"></div>
+<div id="pager" class="pager"></div>
 
 <script>
 (function () {
@@ -62,7 +69,12 @@
 
   function priceFor(i) { return (19 + i * 7) * 1000; }
 
-  function render(keyword, n) {
+  var PAGES = 3;            // each keyword has 3 result pages, like the real page
+  var curKeyword = "";
+  var curPage = 1;
+
+  function render(keyword, n, page) {
+    page = page || 1;
     var grid = document.getElementById("grid");
     grid.innerHTML = "";
     var slug = (keyword || "default").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
@@ -72,31 +84,74 @@
     // and hid whether storage really keeps batches apart.
     var ns = 0;
     for (var c = 0; c < slug.length; c++) ns = (ns * 31 + slug.charCodeAt(c)) % 99991;
+    // Page offset keeps every page's items DISTINCT, so a crawl that never
+    // advances past page 1 is visible as a missing product count rather than
+    // silently looking the same.
+    var off = (page - 1) * n;
     for (var i = 1; i <= n; i++) {
+      var idx = off + i;
       var a = document.createElement("a");
       // Real Shopee shape: …-i.<shopid>.<itemid>
-      a.href = "https://shopee.co.id/" + slug + "-item-" + i + "-i." + ns + "." + (ns * 100 + i);
+      a.href = "https://shopee.co.id/" + slug + "-item-" + idx + "-i." + ns + "." + (ns * 100 + idx);
       a.innerHTML =
         '<div class="ItemCard__contentSection">' +
-          '<div class="ItemCard__name">' + (keyword ? keyword + " " : "") + 'produk ' + i + '</div>' +
+          '<div class="ItemCard__name">' + (keyword ? keyword + " " : "") + 'produk ' + idx + '</div>' +
           '<div class="ItemCard__price"><span class="price">Rp' +
-             priceFor(i).toLocaleString("id-ID") + '</span></div>' +
-          '<div class="ItemCardSold__wrap">' + (i * 150) + ' terjual</div>' +
+             priceFor(idx).toLocaleString("id-ID") + '</span></div>' +
+          '<div class="ItemCardSold__wrap">' + (idx * 150) + ' terjual</div>' +
           '<div class="commRate">' + (4 + i) + '.5%</div>' +
         '</div>';
       grid.appendChild(a);
     }
+    renderPager();
+  }
+
+  // Numbered pager: leaf <span> per page number plus ‹ › chevrons. No antd
+  // classes, no aria-label — exactly the shape that defeated the old
+  // findNextPage() and left the crawl stuck on page 1.
+  function renderPager() {
+    var pager = document.getElementById("pager");
+    if (!curKeyword) { pager.innerHTML = ""; return; }
+    var html = '<span class="prev">‹</span>';
+    for (var p = 1; p <= PAGES; p++) {
+      html += '<span class="pg' + (p === curPage ? " active" : "") + '">' + p + '</span>';
+    }
+    html += '<span class="next">›</span>';
+    pager.innerHTML = html;
+    Array.prototype.forEach.call(pager.querySelectorAll(".pg"), function (el) {
+      el.addEventListener("click", function () {
+        var want = parseInt(el.textContent, 10);
+        if (want === curPage) return;
+        goToPage(want);
+      });
+    });
+    pager.querySelector(".next").addEventListener("click", function () {
+      if (curPage < PAGES) goToPage(curPage + 1);
+    });
+  }
+
+  function goToPage(p) {
+    curPage = p;
+    var spin = document.getElementById("spin");
+    document.getElementById("grid").innerHTML = "";
+    spin.style.display = "block";
+    setTimeout(function () {
+      spin.style.display = "none";
+      render(curKeyword, 8, curPage);
+    }, 500);
   }
 
   function search() {
     var kw = committed.trim();
     if (!kw) return;
+    curKeyword = kw;
+    curPage = 1;
     var spin = document.getElementById("spin");
     document.getElementById("grid").innerHTML = "";
     spin.style.display = "block";           // visible spinner = real transition
     setTimeout(function () {
       spin.style.display = "none";
-      render(kw, 8);
+      render(kw, 8, 1);
     }, 600);
   }
 
@@ -105,7 +160,7 @@
     if (e.key === "Enter" || e.keyCode === 13) search();
   });
 
-  render("", 12);   // the landing page already lists products, like Shopee does
+  render("", 12, 1);   // the landing page already lists products, like Shopee does
 })();
 </script>
 </body>
