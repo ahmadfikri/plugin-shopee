@@ -115,6 +115,7 @@
         if (!tabs.length && !confirm(
             "Tidak menemukan tab kategori di halaman ini. Pindai halaman ini saja?")) return;
         bulk.disabled = true; bulk.textContent = "⏳ Memindai…";
+        shortlistNote = "";     // a new crawl must not show the previous summary
         if (stopBtn) stopBtn.style.display = "";
         if (prog) prog.style.display = "block";
         // CRITICAL: stop the DOM observer from rebuilding the panel while the
@@ -133,14 +134,27 @@
               } else if (s.phase === "skip") {
                 prog.textContent = `Lewati ${s.label} (${s.note}) — ${s.total} produk`;
               } else {
-                prog.textContent = (s.note || s.phase) +
+                // Terminal line (done / stopped / start-with-no-tabs). Persist it
+                // so the re-render in finally does not wipe the summary the user
+                // waited for — same fix as the keyword scan path.
+                shortlistNote = (s.note || s.phase) +
                   (s.total != null ? ` — total ${s.total} produk` : "");
+                prog.textContent = shortlistNote;
               }
             }
           });
-          if (r && r.error && prog) prog.textContent = r.error;
+          if (r && r.error && prog) {
+            shortlistNote = r.error;
+            prog.textContent = shortlistNote;
+          } else if (r && !shortlistNote && prog) {
+            // A crawl that only ever emitted "scan" phases still deserves a
+            // readable ending instead of the last mid-scan line.
+            shortlistNote = `Selesai — total ${r.total} produk dari semua kategori.`;
+            prog.textContent = shortlistNote;
+          }
         } catch (err) {
-          if (prog) prog.textContent = "Gagal: " + (err && err.message || err);
+          shortlistNote = "Gagal: " + (err && err.message || err);
+          if (prog) prog.textContent = shortlistNote;
         } finally {
           resume();
           lastSig = "";   // page moved while suspended; allow a fresh scan

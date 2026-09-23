@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--
+  Category-tab variant of the Product Offer fixture, for test/e2e-browser-category.js.
+  Built from the same selector contract as shopee-offer.html, plus:
+    * multiple .ant-tabs-tab, one active — findCategoryTabs()/findTabByLabel()
+    * clicking a tab REPLACES the tab nodes (React churn) and re-renders results
+      with DISTINCT products, so a held node reference goes stale (the real
+      "bulk scan error setelah search" bug) and a batch that overwrites another
+      is detectable.
+    * a spinner between renders so waitForChange has a real transition.
+-->
+<html lang="id"><head><meta charset="utf-8"><title>Product Offer</title>
+<style>
+  body{font-family:system-ui,sans-serif;margin:0;padding:16px}
+  .grid{display:flex;flex-wrap:wrap;gap:8px}
+  .ItemCard__contentSection{border:1px solid #ddd;padding:8px;width:220px}
+  .ant-tabs-tab{display:inline-block;padding:4px 10px;cursor:pointer}
+  .ant-tabs-tab-active{font-weight:700;border-bottom:2px solid #ee4d2d}
+  a{text-decoration:none;color:inherit}
+</style></head>
+<body>
+<div class="ant-tabs" id="tabs"></div>
+<div id="spin" class="ant-spin-spinning" style="display:none">memuat…</div>
+<div id="grid" class="grid"></div>
+<script>
+(function () {
+  var CATS = ["All", "Mobile", "Home", "Beauty"];
+  var active = "All";
+
+  function ns(s){var n=0;for(var i=0;i<s.length;i++)n=(n*31+s.charCodeAt(i))%99991;return n;}
+
+  function renderTabs() {
+    // Rebuild tab nodes every time — this is the React churn that made a held
+    // node reference go stale. findTabByLabel must re-find by text each turn.
+    var host = document.getElementById("tabs");
+    host.innerHTML = "";
+    CATS.forEach(function (c) {
+      var d = document.createElement("div");
+      d.className = "ant-tabs-tab" + (c === active ? " ant-tabs-tab-active" : "");
+      d.setAttribute("role", "tab");
+      d.setAttribute("aria-selected", c === active ? "true" : "false");
+      d.textContent = c;
+      d.addEventListener("click", function () { switchTo(c); });
+      host.appendChild(d);
+    });
+  }
+
+  function renderGrid(cat, n) {
+    var grid = document.getElementById("grid");
+    grid.innerHTML = "";
+    var base = ns(cat);
+    for (var i = 1; i <= n; i++) {
+      var a = document.createElement("a");
+      a.href = "https://shopee.co.id/" + cat.toLowerCase() + "-" + i +
+               "-i." + base + "." + (base * 100 + i);
+      a.innerHTML =
+        '<div class="ItemCard__contentSection">' +
+          '<div class="ItemCard__name">' + cat + ' produk ' + i + '</div>' +
+          '<div class="ItemCard__price"><span class="price">Rp' +
+             ((10 + i) * 1000).toLocaleString("id-ID") + '</span></div>' +
+          '<div class="ItemCardSold__wrap">' + (i * 120) + ' terjual</div>' +
+          '<div class="commRate">' + (5 + i) + '.0%</div>' +
+        '</div>';
+      grid.appendChild(a);
+    }
+  }
+
+  function switchTo(cat) {
+    active = cat;
+    renderTabs();
+    var spin = document.getElementById("spin");
+    document.getElementById("grid").innerHTML = "";
+    spin.style.display = "block";
+    // per-category count, so each category's batch is a different size/identity
+    var counts = { All: 6, Mobile: 5, Home: 4, Beauty: 3 };
+    setTimeout(function () {
+      spin.style.display = "none";
+      renderGrid(cat, counts[cat] || 4);
+    }, 500);
+  }
+
+  renderTabs();
+  renderGrid("All", 6);
+})();
+</script>
+</body></html>

@@ -92,9 +92,8 @@ yang terhapus — tiga bug yang baru ditemukan begitu test browser pertama ada.
 
 - [x] bulk keyword scan — `test/e2e-browser-bulk.js` (v0.9.1)
 - [x] skor EPC tidak boleh kolaps — `test/e2e-epc-score.js` (v0.9.2)
-- [ ] bulk scan SEMUA KATEGORI di browser nyata: pindah tab, "+ halaman
-      berikutnya", tombol Stop benar-benar menghentikan, label kategori tersimpan
-      per tab, tidak ada batch yang saling menimpa
+- [x] bulk scan SEMUA KATEGORI di browser nyata — `test/e2e-browser-category.js`
+      (v0.9.3; menemukan bug ringkasan-hilang yang sama seperti keyword scan)
 - [ ] tabel & kontrol panel di browser nyata: sort ↕ tiap kolom (asc/desc, angka
       vs teks), "Tampilkan semua" / "Tampilkan 20 teratas", "Kosongkan" minta
       konfirmasi dan benar-benar mengosongkan
