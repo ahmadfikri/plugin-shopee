@@ -95,8 +95,7 @@ yang terhapus — tiga bug yang baru ditemukan begitu test browser pertama ada.
 - [x] bulk scan SEMUA KATEGORI di browser nyata — `test/e2e-browser-category.js`
       (v0.9.3; menemukan bug ringkasan-hilang yang sama seperti keyword scan)
 - [x] sort tabel (angka vs teks, toggle, satu kolom aktif) — `test/e2e-browser-sort.js` (v0.9.4; tanpa bug)
-- [ ] Export CSV di browser nyata: file benar-benar terbentuk, kolom lengkap,
-      nama produk yang mengandung koma/kutip tidak merusak kolom
+- [x] Export CSV — file terunduh, kolom lengkap, nama koma+kutip utuh — `test/e2e-browser-csv.js` (v0.9.5; tanpa bug)
 - [ ] modal detail di browser nyata: terbuka dari tabel, harga/rating terbaca,
       ditutup bersih, tidak menghapus panel (regresi lama)
 - [ ] Experiment ID di browser nyata: caption+video memakai SATU id, tombol
