@@ -22,6 +22,10 @@
   // from hammering Shopee's anti-bot. (Fikri: maksimal 200 produk.)
   const MAX_ANALYZE = 200;
 
+  // Hard ceiling on result pages walked per keyword — a second, independent
+  // brake so pagination cannot spin even if the product cap is never reached.
+  const MAX_PAGES = 12;
+
   let running = false;
   let stopRequested = false;
 
@@ -72,10 +76,17 @@
   }
 
   function pageLoading() {
+    // ONLY real, framework-owned busy indicators. This used to also match
+    // [class*='loading' i], which is far too broad for a React/antd page: a
+    // permanently-visible node like `image-loading` / `lazyloading` /
+    // `loadingWrapper` made this return true FOREVER, so waitForSearchResult
+    // could never satisfy `transitioned && !loading` and every keyword came back
+    // "hasil baru tidak terverifikasi" — 0/1 kata kunci, 0 produk, even though the
+    // results were plainly on screen. Category scan was unaffected because it uses
+    // waitForChange(), which never consults this function; that asymmetry is what
+    // identified the bug.
     const nodes = Array.from(document.querySelectorAll(
-      ".ant-spin-spinning, .ant-skeleton, [aria-busy='true'], [class*='loading' i]"));
-    // querySelector used to stop on a hidden/global spinner from another widget.
-    // Only a VISIBLE loading node can hold the product-search state machine.
+      ".ant-spin-spinning, .ant-skeleton-active, [aria-busy='true']"));
     return nodes.some((n) => n.offsetParent !== null &&
       n.getAttribute("aria-hidden") !== "true");
   }
@@ -95,12 +106,18 @@
   // then settle on one non-loading signature twice. Never accept old stable cards.
   async function waitForSearchResult(prevSig, timeoutMs) {
     const t0 = Date.now();
+    const budget = timeoutMs || 15000;
+    // After this much time we stop trusting the busy indicator: a spinner that is
+    // still "on" while the card set has gone quiet is a stuck widget, not a search
+    // in flight. Without this escape the whole scan is hostage to one node.
+    const IGNORE_LOADING_AFTER = Math.min(6000, Math.floor(budget / 2));
     let transitioned = false, stable = 0, last = null;
-    while (Date.now() - t0 < (timeoutMs || 15000)) {
+    while (Date.now() - t0 < budget) {
       if (stopRequested) return { ready: false, stopped: true, cards: 0 };
       await sleep(450);
       const sig = signature();
-      const loading = pageLoading();
+      const elapsed = Date.now() - t0;
+      const loading = pageLoading() && elapsed < IGNORE_LOADING_AFTER;
       if (loading || sig !== prevSig) transitioned = true;
       if (transitioned && !loading && sig !== "0") {
         if (sig === last) {
@@ -318,6 +335,18 @@
     const report = opts.onProgress || function () {};
     let total = 0, done = 0, lastKeyword = null;
 
+    // Fikri wants a fresh list per bulk search, but clearing at the START was a
+    // data-loss trap: when the scan then verified nothing (0/1 kata kunci) he was
+    // left with an EMPTY table and his previous research gone. So the wipe is
+    // LAZY — it happens once, immediately before the first batch we are actually
+    // able to store. A scan that finds nothing now changes nothing.
+    let cleared = false;
+    async function clearOnceBeforeStoring() {
+      if (cleared || !opts.clearFirst) return;
+      cleared = true;
+      try { if (global.RMShortlist) await global.RMShortlist.clear(); } catch (_) {}
+    }
+
     try {
       if (!findSearchInput()) {
         report({ phase: "error", note: "Kotak pencarian produk tidak ditemukan." });
@@ -361,6 +390,7 @@
           continue;
         }
 
+        await clearOnceBeforeStoring();   // wipe old list only now that we CAN store
         total = await scrapeAndStore("cari: " + kw, cfg);
         done++;
         lastKeyword = "cari: " + kw;
@@ -370,9 +400,15 @@
 
         // Walk THIS keyword's result pages (pagination "1 2 3 4 5 …"), not just
         // page 1. Fikri: untuk keyword spesifik, ikuti halaman berikutnya, bukan
-        // pindah tab. Hard cap MAX_ANALYZE (200) products total so a huge result
-        // set never runs away or hammers Shopee's anti-bot.
-        for (let pg = 2; total < MAX_ANALYZE && !stopRequested; pg++) {
+        // pindah tab. Hard cap MAX_ANALYZE (200) products.
+        //
+        // THREE stop conditions, all required. The cap ALONE is not enough: if a
+        // page stores no NEW product the running total never grows, `total < 200`
+        // stays true forever and the crawl keeps clicking "next" endlessly — the
+        // "pages gak berenti" bug. So we also stop after MAX_PAGES and after two
+        // consecutive pages that added nothing.
+        let noProgress = 0;
+        for (let pg = 2; total < MAX_ANALYZE && pg <= MAX_PAGES + 1 && !stopRequested; pg++) {
           const next = findNextPage();
           if (!next) break;                       // no more pages for this keyword
           const prevP = signature();
@@ -384,10 +420,19 @@
                      of: keywords.length, total, note: "halaman berikutnya tidak terverifikasi" });
             break;
           }
+          const before = total;
           total = await scrapeAndStore("cari: " + kw, cfg);
-          report({ phase: "scan", label: kw + " · hal " + pg, index: i + 1,
-                   of: keywords.length, total,
-                   note: `${pageResult.cards} produk (hal ${pg}) · total ${total}/${MAX_ANALYZE}` });
+          if (total <= before) {
+            noProgress++;
+            report({ phase: "skip", label: kw + " · hal " + pg, index: i + 1,
+                     of: keywords.length, total, note: "tidak ada produk baru di halaman ini" });
+            if (noProgress >= 2) break;           // two dead pages: stop, do not spin
+          } else {
+            noProgress = 0;
+            report({ phase: "scan", label: kw + " · hal " + pg, index: i + 1,
+                     of: keywords.length, total,
+                     note: `${pageResult.cards} produk (hal ${pg}) · total ${total}/${MAX_ANALYZE}` });
+          }
           await sleep(delay);
         }
         if (total >= MAX_ANALYZE) {

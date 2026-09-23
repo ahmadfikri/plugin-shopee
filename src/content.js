@@ -191,9 +191,6 @@
         }
         kwScan.disabled = true; kwScan.textContent = "⏳ Memindai…";
         shortlistNote = "";     // a new scan must not show the previous summary
-        // Fikri: pencet Bulk Scan Keyword -> bersihkan dulu daftar lama, biar
-        // hasil scan baru tidak nyampur/rusuh dengan produk scan sebelumnya.
-        try { if (window.RMShortlist) await RMShortlist.clear(); } catch (_) {}
         shortlistKeywordFilter = null;   // start from a clean, unfiltered view
         if (stopBtn) stopBtn.style.display = "";
         if (prog) prog.style.display = "block";
@@ -204,6 +201,10 @@
           scanResult = await RMBulk.runKeywords({
             cfg: await loadCfg(),
             keywords,
+            // Fresh list per bulk search, but wiped LAZILY inside runKeywords —
+            // only right before the first batch it can actually store, so a scan
+            // that verifies nothing leaves the existing research untouched.
+            clearFirst: true,
             onProgress: (s) => {
               if (!prog) return;
               if (s.phase === "search") {

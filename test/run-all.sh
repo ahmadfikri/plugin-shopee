@@ -103,6 +103,10 @@ echo "=== 19. Test: bulk keyword tahan stale-result / React submit ==="
 node test/e2e-bulk-keywords.js || fail=1
 
 echo
+echo "=== 19b. Test: REGRESSI node 'loading' nyangkut tidak menggantung keyword scan ==="
+node test/e2e-loading-guard.js || fail=1
+
+echo
 
 echo
 echo "=== 20. Test: concept win-rate hanya dari exact Experiment ID ==="
