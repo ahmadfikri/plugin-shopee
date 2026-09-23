@@ -36,7 +36,16 @@
       chrome.storage.local.get(KEY, (o) => r(o[KEY] || null)));
   }
   function clear() {
-    return new Promise((r) => chrome.storage.local.remove(KEY, r));
+    // Read lastError inside the callback. Passing `r` (the resolver) directly as
+    // the storage callback leaves chrome.runtime.lastError UNCHECKED, which
+    // Chrome surfaces as an "Unchecked runtime.lastError" error in the console
+    // (the error Fikri saw). Consuming it here silences the false alarm and lets
+    // clear() resolve cleanly whether or not the key existed.
+    return new Promise((resolve) =>
+      chrome.storage.local.remove(KEY, () => {
+        void (chrome.runtime && chrome.runtime.lastError);
+        resolve();
+      }));
   }
 
   // Split a tag name like "polkadotIphone" / "caseSwaroskiIphone" into keywords.

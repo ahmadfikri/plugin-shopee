@@ -25,9 +25,9 @@
       angle: "buka dengan pertanyaan/teka-teki yang HANYA terjawab oleh produk; frame 1 tunjukkan MASALAH sedang terjadi, bukan produk dulu",
       hook: "pertanyaan singkat ('kenapa…', 'gimana bisa…')",
       set: "sudut close-up dramatis, 1 titik fokus" },
-    { id: "price_shock", label: "Price shock / specificity",
-      angle: "kejutkan dengan harga spesifik yang tak masuk akal murahnya vs hasilnya; angka di on-screen text frame 1",
-      hook: "angka konkret ('Rp15.000 doang tapi…')",
+    { id: "price_shock", label: "Harga apa adanya",
+      angle: "kalau harga produk memang menarik, tampilkan angka ASLI dari data apa adanya — JANGAN membesar-besarkan, jangan klaim 'termurah' atau 'tak masuk akal'; biarkan angkanya bicara sendiri",
+      hook: "sebut harga asli produk secara wajar ('cuma segini dapat …')",
       set: "produk dipegang, reveal harga cepat" },
     { id: "before_after", label: "Before / after",
       angle: "kontras dramatis sebelum→sesudah dalam 3 detik pertama; transformasi memuncak sebelum detik ke-3",
@@ -49,10 +49,10 @@
       angle: "tunjukkan frustrasi nyata sehari-hari lalu produk menyelesaikannya di depan mata; jawab keberatan #1 secara visual",
       hook: "sebut frustrasi spesifik ke 'kamu'",
       set: "adegan masalah nyata, lalu solusi in-use" },
-    { id: "comparison", label: "Comparative showdown",
-      angle: "adu 'yang murah vs yang mahal' atau 'biasa vs ini'; tahan pemenangnya ('tebak yang mana')",
-      hook: "'yang Rp20rb vs Rp200rb…'",
-      set: "split-screen / dua produk berdampingan" }
+    { id: "comparison", label: "Perbandingan wajar",
+      angle: "bandingkan cara/hasil PAKAI produk ini vs cara lama/biasa (bukan adu harga karangan); tunjukkan bedanya secara nyata, JANGAN mengarang angka harga 'murah vs mahal'",
+      hook: "'biasanya ribet, pakai ini jadi …'",
+      set: "split-screen / dua cara berdampingan" }
   ];
 
 

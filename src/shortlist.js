@@ -29,7 +29,15 @@
       chrome.storage.local.get(KEY, (o) => r(o[KEY] || { items: [], scans: 0, keywords: [] })));
   }
   function clear() {
-    return new Promise((r) => chrome.storage.local.remove(KEY, r));
+    // Read lastError inside the callback — passing the resolver `r` directly as
+    // the storage callback leaves chrome.runtime.lastError UNCHECKED, which
+    // Chrome logs as "Unchecked runtime.lastError". Consume it so a Kosongkan
+    // never throws into the console.
+    return new Promise((resolve) =>
+      chrome.storage.local.remove(KEY, () => {
+        void (chrome.runtime && chrome.runtime.lastError);
+        resolve();
+      }));
   }
 
   // Add a scanned batch. Existing ids are UPDATED (fresher score wins) rather

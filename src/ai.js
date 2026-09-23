@@ -296,9 +296,16 @@
     "Kamu copywriter iklan Shopee affiliate Indonesia. Buatkan SATU caption " +
     "siap-posting (Facebook/Instagram/TikTok) dari data produk ini:\n{{context}}\n\n" +
     "{{CONCEPT}}" +
-    "Aturan caption: bahasa Indonesia kasual-santai (nada bestie, jangan lebay/" +
-    "hard-selling), hook kuat di kalimat PERTAMA, 2-4 baris saja, akhiri dengan ajakan " +
-    "cek link. SEBUT NAMA PRODUK-nya — jangan ragu. Kalau memakai bukti sosial, CUKUP " +
+    "Aturan caption: bahasa Indonesia santai dan WAJAR seperti orang biasa cerita, " +
+    "JANGAN alay/lebay, JANGAN hard-selling, JANGAN pakai huruf kapital berlebihan " +
+    "atau emoji bertumpuk. Hook di kalimat PERTAMA boleh menarik tapi tetap masuk akal " +
+    "— tanpa hiperbola (hindari 'GILA', 'auto sultan', 'terbaik sedunia', 'wajib punya " +
+    "atau nyesel'). 2-4 baris saja, akhiri dengan ajakan cek link. " +
+    "SEBUT NAMA PRODUK-nya — jangan ragu. " +
+    "HARGA & DISKON: sebut angka HANYA jika ada di data produk; JANGAN mengarang harga, " +
+    "diskon, persentase hemat, atau perbandingan 'biasanya Rpxxx sekarang Rpxxx'. " +
+    "Kalau tidak ada data harga, jangan singgung harga sama sekali. " +
+    "Kalau memakai bukti sosial, CUKUP " +
     "RATING saja; JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, " +
     "persentase bintang, atau jumlah favorit.\n\n" +
     "HASHTAG — WAJIB ADA, taruh di baris terpisah setelah caption, 6-9 hashtag " +
@@ -456,7 +463,20 @@
     if (p.price != null) parts.push("Harga: Rp" + p.price.toLocaleString("id-ID"));
     if (p.commissionPct != null || (p.economics && p.economics.commissionPct))
       parts.push("Komisi: " + (p.commissionPct || p.economics.commissionPct) + "%");
-    if (p.rating != null) parts.push("Rating: " + p.rating + "/5");
+    // Rating hanya disebut kalau BAGUS (>= 4.8). Rating 4.5 atau 4.2 secara
+    // teknis "tinggi" tapi di iklan Shopee justru menurunkan kepercayaan —
+    // pembeli Indonesia membaca apa pun di bawah 4.8 sebagai sinyal ragu. Di
+    // bawah ambang: rating TIDAK dikirim ke model sama sekali, plus larangan
+    // eksplisit supaya model tidak mengarang atau menyinggung rating sendiri.
+    const RATING_MIN_SEBUT = 4.8;
+    const rating = Number(p.rating);
+    if (Number.isFinite(rating) && rating >= RATING_MIN_SEBUT) {
+      parts.push("Rating: " + p.rating + "/5");
+    } else {
+      parts.push("LARANGAN: JANGAN sebut, tulis, atau singgung rating/bintang/" +
+                 "ulasan sama sekali — angkat sisi lain (fungsi, harga, masalah " +
+                 "yang dipecahkan). Jangan mengarang angka rating.");
+    }
     return parts.join(" | ");
   }
 
