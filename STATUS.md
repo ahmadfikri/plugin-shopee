@@ -97,8 +97,17 @@ yang terhapus — tiga bug yang baru ditemukan begitu test browser pertama ada.
 - [x] sort tabel (angka vs teks, toggle, satu kolom aktif) — `test/e2e-browser-sort.js` (v0.9.4; tanpa bug)
 - [x] Export CSV — file terunduh, kolom lengkap, nama koma+kutip utuh — `test/e2e-browser-csv.js` (v0.9.5; tanpa bug)
 - [x] modal detail — buka dari tabel, isi terbaca, tutup ✕/backdrop, panel utuh — `test/e2e-browser-modal.js` (v0.9.6; tanpa bug)
-- [ ] Experiment ID di browser nyata: caption+video memakai SATU id, tombol
-      Eksperimen Baru memutar konsep, id tersimpan dan muncul di ledger sekali
+- [x] Experiment ID — logika inti tertutup PENUH oleh `test/e2e-experiment.js`
+      (satu identity id caption=video, dedup ledger jadi 1 baris, ＋Eksperimen
+      Baru memutar konsep + id baru). KETERBATASAN: jalur UI-nya (klik ✨Caption
+      lalu 🎬Prompt Video di modal) TIDAK bisa diuji browser di konfigurasi ini —
+      butuh (a) id ekstensi untuk membuka Admin page set API key, dan MV3
+      content-script-only ini tidak punya service worker sehingga id-nya tidak
+      bisa didapat andal (CDP Target.getTargets tidak melihatnya, dan id unpacked
+      Chrome bukan hash-path murni), plus (b) panggilan jaringan DeepSeek. Test
+      browser setengah-jadi dihapus daripada dibuat lolos palsu. Kalau nanti
+      ditambah service_worker minimal (atau `key` tetap di manifest), id jadi
+      pasti dan test UI ini bisa dibuat benar.
 - [ ] realisme fixture: `test/fixtures/shopee-offer.html` dibangun dari kontrak
       selector, BUKAN dari dump Shopee asli. Selama itu belum diganti dump nyata,
       test browser membuktikan kontrak plugin sendiri — bukan bahwa markup Shopee
