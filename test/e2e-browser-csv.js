@@ -68,7 +68,14 @@ function parseLine(line) {
   const pw = loadPlaywright();
   if (!pw) { console.log("BROWSER E2E CSV DILEWATI — playwright tidak terpasang."); process.exit(0); }
 
-  const profile = fs.mkdtempSync(path.join(os.tmpdir(), "rm-csv-"));
+  // Profil browser TIDAK boleh di $KIROCREW_SCRATCH: sandbox menolak lstat pada
+  // direktori induknya, dan Playwright men-stat rantai path user-data-dir saat
+  // launch — akibatnya Chromium start tapi koneksi CDP tidak pernah selesai
+  // (timeout 180s yang terlihat seperti "semua test browser rusak"). Pakai
+  // direktori di dalam repo yang bisa di-stat penuh.
+  const PROFILE_ROOT = path.join(EXT, ".e2e-profiles");
+  fs.mkdirSync(PROFILE_ROOT, { recursive: true });
+  const profile = fs.mkdtempSync(path.join(PROFILE_ROOT, "rm-csv-"));
   const ctx = await pw.chromium.launchPersistentContext(profile, {
     headless: false,
     args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`,
