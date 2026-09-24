@@ -290,6 +290,10 @@
     return (data.choices && data.choices[0] && data.choices[0].message.content || "").trim();
   }
 
+  // Campaign hashtags that MUST appear in every caption (Fikri, 24 Sep 2026).
+  // Time-bound to the running Shopee campaign — edit this one line when it ends.
+  const CAMPAIGN_TAGS = ["#1010BrandsFestival", "#1010ShopeeMall"];
+
   // Default caption template — ONE caption, ready to copy-paste. No variants:
   // choosing between three was friction, not value.
   const DEFAULT_CAPTION_PROMPT =
@@ -309,13 +313,17 @@
     "RATING saja; JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, " +
     "persentase bintang, atau jumlah favorit.\n\n" +
     "HASHTAG — WAJIB ADA, taruh di baris terpisah setelah caption, 6-9 hashtag " +
-    "(riset 2026: sedikit tapi bisa DICARI mengalahkan tumpukan tag). Struktur:\n" +
-    "(a) 2 tag reach: #fyp #viral\n" +
-    "(b) 2-4 tag NICHE yang benar-benar diketik pembeli (turunkan dari nama/kategori " +
+    "organik DITAMBAH 2 tag kampanye wajib di bawah (riset 2026: sedikit tapi bisa " +
+    "DICARI mengalahkan tumpukan tag). Struktur:\n" +
+    "(a) 2 tag KAMPANYE yang WAJIB selalu ada, tulis PERSIS termasuk huruf besarnya: " +
+    CAMPAIGN_TAGS.join(" ") + "\n" +
+    "(b) 2 tag reach: #fyp #viral\n" +
+    "(c) 2-4 tag NICHE yang benar-benar diketik pembeli (turunkan dari nama/kategori " +
     "produk dalam bahasa Indonesia — mis. #casinghp #rakdapur #lamputidur), " +
     "ini yang jadi SEO/temuan\n" +
-    "(c) 2-3 tag niat-beli: #racunshopee #shopeefinds #checkoutdulu #tiktokmademebuyit\n" +
-    "Huruf kecil, dipisah spasi, tanpa tanda baca lain.\n\n" +
+    "(d) 2-3 tag niat-beli: #racunshopee #shopeefinds #checkoutdulu #tiktokmademebuyit\n" +
+    "Selain tag kampanye di (a), semua hashtag huruf kecil, dipisah spasi, " +
+    "tanpa tanda baca lain.\n\n" +
     "FORMAT OUTPUT — persis seperti ini, tanpa judul/penjelasan/nomor variasi:\n" +
     "<isi caption 2-4 baris>\n\n<baris hashtag>\n\n" +
     "DILARANG: kalimat pembuka seperti 'Berikut caption...', markdown apa pun " +
@@ -333,6 +341,30 @@
       .replace(/[^a-z0-9\s]/g, " ").split(/\s+/)
       .filter((w) => w.length >= 4 && !/^(isi|pcs|box|set|untuk|dan|new|premium)$/.test(w));
     return words.slice(0, 2).map((w) => "#" + w).join(" ");
+  }
+
+  // Campaign tags are NON-NEGOTIABLE: enforce them on the finished caption no
+  // matter what the model returned (or what stale stored prompt it ran on).
+  function ensureCampaignTags(text) {
+    let t = String(text || "");
+    const missing = CAMPAIGN_TAGS.filter(
+      (tag) => !new RegExp("(^|\\s)" + tag + "\\b", "i").test(t)
+    );
+    if (!missing.length) return t;
+
+    const lines = t.split("\n");
+    const isTagLine = (l) => {
+      const toks = l.trim().split(/\s+/).filter(Boolean);
+      return toks.length >= 2 && toks.filter((w) => w.startsWith("#")).length >= toks.length - 1;
+    };
+    // append to the LAST hashtag line so the caption body stays untouched
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (isTagLine(lines[i])) {
+        lines[i] = lines[i].replace(/\s*$/, "") + " " + missing.join(" ");
+        return lines.join("\n");
+      }
+    }
+    return t.replace(/\s*$/, "") + "\n\n" + missing.join(" ");
   }
 
   // Safety net for the single-caption output: strip stray variant labels, keep only
@@ -366,10 +398,10 @@
     }
 
     const tagCount = (t.match(/#\w+/g) || []).length;
-    if (tagCount >= 6) return t;
+    if (tagCount >= 6) return ensureCampaignTags(t);
     const block = [slugTags(product.name), FYP_TAGS, SHOP_TAGS]
       .filter(Boolean).join(" ");
-    return t.replace(/\s*$/, "") + "\n\n" + block;
+    return ensureCampaignTags(t.replace(/\s*$/, "") + "\n\n" + block);
   }
 
   // Build the CONCEPT directive injected into video/caption prompts. Forces THIS
@@ -527,5 +559,6 @@
   }
 
   global.RMAi = { generateCaption, generateTag, generateVideoPrompt, productContext,
-                  isPhoneAccessory, isHandheld, isPhoneCase, productSize, videoMode };
+                  isPhoneAccessory, isHandheld, isPhoneCase, productSize, videoMode,
+                  ensureHashtags, CAMPAIGN_TAGS, DEFAULT_CAPTION_PROMPT };
 })(typeof window !== "undefined" ? window : this);

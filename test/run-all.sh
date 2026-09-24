@@ -149,6 +149,11 @@ node test/e2e-browser-modal.js || fail=1
 echo
 echo "=== 28. Test: rating hanya disebut kalau >=4.8 (caption & prompt) ==="
 node test/e2e-rating-gate.js || fail=1
+
+echo
+echo "=== 29. Test: hashtag kampanye 10.10 wajib ada di setiap caption ==="
+node test/e2e-campaign-hashtag.js || fail=1
+
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else
