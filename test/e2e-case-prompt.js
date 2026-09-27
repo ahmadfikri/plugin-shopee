@@ -3,7 +3,7 @@
  * Dua koreksi dari hasil Veo nyata Fikri:
  *  1. Produk casing WAJIB pakai tangan PEREMPUAN terawat + kuku berkutek.
  *  2. HP JANGAN dibolak-balik — AI jadi ngaco (casing muncul di depan DAN belakang).
- *     Gantinya digoyang/dimiringkan pelan.
+ *     Cukup digoyang-goyang pelan; tanpa konsep sebelum→sesudah.
  *
  * Tes memeriksa isi instruksi yang dikirim ke AI (bukan output AI-nya).
  */
@@ -45,8 +45,8 @@ const chk = (n, c, d) => { console.log(`${c ? "PASS" : "FAIL"}  ${n}${d ? "  " +
   chk("casing: minta kuku berkutek", /KUTEK/i.test(caseTxt));
   chk("casing: melarang membalik HP", /JANGAN PERNAH membalik/i.test(caseTxt));
   chk("casing: menyebut alasan (casing di kedua sisi)", /KEDUA sisi/i.test(caseTxt));
-  chk("casing: menyuruh digoyang/dimiringkan", /GOYANGKAN|miringkan/i.test(caseTxt));
-  chk("casing: batasi orbit ~30 derajat", /30 derajat/.test(caseTxt));
+  chk("casing: cukup goyang-goyangkan pelan", /goyang-goyangkan HP pelan/i.test(caseTxt));
+  chk("casing: melarang konsep sebelum→sesudah", /JANGAN pakai konsep sebelum→sesudah/i.test(caseTxt));
   chk("casing: kunci kamera di sisi belakang", /rear hemisphere/.test(caseTxt));
   chk("casing: lubang kamera wajib stabil", /lubang kamera/.test(caseTxt));
   chk("casing: hanya satu HP + casing", /SATU HP dengan SATU casing/.test(caseTxt));

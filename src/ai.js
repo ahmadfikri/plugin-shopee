@@ -163,7 +163,9 @@
   // PHONE-CASE specific rules. Two corrections from Fikri's real Veo output:
   //  1. Case products always use FEMALE hands, manicured — that is the audience.
   //  2. NEVER flip the phone front-to-back. When told to flip, the AI renders a
-  //     case on BOTH sides (nonsense). A gentle shake/tilt shows the case just as
+  //     case on BOTH sides (nonsense). Just a gentle shake/sway of the phone —
+  //     no before/after transformation, no tapping, no flipping (Fikri: those
+  //     angles are useless; pure showcase shake is what he wants).
 
   // Gemini/Veo quality contract. Product identity and temporal continuity beat
   // fancy camera motion: an attractive shot is useless if the product morphs.
@@ -194,13 +196,13 @@
     "  * JANGAN PERNAH membalik HP depan-belakang (no flipping, no turning the " +
     "phone over, jangan tunjukkan sisi depan lalu belakang). Membalik HP membuat AI " +
     "salah render — casing muncul di KEDUA sisi, hasilnya tidak masuk akal.\n" +
-    "  * Sebagai gantinya: GOYANGKAN / miringkan HP pelan (gentle shake, subtle " +
-    "tilt, sway kiri-kanan kecil) supaya cahaya bergerak di permukaan casing dan " +
-    "tekstur/kilau/motifnya terlihat jelas. Boleh macro push-in dan orbit KECIL " +
-    "(maksimum ~30 derajat — jangan sampai memperlihatkan sisi sebaliknya).\n" +
     "  * Tampilkan casing HANYA dari satu sisi (sisi belakang HP tempat motifnya " +
     "berada) sepanjang video. Kunci kamera di rear hemisphere; jangan pernah " +
-    "melewati sudut samping menuju layar depan.\n" +
+    "melewati sudut samping menuju layar depan. Gerakannya CUKUP goyang-goyangkan " +
+    "HP pelan (gentle shake / sway kiri-kanan kecil) supaya cahaya bergerak di " +
+    "permukaan casing dan tekstur/kilau/motifnya terlihat — tidak perlu aksi lain.\n" +
+    "  * JANGAN pakai konsep sebelum→sesudah / transformasi apa pun. Ini murni " +
+    "showcase casing yang digoyang pelan, bukan demo perubahan.\n" +
     "  * Hanya SATU HP dengan SATU casing yang sudah terpasang. Posisi lubang kamera, " +
     "bibir casing, tombol, motif, dan jumlah lensa harus identik dengan gambar " +
     "referensi di semua frame — jangan berubah, hilang, berlipat, atau berpindah.\n" +
