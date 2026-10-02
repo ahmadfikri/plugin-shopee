@@ -27,7 +27,7 @@ for (const r of [4.8, 4.9, 5, "4.85"]) {
   const out = RMAi.productContext(Object.assign({}, base, { rating: r }));
   assert(/Rating:/.test(out), `rating ${r} (>=4.8) harus disebut, dapat: ${out}`);
   assert(out.includes(String(r)), `nilai rating ${r} harus muncul apa adanya`);
-  assert(!/LARANGAN/.test(out), `rating bagus ${r} tidak boleh memicu larangan`);
+  assert(!/LARANGAN:/.test(out), `rating bagus ${r} tidak boleh memicu larangan`);
 }
 
 // --- below the threshold: rating is NOT mentioned, and it is forbidden -------
@@ -54,7 +54,9 @@ const good = RMAi.productContext(Object.assign({}, base, { rating: 4.9 }));
 const bad = RMAi.productContext(Object.assign({}, base, { rating: 4.2 }));
 for (const out of [good, bad]) {
   assert(out.includes("Case Bening iPhone 15"), "nama produk hilang dari konteks");
-  assert(/Rp45\.000/.test(out), "harga hilang dari konteks");
+  // Aturan Fikri 2026-10-02: harga TIDAK boleh dikirim ke AI, larangan harga wajib ada.
+  assert(!/Rp45\.000/.test(out), "harga tidak boleh ada di konteks AI");
+  assert(/LARANGAN HARGA/.test(out), "larangan harga wajib ada di konteks");
   assert(/Komisi: 8%/.test(out), "komisi hilang dari konteks");
 }
 

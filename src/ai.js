@@ -47,6 +47,7 @@
     "dan audio/voice. Produk asli " +
     "akan di-drag user sebagai gambar referensi (Ingredients to Video), jadi JANGAN " +
     "deskripsikan detail bentuk produk secara spesifik — cukup rujuk 'produk ini'. " +
+    "LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga. " +
     "SEBUT NAMA PRODUK secara jelas dalam dialog dan/atau on-screen text — jangan ragu " +
     "menyebut nama/brand-nya. Kalau memakai bukti sosial, CUKUP RATING saja; " +
     "JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, persentase bintang, " +
@@ -255,6 +256,7 @@
     "(macro push-in, top-down, orbit kecil), lens (35mm/50mm macro), lighting, mood, audio.\n" +
     "- Produk asli akan di-drag user sebagai gambar referensi (Ingredients to Video), " +
     "jadi JANGAN deskripsikan bentuk/warna produk secara spesifik — cukup rujuk 'produk ini'.\n" +
+    "- LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga.\n" +
     "- SEBUT NAMA PRODUK secara jelas (di on-screen text dan/atau teks akhir). Jangan " +
     "ragu menyebut nama/brand-nya.\n" +
     "- Kalau memakai bukti sosial, CUKUP RATING saja. " +
@@ -269,7 +271,7 @@
   function fill(tpl, product) {
     return tpl
       .replace(/{{name}}/g, product.name || "")
-      .replace(/{{price}}/g, product.price != null ? "Rp" + product.price.toLocaleString("id-ID") : "");
+      .replace(/{{price}}/g, "");
   }
 
   async function call(cfg, prompt, temperature) {
@@ -308,9 +310,7 @@
     "— tanpa hiperbola (hindari 'GILA', 'auto sultan', 'terbaik sedunia', 'wajib punya " +
     "atau nyesel'). 2-4 baris saja, akhiri dengan ajakan cek link. " +
     "SEBUT NAMA PRODUK-nya — jangan ragu. " +
-    "HARGA & DISKON: sebut angka HANYA jika ada di data produk; JANGAN mengarang harga, " +
-    "diskon, persentase hemat, atau perbandingan 'biasanya Rpxxx sekarang Rpxxx'. " +
-    "Kalau tidak ada data harga, jangan singgung harga sama sekali. " +
+    "LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga. " +
     "Kalau memakai bukti sosial, CUKUP " +
     "RATING saja; JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, " +
     "persentase bintang, atau jumlah favorit.\n\n" +
@@ -480,7 +480,7 @@
     const raw = await call(cfg, tpl.replace(/{{context}}/g, ctx)
       .replace(/{{CONCEPT}}/g, conceptBlock(concept, false))
       .replace(/{{name}}/g, product.name || "")
-      .replace(/{{price}}/g, product.price != null ? "Rp" + product.price.toLocaleString("id-ID") : ""), 0.75);
+      .replace(/{{price}}/g, ""), 0.75);
     return ensureHashtags(raw, product);
   }
   async function generateTag(cfg, product) {
@@ -494,7 +494,9 @@
   function productContext(p) {
     const parts = [];
     if (p.name) parts.push("Nama produk (SEBUT dalam video/caption): " + p.name);
-    if (p.price != null) parts.push("Harga: Rp" + p.price.toLocaleString("id-ID"));
+    // Fikri's rule (2026-10-02): NO PRICE in video prompt or caption. Price is
+    // deliberately NOT passed to the AI (same pattern as jumlah terjual).
+    parts.push("LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga.");
     if (p.commissionPct != null || (p.economics && p.economics.commissionPct))
       parts.push("Komisi: " + (p.commissionPct || p.economics.commissionPct) + "%");
     // Rating hanya disebut kalau BAGUS (>= 4.8). Rating 4.5 atau 4.2 secara
@@ -508,7 +510,7 @@
       parts.push("Rating: " + p.rating + "/5");
     } else {
       parts.push("LARANGAN: JANGAN sebut, tulis, atau singgung rating/bintang/" +
-                 "ulasan sama sekali — angkat sisi lain (fungsi, harga, masalah " +
+                 "ulasan sama sekali — angkat sisi lain (fungsi, masalah " +
                  "yang dipecahkan). Jangan mengarang angka rating.");
     }
     return parts.join(" | ");

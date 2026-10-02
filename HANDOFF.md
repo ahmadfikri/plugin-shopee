@@ -270,3 +270,4 @@ Video: `.mp4` LANGSUNG di `down-tx-id.vod.susercontent.com` (bukan HLS).
 
 ## v0.9.14 (2026-10-02)
 - Prompt video default 10 detik (sebelumnya 8). Lihat documentation/2026-10-02-durasi-video-10-detik.md
+- v0.9.15 (2026-10-02): LARANGAN HARGA — harga tidak dikirim ke AI, dilarang di prompt video & caption, konsep price_shock dihapus. Lihat documentation/2026-10-02-larangan-harga.md
