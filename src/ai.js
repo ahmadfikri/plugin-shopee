@@ -371,8 +371,31 @@
 
   // Safety net for the single-caption output: strip stray variant labels, keep only
   // the FIRST caption (cut right after its hashtag line), and guarantee hashtags.
+  // OUTPUT-side price guard (Fikri's rule 2026-10-02: no price anywhere).
+  // The prompt already forbids price, but an LLM can still slip one in, so the
+  // finished caption / video prompt is scrubbed too — same "non-negotiable,
+  // enforce on output" pattern as ensureCampaignTags.
+  const PRICE_PATTERNS = [
+    /\bRp\.?\s?\d[\d.,]*(\s?(rb|ribu|k|jt|juta))?\b/gi,           // Rp39.000, Rp 25rb
+    /\b\d[\d.,]*\s?(rb|ribu)\s?(an|aja|saja)?\b/gi,                // 25rb, 30 ribuan
+    /\b(diskon|potongan|hemat|cashback|off)\s*(s\.?d\.?\s*)?\d+\s?%/gi, // diskon 50%
+    /\b\d+\s?%\s*(off|diskon)\b/gi,                                 // 50% off
+    /#(harga\w*|murah\w*|diskon\w*|promo\w*|sale|flashsale|cuci\w*gudang)\b/gi,
+    /\b(harga\s+(murah|miring|terjangkau|bersahabat|grosir|termurah)|murah\s+(banget|meriah|pol)|super\s+murah|termurah|harga\s+promo)\b/gi
+  ];
+  function stripPrice(text) {
+    let t = String(text || "");
+    for (const re of PRICE_PATTERNS) t = t.replace(re, "");
+    return t
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/[ \t]+([,.!?])/g, "$1")
+      .replace(/^[ \t]*[,.:;-]+[ \t]*$/gm, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
   function ensureHashtags(text, product) {
-    let t = String(text || "")
+    let t = stripPrice(text)
       // drop a leading preamble line like "Berikut 3 variasi caption ... :"
       .replace(/^\s*(berikut|ini(?:lah)?)\b[^\n]*:\s*\n+/i, "")
       // drop variant labels / headings / separators
@@ -527,7 +550,11 @@
     const handsMode = size === "small";
     // a user-customised videoPrompt in Admin Panel always wins
     const custom = cfg.ai && cfg.ai.videoPrompt && cfg.ai.videoPrompt.trim();
-    const tpl = custom || (handsMode ? HANDS_VIDEO_PROMPT : DEFAULT_VIDEO_PROMPT);
+    // A custom template without {{context}} used to drop the product data AND
+    // the price ban entirely — append it, same as the caption path does.
+    const tpl = custom
+      ? (/{{context}}/.test(custom) ? custom : custom + "\n\nData produk: {{context}}")
+      : (handsMode ? HANDS_VIDEO_PROMPT : DEFAULT_VIDEO_PROMPT);
     const sizeBlock = handsMode ? ""
       : (size === "large" ? SIZE_RULES_LARGE : SIZE_RULES_JUDGE);
     // Phone cases get extra hard rules (female manicured hands; never flip the
@@ -543,11 +570,12 @@
       .replace(/{{CASE_RULES}}/g, caseBlock)
       .replace(/{{CONCEPT}}/g, conceptBlock(concept, true))
       .replace(/{{context}}/g, ctx)
-      .replace(/{{name}}/g, product.name || "");
+      .replace(/{{name}}/g, product.name || "")
+      .replace(/{{price}}/g, "");   // was left as literal "{{price}}" here
     // NOTE: no mode label is prefixed — the whole textarea gets pasted into
     // Gemini/Veo, so any bracketed note would become noise in the prompt.
     // The mode is surfaced in the panel's section title instead (see content.js).
-    return call(cfg, instruction, 0.35);
+    return stripPrice(await call(cfg, instruction, 0.35));
   }
 
   // Which video template a product will use — for labelling in the UI.
@@ -564,5 +592,5 @@
 
   global.RMAi = { generateCaption, generateTag, generateVideoPrompt, productContext,
                   isPhoneAccessory, isHandheld, isPhoneCase, productSize, videoMode,
-                  ensureHashtags, CAMPAIGN_TAGS, DEFAULT_CAPTION_PROMPT };
+                  ensureHashtags, stripPrice, CAMPAIGN_TAGS, DEFAULT_CAPTION_PROMPT };
 })(typeof window !== "undefined" ? window : this);

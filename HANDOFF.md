@@ -274,3 +274,6 @@ Video: `.mp4` LANGSUNG di `down-tx-id.vod.susercontent.com` (bukan HLS).
 
 ## v0.9.16 (2026-10-03)
 Experiment ID (Campaign Meta = Tag Shopee) dibuat unik: nama6+konsep2+yymmdd+sidikProduk3+acak3, cek bentrok. Lihat documentation/2026-10-03-experiment-id-unik.md
+
+## v0.9.17 (2026-10-03)
+Audit: price guard di output caption+video (stripPrice), template video custom tetap dapat {{context}}, {{price}} tidak bocor. Lihat documentation/2026-10-03-audit-bug-harga.md
