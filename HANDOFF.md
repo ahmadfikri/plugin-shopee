@@ -267,3 +267,6 @@ Video: `.mp4` LANGSUNG di `down-tx-id.vod.susercontent.com` (bukan HLS).
   tanpa bukti.
 - Kalau ingest data Shopee: **update sheet DULU, tunjukkan buktinya, baru analisa.**
 - Eksekusi, jangan cuma menyarankan. Tapi jangan langgar batasan di §4.
+
+## v0.9.14 (2026-10-02)
+- Prompt video default 10 detik (sebelumnya 8). Lihat documentation/2026-10-02-durasi-video-10-detik.md

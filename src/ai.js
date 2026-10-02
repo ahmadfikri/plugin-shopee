@@ -10,7 +10,7 @@
   const DEFAULT_VIDEO_PROMPT =
     "Kamu penulis prompt video Veo/Gemini untuk iklan Shopee affiliate. " +
     "Buatkan SATU prompt video sinematik siap-tempel ke Google Flow/Veo, format " +
-    "9:16 vertikal (HP), durasi 8 detik, dari data produk ini:\n{{context}}\n\n" +
+    "9:16 vertikal (HP), durasi 10 detik, dari data produk ini:\n{{context}}\n\n" +
     "{{CONCEPT}}" +
     "{{GEMINI_RULES}}" +
     "=== PRIORITAS TERTINGGI: 3 DETIK PERTAMA ===\n" +
@@ -41,7 +41,7 @@
     "{{SIZE_RULES}}" +
     "Aturan wajib lainnya: gaya main NATURAL & santai (jangan lebay/over-acting), " +
     "nada ngobrol ringan seperti teman. Setting OUTDOOR (taman/halaman/teras) siang " +
-    "hari cahaya alami. Dialog bahasa Indonesia kasual. Alur 3-8s: perlihatkan produk " +
+    "hari cahaya alami. Dialog bahasa Indonesia kasual. Alur 3-10s: perlihatkan produk " +
     "& manfaatnya, akhiri dengan ajakan 'link di bio'. " +
     "Sertakan: subject, action per detik, scene, camera movement, lens, lighting, mood, " +
     "dan audio/voice. Produk asli " +
@@ -52,7 +52,7 @@
     "JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, persentase bintang, " +
     "atau jumlah favorit. " +
     "PENTING: prompt harus BERUPA PERINTAH langsung ke AI video. Awali dengan kalimat " +
-    "perintah eksplisit, contoh: \"Buatkan video vertikal 9:16 berdurasi 8 detik dengan " +
+    "perintah eksplisit, contoh: \"Buatkan video vertikal 9:16 berdurasi 10 detik dengan " +
     "spesifikasi berikut:\" — sehingga bisa langsung ditempel ke Gemini/Veo dan dieksekusi, " +
     "bukan sekadar deskripsi. " +
     "Keluarkan HANYA teks prompt-nya, tanpa penjelasan tambahan.";
@@ -174,7 +174,7 @@
     "- Gambar referensi adalah SATU-SATUNYA sumber kebenaran produk. Pertahankan " +
     "siluet, warna, motif, material, logo, proporsi, dan posisi detail produk SAMA " +
     "di setiap frame; jangan mengarang varian atau dekorasi baru.\n" +
-    "- Maksimal 3 shot dalam 8 detik. Setiap cut harus mempertahankan produk yang " +
+    "- Maksimal 3 shot dalam 10 detik. Setiap cut harus mempertahankan produk yang " +
     "sama secara temporal — tidak morphing, tidak berubah warna/bentuk/ukuran.\n" +
     "- Hanya SATU unit produk utama. Jangan menduplikasi produk, jangan membuat " +
     "objek menyatu/menembus tangan, dan jangan memunculkan tangan/jari tambahan.\n" +
@@ -219,7 +219,7 @@
   const HANDS_VIDEO_PROMPT =
     "Kamu penulis prompt video Veo/Gemini untuk iklan Shopee affiliate produk yang " +
     "bisa dipegang tangan. Buatkan SATU prompt video siap-tempel ke Google Flow/Veo, " +
-    "format 9:16 VERTIKAL (HP), durasi 8 detik, dari data produk ini:\n{{context}}\n\n" +
+    "format 9:16 VERTIKAL (HP), durasi 10 detik, dari data produk ini:\n{{context}}\n\n" +
     "{{CONCEPT}}" +
     "{{GEMINI_RULES}}" +
     "=== PRIORITAS TERTINGGI: 3 DETIK PERTAMA ===\n" +
@@ -242,9 +242,9 @@
     "perempuan/beauty → tangan perempuan; produk netral → bebas, yang paling wajar. " +
     "Sebutkan pilihanmu secara eksplisit.\n" +
     "{{CASE_RULES}}" +
-    "- Alur sisanya: 3-6s DEMO cepat (pakai/buka/tunjukkan tekstur & detail, " +
+    "- Alur sisanya: 3-7s DEMO cepat (pakai/buka/tunjukkan tekstur & detail, " +
     "fungsi utamanya; putar 360 hanya jika produk BUKAN casing HP), " +
-    "6-8s HERO SHOT produk + on-screen text 'Link di bio'.\n" +
+    "7-10s HERO SHOT produk + on-screen text 'Link di bio'.\n" +
     "- Editing MENGIKUTI BEAT: potongan cepat sinkron ke ketukan, 2-3 cut on beat, " +
     "gerakan produk tepat di beat drop.\n" +
     "- AUDIO: musik upbeat/trending beat instrumental (bukan voice-over, TANPA dialog), " +
@@ -261,7 +261,7 @@
     "JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, persentase bintang, " +
     "atau jumlah favorit.\n" +
     "PENTING: prompt harus BERUPA PERINTAH langsung ke AI video. Awali dengan kalimat " +
-    "perintah eksplisit, contoh: \"Buatkan video vertikal 9:16 berdurasi 8 detik, " +
+    "perintah eksplisit, contoh: \"Buatkan video vertikal 9:16 berdurasi 10 detik, " +
     "hands-only, dengan spesifikasi berikut:\" — sehingga bisa langsung ditempel ke " +
     "Gemini/Veo dan dieksekusi, bukan sekadar deskripsi.\n" +
     "Keluarkan HANYA teks prompt-nya, tanpa penjelasan tambahan.";
