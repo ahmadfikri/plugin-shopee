@@ -4,8 +4,9 @@
  *   - Meta campaign name
  *   - Shopee tag
  *
- * IDs are safe (lowercase alphanumeric, <=20 chars), recognisable, and unique
- * per base product/day. Caption + video generated from the same open product
+ * IDs are safe (lowercase alphanumeric, exactly 20 chars), recognisable, and
+ * unique: name(6)+concept(2)+yymmdd(6)+product-hash(3)+random(3), checked
+ * against every ID already issued. Caption + video generated from the same open product
  * reuse one experiment until the user clicks "Eksperimen Baru".
  */
 (function (global) {
@@ -36,13 +37,6 @@
 
   function slug(v) {
     return String(v || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  }
-
-  function hash2(v) {
-    let h = 0;
-    const s = String(v || "");
-    for (let i = 0; i < s.length; i++) h = ((h * 31) + s.charCodeAt(i)) >>> 0;
-    return h.toString(36).padStart(2, "0").slice(-2);
   }
 
   function baseTag(product) {
@@ -77,12 +71,39 @@
     return true;
   }
 
-  function makeId(base, conceptId, seq, code) {
+  // 3-char base36 hash (46,656 buckets) — fingerprints the exact product.
+  function hash3(v) {
+    let h = 2166136261;
+    const s = String(v || "");
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return (h % 46656).toString(36).padStart(3, "0");
+  }
+
+  // 3 random base36 chars (46,656 values). Uniqueness no longer depends on a
+  // local counter that resets when storage is cleared or another PC is used.
+  function rand3() {
+    let n;
+    try {
+      const a = new Uint32Array(1);
+      (global.crypto || crypto).getRandomValues(a);
+      n = a[0];
+    } catch (_) { n = Math.floor(Math.random() * 4294967296); }
+    return (n % 46656).toString(36).padStart(3, "0");
+  }
+
+  /* ID layout (exactly 20 chars, lowercase a-z0-9):
+   *   name(6) + concept(2) + yymmdd(6) + product(3) + random(3)
+   *   e.g. polkadps261003k3fx9a
+   * Readable part first (product · concept · day), then 6 chars of entropy:
+   * product fingerprint separates two products with similar names, random
+   * separates repeated experiments on the same product/concept/day. */
+  function makeId(base, conceptId, code, productKey, rnd) {
     const clean = slug(base) || "produk";
-    const prefix = clean.slice(0, 8) + hash2(clean); // recognisable + collision guard
+    const name = (clean + "xxxxxx").slice(0, 6);
     const cc = CONCEPT_CODE[conceptId] || "xx";
-    const n = Math.max(1, Number(seq) || 1).toString(36).padStart(2, "0").slice(-2);
-    return (prefix + cc + code + n).slice(0, 20);
+    const pk = hash3(productKey || clean);
+    const r = rnd || rand3();
+    return (name + cc + code + pk + r).slice(0, 20);
   }
 
   function hypothesis(product, conceptId) {
@@ -104,7 +125,14 @@
     const key = slug(base) + "|" + day;
     const seq = (Number(state.counters[key]) || 0) + 1;
     state.counters[key] = seq;
-    const campaignTag = makeId(base, conceptId, seq, day);
+    // Never reuse an ID already issued on this browser (retry the random part).
+    const used = new Set(state.rows.map((r) => r && r.campaignTag));
+    const productKey = p.id || p.href || p.name || base;
+    let campaignTag = makeId(base, conceptId, day, productKey);
+    for (let i = 0; used.has(campaignTag) && i < 20; i++) {
+      campaignTag = makeId(base, conceptId, day, productKey);
+    }
+    if (used.has(campaignTag)) throw new Error("Experiment ID bentrok, coba lagi.");
     const entry = {
       experimentId: campaignTag,
       campaignTag,
