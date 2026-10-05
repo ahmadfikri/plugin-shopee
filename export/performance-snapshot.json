@@ -1,30 +1,30 @@
 {
-  "generatedAt": "2026-09-22T11:47:14",
+  "generatedAt": "2026-10-05T11:55:20",
   "source": "syabab affiliate masters (read-only export)",
   "global": {
-    "clicks": 21244,
-    "orders": 903,
-    "conversionRate": 4.25,
-    "epc": 111.9,
-    "roas": 0.84,
-    "commission": 2377349,
-    "spend": 2842632
+    "clicks": 39995,
+    "orders": 2096,
+    "conversionRate": 5.24,
+    "epc": 146.1,
+    "roas": 1.12,
+    "commission": 5845176,
+    "spend": 5215269
   },
   "minClicksTrust": 25,
   "tags": {
     "(none)": {
-      "clicks": 547,
-      "orders": 8,
-      "commission": 11191,
+      "clicks": 714,
+      "orders": 10,
+      "commission": 18578,
       "spend": 0,
-      "conversionRate": 1.46,
-      "epc": 20.5,
+      "conversionRate": 1.4,
+      "epc": 26.0,
       "roas": null,
       "trusted": true,
       "verdict": "no-spend"
     },
     "A17CaseManual": {
-      "clicks": 3,
+      "clicks": 4,
       "orders": 0,
       "commission": 0,
       "spend": 0,
@@ -46,18 +46,29 @@
       "verdict": "loser"
     },
     "CaseLucu": {
-      "clicks": 307,
+      "clicks": 309,
       "orders": 19,
       "commission": 30894,
       "spend": 62128,
-      "conversionRate": 6.19,
-      "epc": 100.6,
+      "conversionRate": 6.15,
+      "epc": 100.0,
       "roas": 0.5,
       "trusted": true,
       "verdict": "loser"
     },
-    "Coklat": {
+    "Cherry": {
       "clicks": 1,
+      "orders": 0,
+      "commission": 0,
+      "spend": 0,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": null,
+      "trusted": false,
+      "verdict": "no-spend"
+    },
+    "Coklat": {
+      "clicks": 2,
       "orders": 0,
       "commission": 0,
       "spend": 0,
@@ -79,23 +90,23 @@
       "verdict": "no-spend"
     },
     "KupuA17": {
-      "clicks": 3403,
-      "orders": 111,
-      "commission": 365791,
-      "spend": 295838,
-      "conversionRate": 3.26,
-      "epc": 107.5,
-      "roas": 1.24,
+      "clicks": 5583,
+      "orders": 201,
+      "commission": 507147,
+      "spend": 559612,
+      "conversionRate": 3.6,
+      "epc": 90.8,
+      "roas": 0.91,
       "trusted": true,
-      "verdict": "profitable"
+      "verdict": "thin"
     },
     "LeatherDIY": {
-      "clicks": 20,
+      "clicks": 22,
       "orders": 1,
       "commission": 5752,
       "spend": 7613,
-      "conversionRate": 5.0,
-      "epc": 287.6,
+      "conversionRate": 4.55,
+      "epc": 261.4,
       "roas": 0.76,
       "trusted": false,
       "verdict": "thin"
@@ -112,7 +123,7 @@
       "verdict": "loser"
     },
     "LocknLockMetroAI": {
-      "clicks": 31,
+      "clicks": 32,
       "orders": 0,
       "commission": 0,
       "spend": 3635,
@@ -121,6 +132,17 @@
       "roas": 0.0,
       "trusted": true,
       "verdict": "zero-converter"
+    },
+    "PinkCase": {
+      "clicks": 2,
+      "orders": 0,
+      "commission": 0,
+      "spend": 0,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": null,
+      "trusted": false,
+      "verdict": "no-spend"
     },
     "PinkLucu": {
       "clicks": 1,
@@ -133,23 +155,34 @@
       "trusted": false,
       "verdict": "no-spend"
     },
+    "PiringIndh": {
+      "clicks": 1,
+      "orders": 0,
+      "commission": 0,
+      "spend": 855,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
     "PolkadotMag": {
-      "clicks": 1654,
-      "orders": 84,
-      "commission": 293820,
-      "spend": 249096,
-      "conversionRate": 5.08,
-      "epc": 177.6,
-      "roas": 1.18,
+      "clicks": 2972,
+      "orders": 201,
+      "commission": 642679,
+      "spend": 567313,
+      "conversionRate": 6.76,
+      "epc": 216.2,
+      "roas": 1.13,
       "trusted": true,
       "verdict": "profitable"
     },
     "SpideyCase": {
-      "clicks": 9,
+      "clicks": 10,
       "orders": 1,
       "commission": 0,
       "spend": 0,
-      "conversionRate": 11.11,
+      "conversionRate": 10.0,
       "epc": 0.0,
       "roas": null,
       "trusted": false,
@@ -177,15 +210,26 @@
       "trusted": true,
       "verdict": "zero-converter"
     },
-    "aviva": {
-      "clicks": 9,
-      "orders": 14,
-      "commission": 71979,
-      "spend": 0,
-      "conversionRate": 155.56,
-      "epc": 7997.6,
-      "roas": null,
+    "asadtsujnwpr26100101": {
+      "clicks": 2,
+      "orders": 0,
+      "commission": 0,
+      "spend": 5516,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
       "trusted": false,
+      "verdict": "loser"
+    },
+    "aviva": {
+      "clicks": 29,
+      "orders": 51,
+      "commission": 248898,
+      "spend": 0,
+      "conversionRate": 175.86,
+      "epc": 8582.7,
+      "roas": null,
+      "trusted": true,
       "verdict": "no-spend"
     },
     "bagus": {
@@ -210,6 +254,17 @@
       "trusted": false,
       "verdict": "no-spend"
     },
+    "blingReborn": {
+      "clicks": 51,
+      "orders": 0,
+      "commission": 0,
+      "spend": 42269,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": true,
+      "verdict": "zero-converter"
+    },
     "blinkShiny": {
       "clicks": 7,
       "orders": 0,
@@ -233,7 +288,7 @@
       "verdict": "loser"
     },
     "cabe": {
-      "clicks": 7,
+      "clicks": 8,
       "orders": 0,
       "commission": 0,
       "spend": 0,
@@ -242,6 +297,17 @@
       "roas": null,
       "trusted": false,
       "verdict": "no-spend"
+    },
+    "caseBurit": {
+      "clicks": 6,
+      "orders": 0,
+      "commission": 0,
+      "spend": 6957,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
     },
     "caseCouple": {
       "clicks": 14,
@@ -255,23 +321,34 @@
       "verdict": "loser"
     },
     "caseDicuci": {
-      "clicks": 1,
+      "clicks": 17,
       "orders": 0,
       "commission": 0,
-      "spend": 0,
+      "spend": 3824,
       "conversionRate": 0.0,
       "epc": 0.0,
-      "roas": null,
+      "roas": 0.0,
       "trusted": false,
-      "verdict": "no-spend"
+      "verdict": "loser"
+    },
+    "caseDuyung": {
+      "clicks": 4,
+      "orders": 0,
+      "commission": 0,
+      "spend": 654,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
     },
     "caseItemKuman": {
-      "clicks": 22,
+      "clicks": 23,
       "orders": 1,
       "commission": 1696,
       "spend": 6972,
-      "conversionRate": 4.55,
-      "epc": 77.1,
+      "conversionRate": 4.35,
+      "epc": 73.7,
       "roas": 0.24,
       "trusted": false,
       "verdict": "loser"
@@ -288,29 +365,29 @@
       "verdict": "loser"
     },
     "caseSamsungBlink": {
-      "clicks": 1818,
-      "orders": 72,
-      "commission": 196980,
-      "spend": 157332,
-      "conversionRate": 3.96,
-      "epc": 108.4,
+      "clicks": 4348,
+      "orders": 235,
+      "commission": 553024,
+      "spend": 442824,
+      "conversionRate": 5.4,
+      "epc": 127.2,
       "roas": 1.25,
       "trusted": true,
       "verdict": "profitable"
     },
     "caseSwaroskiIphone": {
-      "clicks": 39,
+      "clicks": 40,
       "orders": 3,
       "commission": 5036,
       "spend": 16425,
-      "conversionRate": 7.69,
-      "epc": 129.1,
+      "conversionRate": 7.5,
+      "epc": 125.9,
       "roas": 0.31,
       "trusted": true,
       "verdict": "loser"
     },
     "caselifyMag": {
-      "clicks": 5,
+      "clicks": 6,
       "orders": 0,
       "commission": 0,
       "spend": 2759,
@@ -320,11 +397,187 @@
       "trusted": false,
       "verdict": "loser"
     },
+    "caselucu8rba26092402": {
+      "clicks": 2,
+      "orders": 0,
+      "commission": 0,
+      "spend": 3866,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "caselucu8rmw26092703": {
+      "clicks": 3,
+      "orders": 0,
+      "commission": 0,
+      "spend": 2927,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "caselucu8rpr26092401": {
+      "clicks": 2,
+      "orders": 0,
+      "commission": 0,
+      "spend": 5365,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "caselucu8rpv26100202": {
+      "clicks": 13,
+      "orders": 0,
+      "commission": 0,
+      "spend": 8460,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "casepitaapmw26092801": {
+      "clicks": 20,
+      "orders": 0,
+      "commission": 0,
+      "spend": 5637,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "caseswar18ba26092701": {
+      "clicks": 2,
+      "orders": 0,
+      "commission": 0,
+      "spend": 3511,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "caseswar18cp26092302": {
+      "clicks": 17,
+      "orders": 2,
+      "commission": 24790,
+      "spend": 21720,
+      "conversionRate": 11.76,
+      "epc": 1458.3,
+      "roas": 1.14,
+      "trusted": false,
+      "verdict": "profitable"
+    },
+    "caseswar18mw26092407": {
+      "clicks": 2,
+      "orders": 0,
+      "commission": 0,
+      "spend": 5430,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "caseswar18mw26092801": {
+      "clicks": 254,
+      "orders": 3,
+      "commission": 7945,
+      "spend": 49161,
+      "conversionRate": 1.18,
+      "epc": 31.3,
+      "roas": 0.16,
+      "trusted": true,
+      "verdict": "loser"
+    },
+    "caseswar18mw26100202": {
+      "clicks": 35,
+      "orders": 0,
+      "commission": 0,
+      "spend": 7940,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": true,
+      "verdict": "zero-converter"
+    },
+    "caseswar18pr26092402": {
+      "clicks": 7,
+      "orders": 0,
+      "commission": 0,
+      "spend": 5559,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "caseswar18ps26100101": {
+      "clicks": 17,
+      "orders": 0,
+      "commission": 0,
+      "spend": 6195,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "caseswar18pv26092406": {
+      "clicks": 4,
+      "orders": 0,
+      "commission": 0,
+      "spend": 10222,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "caseswar18pv26092707": {
+      "clicks": 9,
+      "orders": 0,
+      "commission": 0,
+      "spend": 3038,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "casingBo": {
+      "clicks": 26,
+      "orders": 1,
+      "commission": 506,
+      "spend": 3944,
+      "conversionRate": 3.85,
+      "epc": 19.5,
+      "roas": 0.13,
+      "trusted": true,
+      "verdict": "loser"
+    },
     "casingOppo": {
       "clicks": 15,
       "orders": 0,
       "commission": 0,
       "spend": 6274,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "casingunspmw26092701": {
+      "clicks": 4,
+      "orders": 0,
+      "commission": 0,
+      "spend": 3137,
       "conversionRate": 0.0,
       "epc": 0.0,
       "roas": 0.0,
@@ -353,30 +606,63 @@
       "trusted": false,
       "verdict": "loser"
     },
+    "cid3in1mq8mw26092802": {
+      "clicks": 3,
+      "orders": 0,
+      "commission": 0,
+      "spend": 0,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": null,
+      "trusted": false,
+      "verdict": "no-spend"
+    },
+    "coachPhone": {
+      "clicks": 1964,
+      "orders": 98,
+      "commission": 255494,
+      "spend": 197033,
+      "conversionRate": 4.99,
+      "epc": 130.1,
+      "roas": 1.3,
+      "trusted": true,
+      "verdict": "profitable"
+    },
     "cucuLemonTumbler": {
-      "clicks": 24,
+      "clicks": 25,
       "orders": 1,
       "commission": 120,
       "spend": 4327,
-      "conversionRate": 4.17,
-      "epc": 5.0,
+      "conversionRate": 4.0,
+      "epc": 4.8,
       "roas": 0.03,
-      "trusted": false,
+      "trusted": true,
+      "verdict": "loser"
+    },
+    "digidiMaroon": {
+      "clicks": 78,
+      "orders": 2,
+      "commission": 4235,
+      "spend": 41261,
+      "conversionRate": 2.56,
+      "epc": 54.3,
+      "roas": 0.1,
+      "trusted": true,
       "verdict": "loser"
     },
     "dotCaseIphone": {
-      "clicks": 13,
+      "clicks": 14,
       "orders": 1,
       "commission": 149,
       "spend": 4250,
-      "conversionRate": 7.69,
-      "epc": 11.5,
+      "conversionRate": 7.14,
+      "epc": 10.7,
       "roas": 0.04,
       "trusted": false,
       "verdict": "loser"
     },
     "dukbillTiktok": {
-      "clicks": 2,
+      "clicks": 3,
       "orders": 0,
       "commission": 0,
       "spend": 0,
@@ -396,6 +682,39 @@
       "roas": 0.82,
       "trusted": false,
       "verdict": "thin"
+    },
+    "facebook": {
+      "clicks": 2,
+      "orders": 0,
+      "commission": 0,
+      "spend": 0,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": null,
+      "trusted": false,
+      "verdict": "no-spend"
+    },
+    "fakhri": {
+      "clicks": 0,
+      "orders": 1,
+      "commission": 5402,
+      "spend": 0,
+      "conversionRate": null,
+      "epc": null,
+      "roas": null,
+      "trusted": false,
+      "verdict": "no-spend"
+    },
+    "fnkocasiwcps26100203": {
+      "clicks": 30,
+      "orders": 0,
+      "commission": 0,
+      "spend": 7169,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": true,
+      "verdict": "zero-converter"
     },
     "gelangKupu": {
       "clicks": 13,
@@ -419,6 +738,17 @@
       "trusted": true,
       "verdict": "loser"
     },
+    "gliterFly": {
+      "clicks": 2,
+      "orders": 0,
+      "commission": 0,
+      "spend": 994,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
     "gojodoqKipas": {
       "clicks": 4,
       "orders": 0,
@@ -429,6 +759,17 @@
       "roas": 0.0,
       "trusted": false,
       "verdict": "loser"
+    },
+    "goojodoqaycp26092801": {
+      "clicks": 3,
+      "orders": 0,
+      "commission": 0,
+      "spend": 0,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": null,
+      "trusted": false,
+      "verdict": "no-spend"
     },
     "halatiSlik": {
       "clicks": 79,
@@ -452,24 +793,35 @@
       "trusted": false,
       "verdict": "loser"
     },
+    "keyboardLucu": {
+      "clicks": 8,
+      "orders": 1,
+      "commission": 1092,
+      "spend": 2701,
+      "conversionRate": 12.5,
+      "epc": 136.5,
+      "roas": 0.4,
+      "trusted": false,
+      "verdict": "loser"
+    },
     "kitchenCounter": {
-      "clicks": 2285,
-      "orders": 95,
-      "commission": 293090,
-      "spend": 212499,
-      "conversionRate": 4.16,
-      "epc": 128.3,
-      "roas": 1.38,
+      "clicks": 5326,
+      "orders": 279,
+      "commission": 893789,
+      "spend": 504886,
+      "conversionRate": 5.24,
+      "epc": 167.8,
+      "roas": 1.77,
       "trusted": true,
-      "verdict": "profitable"
+      "verdict": "winner"
     },
     "kodokCase": {
-      "clicks": 5,
+      "clicks": 6,
       "orders": 1,
       "commission": 1566,
       "spend": 4034,
-      "conversionRate": 20.0,
-      "epc": 313.2,
+      "conversionRate": 16.67,
+      "epc": 261.0,
       "roas": 0.39,
       "trusted": false,
       "verdict": "loser"
@@ -485,6 +837,17 @@
       "trusted": false,
       "verdict": "no-spend"
     },
+    "lamputidsvpr26092606": {
+      "clicks": 3,
+      "orders": 0,
+      "commission": 0,
+      "spend": 3831,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
     "lamputidur": {
       "clicks": 31,
       "orders": 0,
@@ -495,6 +858,28 @@
       "roas": 0.0,
       "trusted": true,
       "verdict": "zero-converter"
+    },
+    "lucuKantongCase": {
+      "clicks": 746,
+      "orders": 35,
+      "commission": 57185,
+      "spend": 112210,
+      "conversionRate": 4.69,
+      "epc": 76.7,
+      "roas": 0.51,
+      "trusted": true,
+      "verdict": "thin"
+    },
+    "luxuryCase": {
+      "clicks": 8,
+      "orders": 0,
+      "commission": 0,
+      "spend": 2933,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
     },
     "maskerKn1": {
       "clicks": 262,
@@ -519,18 +904,18 @@
       "verdict": "no-spend"
     },
     "metal": {
-      "clicks": 3560,
-      "orders": 195,
-      "commission": 435158,
-      "spend": 725167,
-      "conversionRate": 5.48,
-      "epc": 122.2,
-      "roas": 0.6,
+      "clicks": 3888,
+      "orders": 216,
+      "commission": 481315,
+      "spend": 814611,
+      "conversionRate": 5.56,
+      "epc": 123.8,
+      "roas": 0.59,
       "trusted": true,
       "verdict": "thin"
     },
     "narutoCaseIphone": {
-      "clicks": 17,
+      "clicks": 19,
       "orders": 0,
       "commission": 0,
       "spend": 3843,
@@ -540,19 +925,63 @@
       "trusted": false,
       "verdict": "loser"
     },
+    "oootokohlmcu26092601": {
+      "clicks": 17,
+      "orders": 0,
+      "commission": 0,
+      "spend": 4509,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "parfumAhmed": {
+      "clicks": 2,
+      "orders": 0,
+      "commission": 0,
+      "spend": 5455,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "polkaCrying": {
+      "clicks": 2,
+      "orders": 0,
+      "commission": 0,
+      "spend": 5100,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "polkaNew": {
+      "clicks": 217,
+      "orders": 16,
+      "commission": 54367,
+      "spend": 61045,
+      "conversionRate": 7.37,
+      "epc": 250.5,
+      "roas": 0.89,
+      "trusted": true,
+      "verdict": "thin"
+    },
     "polkadotIphone": {
-      "clicks": 4708,
-      "orders": 248,
-      "commission": 586064,
-      "spend": 356758,
-      "conversionRate": 5.27,
-      "epc": 124.5,
-      "roas": 1.64,
+      "clicks": 10194,
+      "orders": 666,
+      "commission": 1963244,
+      "spend": 813720,
+      "conversionRate": 6.53,
+      "epc": 192.6,
+      "roas": 2.41,
       "trusted": true,
       "verdict": "winner"
     },
     "polkadotLagi": {
-      "clicks": 9,
+      "clicks": 12,
       "orders": 0,
       "commission": 0,
       "spend": 3332,
@@ -573,14 +1002,47 @@
       "trusted": false,
       "verdict": "no-spend"
     },
+    "riceCooker": {
+      "clicks": 1,
+      "orders": 0,
+      "commission": 0,
+      "spend": 949,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "samsungRibbon": {
+      "clicks": 14,
+      "orders": 0,
+      "commission": 0,
+      "spend": 4372,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
+    "selusalo2xcu26092605": {
+      "clicks": 5,
+      "orders": 0,
+      "commission": 0,
+      "spend": 3359,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
     "shellaSaukia": {
-      "clicks": 1247,
-      "orders": 19,
-      "commission": 37286,
+      "clicks": 1261,
+      "orders": 21,
+      "commission": 39494,
       "spend": 155811,
-      "conversionRate": 1.52,
-      "epc": 29.9,
-      "roas": 0.24,
+      "conversionRate": 1.67,
+      "epc": 31.3,
+      "roas": 0.25,
       "trusted": true,
       "verdict": "loser"
     },
@@ -617,13 +1079,24 @@
       "trusted": false,
       "verdict": "loser"
     },
+    "tasLucu": {
+      "clicks": 19,
+      "orders": 0,
+      "commission": 0,
+      "spend": 4076,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
+    },
     "tongsangcong": {
-      "clicks": 100,
+      "clicks": 101,
       "orders": 1,
       "commission": 5663,
       "spend": 59901,
-      "conversionRate": 1.0,
-      "epc": 56.6,
+      "conversionRate": 0.99,
+      "epc": 56.1,
       "roas": 0.09,
       "trusted": true,
       "verdict": "loser"
@@ -640,7 +1113,7 @@
       "verdict": "loser"
     },
     "tumblerKupu": {
-      "clicks": 41,
+      "clicks": 42,
       "orders": 0,
       "commission": 0,
       "spend": 9446,
@@ -649,6 +1122,17 @@
       "roas": 0.0,
       "trusted": true,
       "verdict": "zero-converter"
+    },
+    "tumblerModofo": {
+      "clicks": 15,
+      "orders": 0,
+      "commission": 0,
+      "spend": 3177,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": false,
+      "verdict": "loser"
     },
     "tumblerMurah": {
       "clicks": 70,
@@ -662,7 +1146,7 @@
       "verdict": "loser"
     },
     "youtubeshort": {
-      "clicks": 2,
+      "clicks": 7,
       "orders": 0,
       "commission": 0,
       "spend": 0,
