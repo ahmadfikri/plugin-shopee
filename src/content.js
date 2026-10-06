@@ -4,6 +4,8 @@
   "use strict";
   const { RMStore, RMScraper, RMAnalytics, RMPanel, RMAi } = window;
   let lastAnalysis = null;
+  // Activity log (activitylog.js). Never let logging break the plugin.
+  function L(type, data) { try { if (window.RMLog) window.RMLog.log(type, data); } catch (_) {} }
 
   function isSearchPage() {
     // Marketplace search OR any affiliate.shopee page (product/search surfaces there).
@@ -72,11 +74,26 @@
     // repainted the filtered table over it. Only the newest render may write.
     const myToken = ++shortlistRenderToken;
     RMShortlist.getMeta().then((meta) => {
-      if (myToken !== shortlistRenderToken) return;   // superseded — do not paint
+      if (myToken !== shortlistRenderToken) {         // superseded — do not paint
+        L("shortlist-render-skip", { token: myToken, newest: shortlistRenderToken });
+        return;
+      }
       // pageLabel = the label products from the CURRENTLY OPEN page carry, so the
       // "Halaman ini" toggle can filter the one cumulative table down to them.
       const pageLabel = lastAnalysis ? observedLabel(lastAnalysis) : "";
       host.innerHTML = RMPanel.shortlistSection(meta, isOpen, shortlistKeywordFilter, pageLabel);
+      {
+        const all = (meta.items || []);
+        const f = shortlistKeywordFilter;
+        const matching = f ? all.filter((x) => String(x.keyword || "") === String(f)).length : all.length;
+        L("shortlist-render", {
+          total: all.length, matchingFilter: matching, filter: f || null,
+          expanded: isOpen, pageLabel,
+          rowsInDom: host.querySelectorAll(".rm-sl-table tbody tr").length,
+          hostAttached: document.contains(host),
+          keywordsStored: Array.from(new Set(all.map((x) => x.keyword || ""))).slice(0, 15)
+        });
+      }
       // The progress line lives inside this host, so every re-render destroys it.
       // A finished scan re-rendered immediately, which wiped its own summary
       // ("Selesai — 2/2 kata kunci") microseconds after writing it: the user
@@ -120,6 +137,9 @@
         const tabs = RMBulk.findCategoryTabs();
         if (!tabs.length && !confirm(
             "Tidak menemukan tab kategori di halaman ini. Pindai halaman ini saja?")) return;
+        L("bulk-start", { mode: "kategori", tabs: tabs.length,
+          tabLabels: tabs.slice(0, 15).map((t) => (t.textContent || "").trim().slice(0, 30)),
+          includePages: !!(pagesCb && pagesCb.checked), cardsOnPage: RMScraper.findCards().length });
         bulk.disabled = true; bulk.textContent = "⏳ Memindai…";
         shortlistNote = "";     // a new crawl must not show the previous summary
         if (stopBtn) stopBtn.style.display = "";
@@ -149,6 +169,7 @@
               }
             }
           });
+          L("bulk-end", { mode: "kategori", result: r });
           if (r && r.error && prog) {
             shortlistNote = r.error;
             prog.textContent = shortlistNote;
@@ -159,6 +180,8 @@
             prog.textContent = shortlistNote;
           }
         } catch (err) {
+          L("bulk-crash", { mode: "kategori", msg: String(err && err.message || err),
+            stack: err && String(err.stack || "").slice(0, 800) });
           shortlistNote = "Gagal: " + (err && err.message || err);
           if (prog) prog.textContent = shortlistNote;
         } finally {
@@ -189,6 +212,8 @@
                 "Buka halaman Product Offer yang punya kolom search.");
           return;
         }
+        L("bulk-start", { mode: "keyword", keywords, cardsOnPage: RMScraper.findCards().length,
+          searchBox: !!RMBulk.findSearchInput() });
         kwScan.disabled = true; kwScan.textContent = "⏳ Memindai…";
         shortlistNote = "";     // a new scan must not show the previous summary
         shortlistKeywordFilter = null;   // start from a clean, unfiltered view
@@ -224,11 +249,14 @@
               }
             }
           });
+          L("bulk-end", { mode: "keyword", result: scanResult });
           if (scanResult && scanResult.error && prog) {
             shortlistNote = scanResult.error;
             prog.textContent = shortlistNote;
           }
         } catch (err) {
+          L("bulk-crash", { mode: "keyword", msg: String(err && err.message || err),
+            stack: err && String(err.stack || "").slice(0, 800) });
           shortlistNote = "Gagal: " + (err && err.message || err);
           if (prog) prog.textContent = shortlistNote;
         } finally {
@@ -286,6 +314,18 @@
       cfg.panelCollapsed = !hidden; RMStore.setConfig(cfg);
     });
     panel.querySelector(".rm-export").addEventListener("click", exportWatchlist);
+    const logBtn = panel.querySelector(".rm-log-export");
+    if (logBtn && window.RMLog) logBtn.addEventListener("click", async () => {
+      const n = await RMLog.exportFile();
+      logBtn.textContent = `✓ ${n} baris log diunduh`;
+      setTimeout(() => { logBtn.textContent = "⬇ Log aktivitas"; }, 2500);
+    });
+    const logClr = panel.querySelector(".rm-log-clear");
+    if (logClr && window.RMLog) logClr.addEventListener("click", async () => {
+      if (!confirm("Hapus seluruh log aktivitas?")) return;
+      await RMLog.clear();
+      L("log-cleared", {});
+    });
 
     panel.addEventListener("click", async (e) => {
       const sorter = e.target.closest && e.target.closest(".rm-sort");
@@ -642,8 +682,10 @@
     // A bulk scan may have taken ownership of the page during the await above.
     // If so, ABORT this late render — otherwise it rebuilds the panel underneath
     // the running crawl and blanks the shortlist ("second scan shows nothing").
-    if (suspended) return;
+    if (suspended) { L("run-abort", { reason: "bulk scan sedang jalan" }); return; }
     const snap = RMScraper.scrapePage();
+    L("page-scan", { url: location.href.slice(0, 200), cards: RMScraper.findCards().length,
+      parsed: snap.products.length, panelsRemoved: document.querySelectorAll(".rm-panel, .rm-diag").length });
 
     document.querySelectorAll(".rm-panel, .rm-diag").forEach((n) => n.remove());
 
@@ -657,8 +699,14 @@
         `<span class="rm-kw">aktif di ${location.hostname}</span></div>` +
         `<div class="rm-body"><b>0 produk ke-parse.</b> Content script jalan, tapi ` +
         `selector belum cocok dengan struktur halaman ini. ` +
-        `Buka DevTools Console → cari log "RM:". Kirim potongan HTML satu kartu produk ke Kiro untuk kalibrasi.</div>`;
+        `Buka DevTools Console → cari log "RM:". Kirim potongan HTML satu kartu produk ke Kiro untuk kalibrasi.` +
+        `<div><button class="rm-log-export">⬇ Log aktivitas</button></div></div>`;
       (document.querySelector("main") || document.body).prepend(diag);
+      const dl = diag.querySelector(".rm-log-export");
+      if (dl && window.RMLog) dl.addEventListener("click", () => RMLog.exportFile());
+      L("diag-zero-products", { host: location.hostname, path: location.pathname,
+        cards: RMScraper.findCards().length,
+        firstCardHtml: (RMScraper.findCards()[0] && RMScraper.findCards()[0].outerHTML || "").slice(0, 1500) });
       console.log("RM: 0 produk. host=", location.hostname, "path=", location.pathname);
       console.log("RM: cards ditemukan oleh findCards() =", RMScraper.findCards().length);
       return;
@@ -681,9 +729,13 @@
     // it REPLACED the panel — which blanked the shortlist rendered into the first
     // one. One panel, one render.
     if (window.RMShortlist) {
+      const lbl = observedLabel(a);
       RMShortlist.add(a.products, observedLabel(a))
-        .then(() => renderShortlist(panel))
-        .catch(() => renderShortlist(panel));
+        .then((r) => { L("page-store", { label: lbl, analyzed: a.products.length,
+          scored: a.products.filter((p) => p && p.pro).length, added: r.added, updated: r.updated, total: r.total });
+          renderShortlist(panel); })
+        .catch((err) => { L("page-store-error", { label: lbl, msg: String(err && err.message || err) });
+          renderShortlist(panel); });
     } else {
       renderShortlist(panel);
     }
@@ -777,6 +829,7 @@
     try {
       await run();
     } catch (e) {
+      L("run-crash", { msg: String(e && e.message || e), stack: e && String(e.stack || "").slice(0, 800) });
       console.log("RM: run gagal:", e && e.message);
     } finally {
       runInFlight = false;

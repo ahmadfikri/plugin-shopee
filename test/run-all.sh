@@ -158,6 +158,10 @@ echo
 echo "=== 30. Test: larangan harga ditegakkan di OUTPUT caption & prompt video ==="
 node test/e2e-price-guard.js || fail=1
 
+echo
+echo "=== 31. Test BROWSER: log aktivitas mencatat klik + tiap tahap bulk scan ==="
+node test/e2e-browser-activitylog.js || fail=1
+
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else

@@ -127,20 +127,6 @@
     return el.closest("li,button,a,[role='button']") || el;
   }
 
-  /* The control for ONE specific page number, e.g. page 3. Clicking the number
-   * is what a human does and survives icon/markup churn far better than trying
-   * to identify which glyph is the "next" chevron. */
-  function findPageButton(n) {
-    const box = findPaginationContainer();
-    if (!box) return null;
-    const want = String(n);
-    const el = Array.from(box.querySelectorAll("li,button,a,span,div"))
-      .find((x) => x.children.length === 0 && x.offsetParent !== null &&
-                   (x.textContent || "").trim() === want);
-    if (!el) return null;
-    if (/disabled/i.test(el.className || "")) return null;
-    return el.closest("li,button,a,[role='button']") || el;
-  }
 
   function signature() {
     const cards = global.RMScraper ? global.RMScraper.findCards() : [];
@@ -214,12 +200,39 @@
     return { ready: false, stopped: false, cards: 0 };
   }
 
+  function L(type, data) { try { if (global.RMLog) global.RMLog.log(type, data); } catch (_) {} }
+
   async function scrapeAndStore(label, cfg) {
-    if (!global.RMScraper || !global.RMAnalytics || !global.RMShortlist) return 0;
+    if (!global.RMScraper || !global.RMAnalytics || !global.RMShortlist) {
+      L("bulk-batch-error", { label, note: "modul tidak lengkap",
+        scraper: !!global.RMScraper, analytics: !!global.RMAnalytics, shortlist: !!global.RMShortlist });
+      return 0;
+    }
+    const cards = global.RMScraper.findCards().length;
     const snap = global.RMScraper.scrapePage();
-    if (!snap.products.length) return 0;
-    const a = global.RMAnalytics.analyze(snap, cfg);
-    const res = await global.RMShortlist.add(a.products, label);
+    if (!snap.products.length) {
+      L("bulk-batch", { label, cards, parsed: 0, note: "0 produk ter-parse dari kartu" });
+      return 0;
+    }
+    let a;
+    try { a = global.RMAnalytics.analyze(snap, cfg); }
+    catch (err) {
+      L("bulk-batch-error", { label, cards, parsed: snap.products.length,
+        stage: "analyze", msg: String(err && err.message || err), stack: err && String(err.stack || "").slice(0, 600) });
+      throw err;
+    }
+    const scored = (a.products || []).filter((p) => p && p.pro).length;
+    let res;
+    try { res = await global.RMShortlist.add(a.products, label); }
+    catch (err) {
+      L("bulk-batch-error", { label, cards, parsed: snap.products.length, scored,
+        stage: "shortlist.add", msg: String(err && err.message || err) });
+      throw err;
+    }
+    L("bulk-batch", { label, cards, parsed: snap.products.length,
+      analyzed: (a.products || []).length, scored,
+      added: res.added, updated: res.updated, total: res.total,
+      sample: snap.products.slice(0, 2).map((p) => ({ id: p.id, name: String(p.name || "").slice(0, 50), price: p.price })) });
     return res.total;
   }
 
@@ -236,7 +249,8 @@
     const cfg = opts.cfg;
     const delay = opts.delayMs || 2500;
     const maxSteps = opts.maxSteps || 40;
-    const report = opts.onProgress || function () {};
+    const userReport = opts.onProgress || function () {};
+    const report = (st) => { L("bulk-progress", Object.assign({ mode: "kategori" }, st)); userReport(st); };
     let steps = 0, total = 0;
 
     try {
@@ -412,7 +426,8 @@
     running = true; stopRequested = false;
     const cfg = opts.cfg;
     const delay = opts.delayMs || 3000;
-    const report = opts.onProgress || function () {};
+    const userReport = opts.onProgress || function () {};
+    const report = (st) => { L("bulk-progress", Object.assign({ mode: "keyword" }, st)); userReport(st); };
     let total = 0, done = 0, lastKeyword = null;
 
     // Fikri wants a fresh list per bulk search, but clearing at the START was a
@@ -460,6 +475,9 @@
             pressEnter(live);
           }
           result = await waitForSearchResult(prev, 15000);
+          L("bulk-search-wait", { keyword: kw, attempt, viaButton: !!btn,
+            ready: result.ready, cards: result.cards, prevSig: String(prev).slice(0, 120),
+            nowSig: String(signature()).slice(0, 120), loading: pageLoading() });
         }
 
         if (stopRequested || result.stopped) break;

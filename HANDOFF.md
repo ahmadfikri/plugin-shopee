@@ -277,3 +277,7 @@ Experiment ID (Campaign Meta = Tag Shopee) dibuat unik: nama6+konsep2+yymmdd+sid
 
 ## v0.9.17 (2026-10-03)
 Audit: price guard di output caption+video (stripPrice), template video custom tetap dapat {{context}}, {{price}} tidak bocor. Lihat documentation/2026-10-03-audit-bug-harga.md
+
+## v0.9.18 (2026-10-06) Log aktivitas
+src/activitylog.js merekam klik, input plugin/search, tiap tahap bulk scan, render shortlist (baris di layar), error JS.
+Ekspor via panel "⬇ Log aktivitas" atau popup. Lihat documentation/2026-10-06-log-aktivitas.md.

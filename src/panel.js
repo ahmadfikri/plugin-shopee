@@ -291,7 +291,9 @@
       headerCards(a) + charts(a, cfg) +
       `<div class="rm-sl-host"></div>` +
       `<div class="rm-note">Angka Terjual/bln & Omset = ESTIMASI dari data publik Shopee, bukan angka resmi. Untuk arah, bukan presisi.</div>` +
-      `<div class="rm-foot"><button class="rm-export">⬇ Export watchlist (CSV)</button></div>` +
+      `<div class="rm-foot"><button class="rm-export">⬇ Export watchlist (CSV)</button>` +
+      `<button class="rm-log-export">⬇ Log aktivitas</button>` +
+      `<button class="rm-log-clear ghost">Hapus log</button></div>` +
       `</div>`;
     return wrap;
   }
