@@ -42,12 +42,14 @@
 
   // Add a scanned batch. Existing ids are UPDATED (fresher score wins) rather
   // than duplicated, so re-visiting a page does not inflate the list.
-  function addUnsafe(products, keyword) {
+  function addUnsafe(products, keyword, opts) {
+    const runId = (opts && opts.run) || null;
     return getMeta().then((meta) => {
       const items = meta.items || [];
       const byId = new Map(items.map((x) => [x.id, x]));
       const now = Date.now();
       let added = 0, updated = 0;
+      const addedIds = [], seenIds = [];
 
       for (const p of products) {
         if (!p || !p.pro) continue;
@@ -77,7 +79,9 @@
           epcZero: ep ? !!ep.zeroConverter : false,
           keyword: keyword || "",
           href: p.href || "",
-          at: now
+          at: now,
+          firstAt: now,       // first time this product ever entered the list
+          run: runId          // bulk-scan run that last touched it (null = observer)
         };
         if (byId.has(entry.id)) {
           const old = byId.get(entry.id);
@@ -88,9 +92,14 @@
               !/^cari:\s*/i.test(entry.keyword || "")) {
             entry.keyword = old.keyword;
           }
-          byId.set(entry.id, entry); updated++;
+          entry.firstAt = old.firstAt || old.at || now;
+          // The page observer re-saves the visible page right after a bulk run
+          // ends; it must not strip the run tag, or the "hasil scan terakhir"
+          // view loses exactly the products that are on screen.
+          if (!runId && old.run) entry.run = old.run;
+          byId.set(entry.id, entry); updated++; seenIds.push(entry.id);
         }
-        else { byId.set(entry.id, entry); added++; }
+        else { byId.set(entry.id, entry); added++; addedIds.push(entry.id); seenIds.push(entry.id); }
       }
 
       let merged = Array.from(byId.values());
@@ -112,15 +121,30 @@
         chrome.storage.local.set({ [KEY]: out }, () => {
           const err = chrome.runtime && chrome.runtime.lastError;
           if (err) reject(new Error("Shortlist gagal disimpan: " + err.message));
-          else r({ added, updated, total: merged.length, scans: out.scans,
+          else r({ added, updated, addedIds, seenIds, total: merged.length, scans: out.scans,
                    keywords: out.keywords });
         }));
     });
   }
 
-  function add(products, keyword) {
-    return serialized(() => addUnsafe(products, keyword));
+  function add(products, keyword, opts) {
+    return serialized(() => addUnsafe(products, keyword, opts));
   }
+
+  // One filter rule for the table AND the activity log. "__run:<id>" = every
+  // product touched by that bulk-scan run; anything else = exact keyword label.
+  const RUN_PREFIX = "__run:";
+  function filterItems(items, filter) {
+    items = items || [];
+    if (!filter) return items;
+    const f = String(filter);
+    if (f.indexOf(RUN_PREFIX) === 0) {
+      const id = f.slice(RUN_PREFIX.length);
+      return items.filter((x) => x && x.run === id);
+    }
+    return items.filter((x) => String(x.keyword || "") === f);
+  }
+  function isRunFilter(filter) { return !!filter && String(filter).indexOf(RUN_PREFIX) === 0; }
 
   // Ranked view. `limit` null/0 = everything.
   /* Ranking. Sorted by EPC SCORE when a prediction exists, because that is the
@@ -159,5 +183,6 @@
     return head.join(",") + "\n" + rows.join("\n");
   }
 
-  global.RMShortlist = { KEY, add, getAll, getMeta, clear, ranked, stats, toCsv };
+  global.RMShortlist = { KEY, add, getAll, getMeta, clear, ranked, stats, toCsv,
+                         filterItems, isRunFilter, RUN_PREFIX };
 })(typeof window !== "undefined" ? window : this);

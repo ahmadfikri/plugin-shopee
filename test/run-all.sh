@@ -162,6 +162,9 @@ echo
 echo "=== 31. Test BROWSER: log aktivitas mencatat klik + tiap tahap bulk scan ==="
 node test/e2e-browser-activitylog.js || fail=1
 
+echo "=== 34. Browser test: setelah bulk scan, tabel = hasil scan itu (BARU di atas) ==="
+node test/e2e-browser-runview.js || fail=1
+
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else

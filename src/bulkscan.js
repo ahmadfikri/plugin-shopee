@@ -202,7 +202,7 @@
 
   function L(type, data) { try { if (global.RMLog) global.RMLog.log(type, data); } catch (_) {} }
 
-  async function scrapeAndStore(label, cfg) {
+  async function scrapeAndStore(label, cfg, tally) {
     if (!global.RMScraper || !global.RMAnalytics || !global.RMShortlist) {
       L("bulk-batch-error", { label, note: "modul tidak lengkap",
         scraper: !!global.RMScraper, analytics: !!global.RMAnalytics, shortlist: !!global.RMShortlist });
@@ -223,7 +223,7 @@
     }
     const scored = (a.products || []).filter((p) => p && p.pro).length;
     let res;
-    try { res = await global.RMShortlist.add(a.products, label); }
+    try { res = await global.RMShortlist.add(a.products, label, tally ? { run: tally.runId } : undefined); }
     catch (err) {
       L("bulk-batch-error", { label, cards, parsed: snap.products.length, scored,
         stage: "shortlist.add", msg: String(err && err.message || err) });
@@ -233,6 +233,13 @@
       analyzed: (a.products || []).length, scored,
       added: res.added, updated: res.updated, total: res.total,
       sample: snap.products.slice(0, 2).map((p) => ({ id: p.id, name: String(p.name || "").slice(0, 50), price: p.price })) });
+    if (tally) {
+      // DISTINCT products: the crawl scans the opening page and then usually the
+      // same "All" tab again, so summing per-batch counts double-counts.
+      (res.addedIds || []).forEach((id) => tally.newIds.add(id));
+      (res.seenIds || []).forEach((id) => tally.seenIds.add(id));
+      tally.batches++;
+    }
     return res.total;
   }
 
@@ -252,6 +259,9 @@
     const userReport = opts.onProgress || function () {};
     const report = (st) => { L("bulk-progress", Object.assign({ mode: "kategori" }, st)); userReport(st); };
     let steps = 0, total = 0;
+    // Run tag: every product this crawl touches is stamped with runId so the
+    // panel can show THIS run's results instead of the unchanged cumulative top 20.
+    const tally = { runId: "r" + Date.now().toString(36), newIds: new Set(), seenIds: new Set(), batches: 0 };
 
     try {
       const tabs0 = findCategoryTabs();
@@ -267,7 +277,7 @@
         : "Tidak menemukan tab kategori — memindai halaman ini saja." });
 
       // always capture the current view first
-      total = await scrapeAndStore(currentLabel(), cfg);
+      total = await scrapeAndStore(currentLabel(), cfg, tally);
       report({ phase: "scan", label: currentLabel(), index: 0, of: labels.length, total });
 
       for (let i = 0; i < labels.length && steps < maxSteps; i++) {
@@ -288,7 +298,7 @@
                    note: "tidak ada perubahan / kosong" });
           continue;
         }
-        total = await scrapeAndStore(label, cfg);
+        total = await scrapeAndStore(label, cfg, tally);
         report({ phase: "scan", label, index: i + 1, of: labels.length, total });
         await sleep(delay);
 
@@ -302,7 +312,7 @@
             try { next.click(); } catch (_) { break; }
             steps++;
             if (!(await waitForChange(prevP, 9000))) break;
-            total = await scrapeAndStore(label + " · hal " + (pg + 2), cfg);
+            total = await scrapeAndStore(label + " · hal " + (pg + 2), cfg, tally);
             report({ phase: "scan", label: label + " · hal " + (pg + 2),
                      index: i + 1, of: labels.length, total });
             await sleep(delay);
@@ -311,7 +321,9 @@
       }
       report({ phase: stopRequested ? "stopped" : "done", total, note:
         stopRequested ? "Dihentikan oleh pengguna." : "Selesai." });
-      return { total, steps, stopped: stopRequested };
+      return { total, steps, stopped: stopRequested, runId: tally.runId,
+               added: tally.newIds.size, updated: tally.seenIds.size - tally.newIds.size,
+               batches: tally.batches };
     } finally {
       running = false; stopRequested = false;
     }

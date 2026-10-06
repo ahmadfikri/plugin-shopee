@@ -85,7 +85,7 @@
       {
         const all = (meta.items || []);
         const f = shortlistKeywordFilter;
-        const matching = f ? all.filter((x) => String(x.keyword || "") === String(f)).length : all.length;
+        const matching = RMShortlist.filterItems(all, f).length;
         L("shortlist-render", {
           total: all.length, matchingFilter: matching, filter: f || null,
           expanded: isOpen, pageLabel,
@@ -173,11 +173,19 @@
           if (r && r.error && prog) {
             shortlistNote = r.error;
             prog.textContent = shortlistNote;
-          } else if (r && !shortlistNote && prog) {
-            // A crawl that only ever emitted "scan" phases still deserves a
-            // readable ending instead of the last mid-scan line.
-            shortlistNote = `Selesai — total ${r.total} produk dari semua kategori.`;
-            prog.textContent = shortlistNote;
+          } else if (r && r.runId) {
+            // Bug 6 Okt: the crawl stored 180 products but the table still
+            // showed the same cumulative top 20 (most were re-scans, the 14 new
+            // ones ranked below), so it looked like bulk scan did nothing. End
+            // on THIS run's results, new products first, with real counts.
+            const seen = (r.added || 0) + (r.updated || 0);
+            shortlistNote = (r.stopped ? "Dihentikan" : "Selesai") +
+              ` — ${r.batches || 0} halaman dipindai, ${seen} produk: ` +
+              `${r.added || 0} BARU, ${r.updated || 0} sudah ada (diperbarui). ` +
+              `Total riset ${r.total} produk. Tabel di bawah = hasil scan ini; ` +
+              `klik "Semua produk" untuk daftar kumulatif.`;
+            if (prog) prog.textContent = shortlistNote;
+            shortlistRunView = { filter: RMShortlist.RUN_PREFIX + r.runId };
           }
         } catch (err) {
           L("bulk-crash", { mode: "kategori", msg: String(err && err.message || err),
@@ -189,7 +197,12 @@
           lastSig = "";   // page moved while suspended; allow a fresh scan
           bulk.disabled = false; bulk.textContent = "▶ Bulk Scan Semua Kategori";
           if (stopBtn) { stopBtn.style.display = "none"; stopBtn.textContent = "■ Stop"; }
-          renderShortlist(panel, shortlistExpanded);
+          if (shortlistRunView) {
+            const v = shortlistRunView; shortlistRunView = null;
+            renderShortlist(panel, true, v.filter);
+          } else {
+            renderShortlist(panel, shortlistExpanded);
+          }
         }
       });
       if (stopBtn && window.RMBulk) stopBtn.addEventListener("click", () => {
@@ -787,6 +800,7 @@
   // Last terminal scan message, re-painted after each re-render so a finished
   // scan's summary stays readable instead of vanishing with the element.
   let shortlistNote = "";
+  let shortlistRunView = null;     // set by a finished category crawl
 
   function currentSignature() {
     const cards = RMScraper.findCards();

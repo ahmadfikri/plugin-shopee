@@ -281,3 +281,6 @@ Audit: price guard di output caption+video (stripPrice), template video custom t
 ## v0.9.18 (2026-10-06) Log aktivitas
 src/activitylog.js merekam klik, input plugin/search, tiap tahap bulk scan, render shortlist (baris di layar), error JS.
 Ekspor via panel "⬇ Log aktivitas" atau popup. Lihat documentation/2026-10-06-log-aktivitas.md.
+
+## v0.9.19 (2026-10-06) Hasil bulk scan terlihat
+Log v0.9.18 membuktikan bulk scan menyimpan semua batch (1217→1231), tapi tabel tetap top-20 kumulatif yang sama, jadi terlihat "tidak terjadi apa-apa". Sekarang setelah bulk scan kategori tabel = hasil run itu (field `run` + `firstAt` di shortlist), BARU di atas dengan badge, ringkasan menyebut jumlah baru/sudah ada (produk unik). Test: `test/e2e-browser-runview.js`. Detail: `documentation/2026-10-06-hasil-bulk-scan-terlihat.md`.

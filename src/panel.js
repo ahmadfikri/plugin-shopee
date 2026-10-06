@@ -186,7 +186,7 @@
       `<div class="rm-epc-sub">Rp${fmtNum(x.epc)}/klik · ${x.epcConfidence}</div>`;
   }
 
-  function shortlistRow(x, i) {
+  function shortlistRow(x, i, fresh) {
     const cls = ACTION_CLASS[x.action] || "rm-grey";
     const basisIcon = x.basis === "tag" ? "✅" : x.basis === "global" ? "~" : "⚠️";
     const href = safeHref(x.href);
@@ -200,7 +200,7 @@
     // for drill-down.
     return `<tr>` +
       `<td class="rm-sl-rank" data-sort="${i + 1}">${i + 1}</td>` +
-      `<td class="rm-name rm-drill" data-sort="${safeName}" data-id="${safeId}" title="Klik untuk analisa mendalam: ${safeName}">${esc((x.name || "").slice(0, 44))} <span class="rm-drill-hint">🔍</span></td>` +
+      `<td class="rm-name rm-drill" data-sort="${safeName}" data-id="${safeId}" title="Klik untuk analisa mendalam: ${safeName}">${fresh ? `<span class="rm-new-badge">BARU</span> ` : ""}${esc((x.name || "").slice(0, 44))} <span class="rm-drill-hint">🔍</span></td>` +
       `<td data-sort="${x.price == null ? -1 : x.price}">${x.price != null ? fmtRp(x.price) : "?"}</td>` +
       `<td data-sort="${x.commissionPct == null ? -1 : x.commissionPct}">${x.commissionPct != null ? x.commissionPct + "%" : "?"}</td>` +
       `<td data-sort="${x.rating == null ? -1 : x.rating}">${rating}</td>` +
@@ -217,9 +217,16 @@
 
   function shortlistSection(meta, expanded, filterKeyword, pageLabel) {
     const allItems = (meta && meta.items) || [];
-    const items = filterKeyword
-      ? allItems.filter((x) => String(x.keyword || "") === String(filterKeyword))
-      : allItems;
+    const SL = global.RMShortlist;
+    const runView = !!(SL && SL.isRunFilter && SL.isRunFilter(filterKeyword));
+    const items = !filterKeyword ? allItems
+      : (SL && SL.filterItems) ? SL.filterItems(allItems, filterKeyword)
+      : allItems.filter((x) => String(x.keyword || "") === String(filterKeyword));
+    // "new in this run" = first entered the list during this run's time span
+    const runStart = runView && items.length
+      ? Math.min.apply(null, items.map((x) => x.at || Infinity)) : 0;
+    const isNew = (x) => runView && (x.firstAt || 0) >= runStart;
+    const newCount = runView ? items.filter(isNew).length : 0;
     if (!allItems.length) {
       return `<div class="rm-sl">` +
         `<div class="rm-sl-head"><b>🗂 Shortlist Kumulatif</b>` +
@@ -236,14 +243,18 @@
         `</div>`;
     }
     const s = global.RMShortlist ? global.RMShortlist.stats(items) : { total: items.length };
-    const list = global.RMShortlist
+    let list = global.RMShortlist
       ? global.RMShortlist.ranked(items, expanded ? 0 : SHORT_TOP)
       : items.slice(0, SHORT_TOP);
+    if (runView) {   // new products on top, each group keeps its ranking
+      list = list.filter(isNew).concat(list.filter((x) => !isNew(x)));
+    }
     const hiddenCount = items.length - list.length;
 
     return `<div class="rm-sl">` +
       `<div class="rm-sl-head">` +
-      `<b>${filterKeyword ? `🔎 ${esc(String(filterKeyword).replace(/^cari:\s*/, ""))}` : "🗂 Riset Produk (kumulatif)"}</b> ` +
+      `<b>${runView ? `🆕 Hasil bulk scan terakhir <span class="rm-sl-newcount">(${newCount} baru)</span>`
+          : filterKeyword ? `🔎 ${esc(String(filterKeyword).replace(/^cari:\s*/, ""))}` : "🗂 Riset Produk (kumulatif)"}</b> ` +
       `<span class="rm-sl-stat">${items.length} ditampilkan · ${allItems.length} total · ${meta.scans || 0} scan · ` +
       `<span class="rm-green">${s.iklankan} iklankan</span> · ` +
       `<span class="rm-yellow">${s.coba} coba</span> · ` +
@@ -273,7 +284,7 @@
       sortHead("EPC", 6, "number") + sortHead("PRO", 7, "number") +
       sortHead("Kata kunci", 8, "text") + `<th></th>` +
       `</tr></thead><tbody>` +
-      list.map(shortlistRow).join("") +
+      list.map((x, i) => shortlistRow(x, i, isNew(x))).join("") +
       `</tbody></table>` +
       (!expanded && hiddenCount > 0
         ? `<div class="rm-sub">+${hiddenCount} produk lain disembunyikan — klik "Tampilkan semua".</div>` : "") +

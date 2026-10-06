@@ -128,3 +128,8 @@
 .rm-sort { border: 0; background: transparent; color: #9b3b2b; padding: 0 2px;
   margin-left: 2px; cursor: pointer; font-size: 11px; line-height: 1; vertical-align: middle; }
 .rm-sort:hover { color: #ee4d2d; transform: scale(1.15); }
+
+/* v0.9.19: hasil bulk scan terakhir */
+.rm-new-badge { display:inline-block; background:#16a34a; color:#fff; font-size:10px; font-weight:700;
+  padding:1px 5px; border-radius:4px; margin-right:4px; vertical-align:middle; }
+.rm-sl-newcount { color:#16a34a; font-weight:700; }
