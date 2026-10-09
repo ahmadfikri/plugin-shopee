@@ -7,6 +7,16 @@
   // presenter preferences (adult hijab woman, natural not lebay, outdoor daylight,
   // casual Indonesian, 9:16 vertical, ends "link di bio"). {{context}} is filled
   // with the scraped product knowledge; the model returns the finished prompt.
+  // Fikri's rule (2026-10-09): rating is NEVER mentioned — not in captions, not
+  // in video prompts, not as a hook, not as on-screen text. One constant feeds
+  // every prompt template and productContext(); stripRating() enforces it on
+  // the OUTPUT so a stale stored prompt or an ignoring model still can't leak it.
+  const RATING_BAN =
+    "JANGAN sebut, tulis, atau singgung RATING dalam bentuk apa pun — tidak ada angka rating " +
+    "apa pun, bintang atau emoji bintang, 'rating tinggi', jumlah review/ulasan, " +
+    "persentase bintang, jumlah terjual/sudah laku berapa, atau jumlah favorit. " +
+    "Angkat sisi lain: fungsi produk, masalah yang dipecahkan, tampilan, momen pemakaian.";
+
   const DEFAULT_VIDEO_PROMPT =
     "Kamu penulis prompt video Veo/Gemini untuk iklan Shopee affiliate. " +
     "Buatkan SATU prompt video sinematik siap-tempel ke Google Flow/Veo, format " +
@@ -19,9 +29,8 @@
     "- FRAME PERTAMA sudah ada gerakan/ekspresi + produk terlihat. JANGAN mulai dari " +
     "frame kosong, logo, teks pembuka, atau presenter yang belum melakukan apa pun.\n" +
     "- Buka dengan hook verbal SINGKAT (maks 5-6 kata, langsung ke inti/rasa penasaran) " +
-    "ATAU hook visual kuat — boleh manfaatkan RATING kalau angkanya mengesankan " +
-    "(JANGAN sebut jumlah terjual atau jumlah review) " +
-    "kalau angkanya memang mengesankan.\n" +
+    "ATAU hook visual kuat (fungsi produk, masalah yang dipecahkan, momen reveal). " +
+    "JANGAN pakai rating, bintang, jumlah terjual, atau jumlah review sebagai hook.\n" +
     "- Ada momen visual PUNCAK sebelum detik ke-3, bukan ditahan sampai akhir.\n" +
     "- Gerakan kamera di 3 detik pertama harus dinamis (push-in cepat / whip pan / reveal).\n" +
     "Tulis bagian ini paling detail dibanding bagian lain.\n\n" +
@@ -49,9 +58,8 @@
     "deskripsikan detail bentuk produk secara spesifik — cukup rujuk 'produk ini'. " +
     "LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga. " +
     "SEBUT NAMA PRODUK secara jelas dalam dialog dan/atau on-screen text — jangan ragu " +
-    "menyebut nama/brand-nya. Kalau memakai bukti sosial, CUKUP RATING saja; " +
-    "JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, persentase bintang, " +
-    "atau jumlah favorit. " +
+    "menyebut nama/brand-nya. " +
+    "LARANGAN RATING: " + RATING_BAN + " " +
     "PENTING: prompt harus BERUPA PERINTAH langsung ke AI video. Awali dengan kalimat " +
     "perintah eksplisit, contoh: \"Buatkan video vertikal 9:16 berdurasi 10 detik dengan " +
     "spesifikasi berikut:\" — sehingga bisa langsung ditempel ke Gemini/Veo dan dieksekusi, " +
@@ -259,9 +267,7 @@
     "- LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga.\n" +
     "- SEBUT NAMA PRODUK secara jelas (di on-screen text dan/atau teks akhir). Jangan " +
     "ragu menyebut nama/brand-nya.\n" +
-    "- Kalau memakai bukti sosial, CUKUP RATING saja. " +
-    "JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, persentase bintang, " +
-    "atau jumlah favorit.\n" +
+    "- LARANGAN RATING: " + RATING_BAN + "\n" +
     "PENTING: prompt harus BERUPA PERINTAH langsung ke AI video. Awali dengan kalimat " +
     "perintah eksplisit, contoh: \"Buatkan video vertikal 9:16 berdurasi 10 detik, " +
     "hands-only, dengan spesifikasi berikut:\" — sehingga bisa langsung ditempel ke " +
@@ -311,9 +317,7 @@
     "atau nyesel'). 2-4 baris saja, akhiri dengan ajakan cek link. " +
     "SEBUT NAMA PRODUK-nya — jangan ragu. " +
     "LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga. " +
-    "Kalau memakai bukti sosial, CUKUP " +
-    "RATING saja; JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, " +
-    "persentase bintang, atau jumlah favorit.\n\n" +
+    "LARANGAN RATING: " + RATING_BAN + "\n\n" +
     "HASHTAG — WAJIB ADA, taruh di baris terpisah setelah caption, 6-9 hashtag " +
     "organik DITAMBAH 2 tag kampanye wajib di bawah (riset 2026: sedikit tapi bisa " +
     "DICARI mengalahkan tumpukan tag). Struktur:\n" +
@@ -394,8 +398,31 @@
       .trim();
   }
 
+  // OUTPUT-side rating guard (Fikri's rule 2026-10-09: no rating anywhere).
+  const RATING_PATTERNS = [
+    /#(?:rating|bintang|review|ulasan)\w*/gi,                                      // hashtags first
+    /(⭐️?|★|☆)+\s?(\d(?:[.,]\d)?(?:\s?\/\s?5)?)?/g,                           // ⭐⭐⭐⭐⭐  ⭐4.9
+    /\b(?:rating|rate)\s*:?\s*\d(?:[.,]\d)?(?:\s?\/\s?5)?/gi,                  // rating 4.9, Rating: 4.8/5
+    /\b\d(?:[.,]\d)?\s?\/\s?5\b/g,                                            // 4.9/5
+    /\b(?:rating|ulasan|review)\s+(?:tinggi|bagus|sempurna|terbaik|bintang\s*\w+)\b/gi,
+    /\b(?:bintang\s*(?:5|lima)|(?:5|lima)\s*bintang)\b/gi,                     // bintang 5, 5 bintang
+    /\b(?:ribuan|ratusan|puluhan)\s+(?:review|ulasan|penilaian)\b/gi,
+    /\b\d[\d.,]*\s?(?:rb|ribu|k)?\+?\s*(?:review|ulasan|penilaian)\b/gi         // 2rb review, 1.200 ulasan
+  ];
+  function stripRating(text) {
+    let t = String(text || "");
+    for (const re of RATING_PATTERNS) t = t.replace(re, "");
+    return t
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/[ \t]+([,.!?])/g, "$1")
+      .replace(/([,.!?])\s*\1+/g, "$1")
+      .replace(/^[ \t]*[,.:;-]+[ \t]*$/gm, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
   function ensureHashtags(text, product) {
-    let t = stripPrice(text)
+    let t = stripPrice(stripRating(text))
       // drop a leading preamble line like "Berikut 3 variasi caption ... :"
       .replace(/^\s*(berikut|ini(?:lah)?)\b[^\n]*:\s*\n+/i, "")
       // drop variant labels / headings / separators
@@ -511,31 +538,19 @@
     return raw.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 20);
   }
 
-  // Lean context. Fikri's rule (updated 2026-09-13): social proof = RATING ONLY.
-  // Jumlah terjual is deliberately NOT passed to the AI so it can never leak into
-  // a caption or video prompt. No review counts, no star percentages either.
+  // Lean context. Fikri's rules: NO price (2026-10-02) and, since 2026-10-09,
+  // NO rating either. Neither price, rating, jumlah terjual nor review counts
+  // are passed to the AI, so they can never leak into a caption or video prompt.
+  // (Rating stays in the research panel/dataset — it only never reaches the AI.)
   function productContext(p) {
     const parts = [];
     if (p.name) parts.push("Nama produk (SEBUT dalam video/caption): " + p.name);
     // Fikri's rule (2026-10-02): NO PRICE in video prompt or caption. Price is
     // deliberately NOT passed to the AI (same pattern as jumlah terjual).
     parts.push("LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga.");
+    parts.push("LARANGAN RATING: " + RATING_BAN);
     if (p.commissionPct != null || (p.economics && p.economics.commissionPct))
       parts.push("Komisi: " + (p.commissionPct || p.economics.commissionPct) + "%");
-    // Rating hanya disebut kalau BAGUS (>= 4.8). Rating 4.5 atau 4.2 secara
-    // teknis "tinggi" tapi di iklan Shopee justru menurunkan kepercayaan —
-    // pembeli Indonesia membaca apa pun di bawah 4.8 sebagai sinyal ragu. Di
-    // bawah ambang: rating TIDAK dikirim ke model sama sekali, plus larangan
-    // eksplisit supaya model tidak mengarang atau menyinggung rating sendiri.
-    const RATING_MIN_SEBUT = 4.8;
-    const rating = Number(p.rating);
-    if (Number.isFinite(rating) && rating >= RATING_MIN_SEBUT) {
-      parts.push("Rating: " + p.rating + "/5");
-    } else {
-      parts.push("LARANGAN: JANGAN sebut, tulis, atau singgung rating/bintang/" +
-                 "ulasan sama sekali — angkat sisi lain (fungsi, masalah " +
-                 "yang dipecahkan). Jangan mengarang angka rating.");
-    }
     return parts.join(" | ");
   }
 
@@ -575,7 +590,7 @@
     // NOTE: no mode label is prefixed — the whole textarea gets pasted into
     // Gemini/Veo, so any bracketed note would become noise in the prompt.
     // The mode is surfaced in the panel's section title instead (see content.js).
-    return stripPrice(await call(cfg, instruction, 0.35));
+    return stripPrice(stripRating(await call(cfg, instruction, 0.35)));
   }
 
   // Which video template a product will use — for labelling in the UI.
@@ -592,5 +607,5 @@
 
   global.RMAi = { generateCaption, generateTag, generateVideoPrompt, productContext,
                   isPhoneAccessory, isHandheld, isPhoneCase, productSize, videoMode,
-                  ensureHashtags, stripPrice, CAMPAIGN_TAGS, DEFAULT_CAPTION_PROMPT };
+                  ensureHashtags, stripPrice, stripRating, RATING_BAN, CAMPAIGN_TAGS, DEFAULT_CAPTION_PROMPT };
 })(typeof window !== "undefined" ? window : this);

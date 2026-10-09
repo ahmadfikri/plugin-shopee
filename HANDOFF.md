@@ -46,9 +46,11 @@ jualan barang. Maka:
    men-flag sesi Shopee Fikri.
 
 ## 5. ATURAN KONTEN (video & caption) — jangan diubah tanpa diminta
-- **Bukti sosial: HANYA RATING.** Jangan sebut jumlah terjual, jumlah review,
-  persentase bintang, atau favorit. Data itu bahkan tidak dikirim ke AI
-  (lihat `ai.js#productContext`).
+- **TANPA RATING (aturan Fikri 2026-10-09, menggantikan "hanya rating").** Caption
+  dan prompt video tidak boleh menyebut rating, bintang, jumlah review, jumlah
+  terjual, atau favorit. Rating tidak dikirim ke AI (`ai.js#productContext`), semua
+  template memuat `RATING_BAN`, dan `stripRating()` membersihkan OUTPUT. Rating tetap
+  dipakai di panel riset/skor (itu data, bukan konten).
 - **SEBUT NAMA PRODUK** dengan jelas.
 - **3 DETIK PERTAMA adalah prioritas tertinggi** — kedua template video punya blok
   khusus yang menuntut penjelasan detik-per-detik.
