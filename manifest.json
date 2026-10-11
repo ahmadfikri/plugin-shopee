@@ -1,12 +1,16 @@
 {
   "manifest_version": 3,
   "name": "syabab-affiliathor",
-  "version": "0.9.20",
+  "version": "0.9.21",
   "description": "Riset pasar & kelayakan iklan langsung di halaman pencarian Shopee. Self-contained, tanpa backend.",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "downloads"
   ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
   "host_permissions": [
     "https://shopee.co.id/*",
     "https://*.shopee.co.id/*",
@@ -36,6 +40,7 @@
         "src/detailscrape.js",
         "src/enrich.js",
         "src/video.js",
+        "src/gahwapack.js",
         "src/proscore.js",
         "src/concepts.js",
         "src/conceptperf.js",

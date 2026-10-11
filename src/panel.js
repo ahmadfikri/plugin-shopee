@@ -155,6 +155,8 @@
       `<div class="rm-foot">` +
       (href ? `<a class="rm-export" href="${href}" target="_blank" rel="noopener">Buka di Shopee ↗</a> ` : "") +
       (global.RMVideo && global.RMVideo.hasVideo() ? `<button class="rm-video" data-id="${safeId}">⬇ Video</button> ` : "") +
+      (global.RMGahwa && global.RMDetailScrape && global.RMDetailScrape.isProductPage()
+        ? `<button class="rm-gahwa" data-id="${safeId}" title="Unduh semua gambar, video & teks produk ini untuk engine Gahwa">🎞 Gahwa Pack</button> ` : "") +
       `<button class="rm-vprompt" data-id="${safeId}">🎬 Prompt Video</button> ` +
       `<button class="rm-exp-new" data-id="${safeId}" title="Buat ID baru dan rotasi ke konsep berikutnya">＋ Eksperimen Baru</button> ` +
       `<button class="rm-star2" data-id="${safeId}">⭐ Simpan</button>` +

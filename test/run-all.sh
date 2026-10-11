@@ -165,6 +165,9 @@ node test/e2e-browser-activitylog.js || fail=1
 echo "=== 34. Browser test: setelah bulk scan, tabel = hasil scan itu (BARU di atas) ==="
 node test/e2e-browser-runview.js || fail=1
 
+echo "=== 35. Browser E2E: 🎞 Gahwa Pack di halaman produk (gambar full-res + job.json, tanpa harga/rating) ==="
+node test/e2e-browser-gahwa.js || fail=1
+
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else

@@ -539,6 +539,22 @@
       } catch (err) { alert("Video: " + err.message); }
       vid.textContent = "⬇ Video";
     });
+    const gp = modal.querySelector(".rm-gahwa");
+    if (gp) gp.addEventListener("click", async () => {
+      gp.disabled = true;
+      gp.textContent = "mengunduh…";
+      let r;
+      try { r = await window.RMGahwa.download(); } catch (err) { r = { ok: false, error: String(err && err.message || err) }; }
+      L("gahwa-pack", { ok: r.ok, folder: r.folder, images: r.images, video: r.video, files: r.files,
+                        failed: r.failed ? r.failed.length : 0, error: r.error || null });
+      let st = modal.querySelector(".rm-gahwa-status");
+      if (!st) { st = document.createElement("div"); st.className = "rm-note rm-gahwa-status"; gp.closest(".rm-foot").before(st); }
+      st.textContent = r.ok
+        ? `🎞 Gahwa Pack tersimpan di Downloads/${r.folder}/ — ${r.images} gambar${r.video ? " + video" : ""} + gahwa_job.json`
+        : `Gahwa Pack gagal: ${r.error || (r.failed || []).map((f) => f.filename.split("/").pop() + ": " + f.error).join("; ")}`;
+      gp.disabled = false;
+      gp.textContent = "🎞 Gahwa Pack";
+    });
     const vp = modal.querySelector(".rm-vprompt");
     if (vp) vp.addEventListener("click", async () => {
       const cfg = await cfgP;
