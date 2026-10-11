@@ -38,24 +38,65 @@
     return m ? { url: m[1] + m[2], key: m[2] } : null;
   }
 
+  const rect = (el) => (el && el.getBoundingClientRect ? el.getBoundingClientRect() : { width: 0, height: 0 });
+  const cdnSrc = (img) => [img.currentSrc, img.src].some((s) => CDN.test(s || ""));
+
+  // Real-page finding (v0.9.22): the whole briefing also holds the SHOP LOGO
+  // and the courier/payment logos (Alfamart, … 52×22 px). Only the product
+  // GALLERY column is wanted. Anchor on the big main image and climb to the
+  // widest ancestor that is still about one column wide: that is the gallery.
+  function galleryBox(r) {
+    let main = null, best = 0;
+    r.querySelectorAll("img").forEach((img) => {
+      if (!cdnSrc(img)) return;
+      const b = rect(img), a = b.width * b.height;
+      if (b.width >= 200 && a > best) { best = a; main = img; }
+    });
+    if (!main) return null;
+    const limit = rect(main).width * 1.45;
+    let box = main;
+    for (let p = main.parentElement; p && p !== r.parentElement; p = p.parentElement) {
+      if (rect(p).width > limit) break;
+      box = p;
+    }
+    return box;
+  }
+
+  // icons, badges and logos: tiny, or far from square (52×22 courier logos)
+  function iconLike(el) {
+    const b = rect(el);
+    if (!b.width || !b.height) return false;      // not laid out (hidden thumb) — keep
+    const ratio = b.width / b.height;
+    return b.width < 40 || b.height < 40 || ratio > 1.6 || ratio < 0.6;
+  }
+
   function collectImages() {
     const r = root();
     const seen = new Map();
     const add = (u, el) => {
-      if (el && el.closest && el.closest("[class*='rating' i], [class*='avatar' i], [class*='shop-' i], [class*='voucher' i]")) return;
+      if (el && el.closest && el.closest("[class*='rating' i], [class*='avatar' i], [class*='shop-' i], [class*='voucher' i]")) return;   // NOT bare 'shop' — every Shopee class says "shopee-…"
+      if (el && iconLike(el)) return;
       const c = canon(u);
       if (c && !seen.has(c.key)) seen.set(c.key, c.url);
     };
-    r.querySelectorAll("img").forEach((img) => {
-      const w = img.getBoundingClientRect ? img.getBoundingClientRect().width : 100;
-      if (w && w < 30) return;                    // badges / icons
-      add(img.currentSrc || img.src, img);
-      (img.srcset || "").split(",").forEach((s) => add(s.trim().split(" ")[0], img));
-    });
-    r.querySelectorAll("[style*='susercontent']").forEach((el) => {
-      const m = (el.getAttribute("style") || "").match(/url\(["']?([^"')]+)/);
-      if (m) add(m[1], el);
-    });
+    const scan = (box) => {
+      box.querySelectorAll("img").forEach((img) => {
+        add(img.currentSrc || img.src, img);
+        (img.srcset || "").split(",").forEach((s) => add(s.trim().split(" ")[0], img));
+      });
+      box.querySelectorAll("[style*='susercontent']").forEach((el) => {
+        const m = (el.getAttribute("style") || "").match(/url\(["']?([^"')]+)/);
+        if (m) add(m[1], el);
+      });
+    };
+    const g = galleryBox(r);
+    if (g) {
+      scan(g);
+      // variant thumbnails live in the info column, inside the variation buttons
+      r.querySelectorAll("button[class*='variation' i] img").forEach((img) => add(img.currentSrc || img.src, img));
+    } else {
+      scan(r);                                    // no big main image found: old behaviour + icon filter
+    }
     return [...seen.values()];
   }
 

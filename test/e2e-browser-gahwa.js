@@ -78,7 +78,7 @@ function loadPlaywright() {
     assert.strictEqual(imgs.length, 3, "harus 3 gambar unik, dapat " + imgs.length + ": " + names.join(", "));
     for (const u of imgs.map((x) => x.url)) {
       assert(!/_tn|@resize|\.webp/.test(u), "URL bukan resolusi penuh: " + u);
-      assert(!/review|badge/.test(u), "gambar non-produk ikut: " + u);
+      assert(!/review|badge|courier|pay-|shoplogo/.test(u), "gambar non-produk ikut (logo kurir/bayar/toko): " + u);
     }
     // Downloads started by the extension go through Chrome's network stack,
     // which Playwright's route() does not intercept, so the fixture's fake CDN

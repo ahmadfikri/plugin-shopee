@@ -289,3 +289,6 @@ Log v0.9.18 membuktikan bulk scan menyimpan semua batch (1217→1231), tapi tabe
 
 ## v0.9.21 (2026-10-11) 🎞 Gahwa Pack
 Tombol baru di panel halaman PRODUK: satu klik mengunduh semua gambar galeri + varian (resolusi penuh, `_tn`/`@resize` dibuang, duplikat digabung), video listing (mp4 langsung; HLS dicatat URL-nya), dan `gahwa_job.json` (nama, varian, fitur dari deskripsi, saran hook/caption/CTA — TANPA harga & rating) ke `~/Downloads/gahwa/<yymmdd>-<slug>/`. Unduhan lewat `chrome.downloads` di service worker baru `src/background.js` (izin baru: `downloads`). Modul: `src/gahwapack.js`. Engine: `python gahwa.py --job ~/Downloads/gahwa/<folder>` (di `/Users/clawbot/Documents/money-maker/gahwa/`). Test: `test/e2e-browser-gahwa.js` (Chromium asli). Detail: `documentation/2026-10-11-gahwa-pack.md`.
+
+## v0.9.22 (2026-10-11) Gahwa Pack: galeri saja
+Logo toko dan logo kurir/pembayaran tidak ikut lagi. Gambar diambil dari kolom galeri (anchor: gambar utama terbesar) + tombol varian, ikon/rasio aneh dibuang. Detail: documentation/2026-10-11-gahwa-pack-galeri-saja.md
