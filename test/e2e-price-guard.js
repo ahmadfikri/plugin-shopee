@@ -30,7 +30,7 @@ assert(/Case cantik banget!/.test(clean), "teks normal ikut terhapus");
 assert(/Tahan banting 100%/.test(clean), "persen non-diskon jangan dihapus");
 assert(/#fyp/.test(clean) && /#racunshopee/.test(clean), "hashtag normal ikut terhapus");
 
-// 2. caption output path is scrubbed and still carries campaign tags.
+// 2. caption output path is scrubbed and still carries niche tags + disclaimer.
 const product = { name: "Case iPhone 16 Pro Floral Pearl", price: 39000, rating: 4.9 };
 const cfg = { ai: { enabled: true, apiKey: "x", baseUrl: "http://stub", model: "m",
   captionPrompt: "", videoPrompt: "" } };
@@ -38,7 +38,8 @@ const cfg = { ai: { enabled: true, apiKey: "x", baseUrl: "http://stub", model: "
   reply = "POV: nemu case paling cakep, cuma Rp 39rb! Super murah.\n#fyp #viral #shopeefinds #promo #racunshopee #checkoutdulu";
   const cap = await RMAi.generateCaption(cfg, product);
   assert(!PRICE_RE.test(cap) && !/super murah/i.test(cap), "caption masih ada harga: " + cap);
-  assert(/#1010BrandsFestival/.test(cap), "hashtag kampanye hilang");
+  assert(/#casinghp/.test(cap), "hashtag niche hilang");
+  assert(cap.includes(RMAi.CAPTION_DISCLAIMER), "disclaimer hilang");
   assert(!/39\.?000/.test(lastPrompt), "harga bocor ke prompt caption");
 
   // 3. video prompt output path is scrubbed.

@@ -48,7 +48,7 @@
   function galleryBox(r) {
     let main = null, best = 0;
     r.querySelectorAll("img").forEach((img) => {
-      if (!cdnSrc(img)) return;
+      if (!cdnSrc(img) || !isProductImg(img)) return;
       const b = rect(img), a = b.width * b.height;
       if (b.width >= 200 && a > best) { best = a; main = img; }
     });
@@ -70,33 +70,93 @@
     return b.width < 40 || b.height < 40 || ratio > 1.6 || ratio < 0.6;
   }
 
+  // v0.9.23 — hard junk filter grounded in the real product-page DOM.
+  // Non-product <img> on a Shopee listing announce themselves:
+  //   * alt="logo"  (31 of them: BCA/BNI/BRI/Visa, Alfamart, shop logo, socials)
+  //   * alt="icon …", "rating", "app", "profile"  -> UI chrome
+  //   * buyer REVIEW photos live under .rating-media-list…
+  //   * voucher / payment / footer / shop-header blocks hold more logos
+  // The product GALLERY = the hero (alt="Product image …") plus its thumbnails,
+  // which on the real page carry an EMPTY alt. So empty-alt is only junk OUTSIDE
+  // the gallery column; inside it (relaxed mode) an empty-alt image is a real
+  // product thumb and is kept, as long as it is not a named junk alt, not in a
+  // junk block, and not icon-sized. Does not rely on the obfuscated class names
+  // (P39yUt…) which Shopee rotates on redeploy.
+  const JUNK_ALT = /^(logo|rating|app|profile|icon\b|icon-|service|cover)/i;
+  const JUNK_CLOSEST =
+    "[class*='rating-media' i], [class*='rating' i], [class*='avatar' i], " +
+    "[class*='voucher' i], [class*='payment' i], [class*='footer' i], " +
+    "[class*='header-with-search' i], [class*='shop-' i], [class*='product-rating' i]";
+  function isProductImg(img, relaxed) {
+    if (!img || !img.getAttribute) return false;
+    const alt = (img.getAttribute("alt") || "").trim();
+    if (JUNK_ALT.test(alt)) return false;              // logo / icon / rating / app / profile
+    if (img.closest && img.closest(JUNK_CLOSEST)) return false;  // review/voucher/footer/header
+    if (!alt) {
+      // empty alt: a real gallery thumb only when we are scanning INSIDE the
+      // gallery column AND it is not icon-sized. Everywhere else it is chrome.
+      if (!relaxed) return false;
+      if (iconLike(img)) return false;
+    }
+    return true;
+  }
+
   function collectImages() {
     const r = root();
     const seen = new Map();
-    const add = (u, el) => {
-      if (el && el.closest && el.closest("[class*='rating' i], [class*='avatar' i], [class*='shop-' i], [class*='voucher' i]")) return;   // NOT bare 'shop' — every Shopee class says "shopee-…"
-      if (el && iconLike(el)) return;
+    const add = (u, el, relaxed) => {
+      if (el && !isProductImg(el, relaxed)) return;    // one gate for every path
       const c = canon(u);
       if (c && !seen.has(c.key)) seen.set(c.key, c.url);
     };
-    const scan = (box) => {
+    const scan = (box, relaxed) => {
       box.querySelectorAll("img").forEach((img) => {
-        add(img.currentSrc || img.src, img);
-        (img.srcset || "").split(",").forEach((s) => add(s.trim().split(" ")[0], img));
+        add(img.currentSrc || img.src, img, relaxed);
+        (img.srcset || "").split(",").forEach((s) => add(s.trim().split(" ")[0], img, relaxed));
       });
+      // CSS background images: only ones that still pass the product gate
       box.querySelectorAll("[style*='susercontent']").forEach((el) => {
+        if (el.querySelector && el.querySelector("img")) return;   // handled above
+        if (!isProductImg(el, relaxed)) return;
         const m = (el.getAttribute("style") || "").match(/url\(["']?([^"')]+)/);
-        if (m) add(m[1], el);
+        if (m) add(m[1], el, relaxed);
       });
     };
-    const g = galleryBox(r);
-    if (g) {
-      scan(g);
-      // variant thumbnails live in the info column, inside the variation buttons
-      r.querySelectorAll("button[class*='variation' i] img").forEach((img) => add(img.currentSrc || img.src, img));
-    } else {
-      scan(r);                                    // no big main image found: old behaviour + icon filter
+
+    // --- primary: find the GALLERY container, scan it RELAXED (its thumbs
+    //     carry an empty alt). Two ways to locate it, real page first:
+    //       (a) the hero <img alt="Product image …"> -> climb to its column
+    //       (b) an explicit gallery/carousel container by class
+    //     Scoping to the gallery is what keeps the shop logo, courier/payment
+    //     logos and buyer-review photos (all OUTSIDE it) from ever being seen. ---
+    let box = null;
+    const hero = r.querySelector('img[alt^="Product image" i]') ||
+                 document.querySelector('img[alt^="Product image" i]');
+    if (hero) {
+      box = hero;
+      const limit = rect(hero).width * 1.6 || 9999;    // the page column width
+      for (let p = hero.parentElement; p && p !== document.body; p = p.parentElement) {
+        if (rect(p).width > limit) break;
+        box = p;
+      }
     }
+    if (!box) {
+      box = r.querySelector(
+        "[class*='image-view' i]:not([class*='rating' i]), " +
+        "[class*='page-product' i] [class*='gallery' i], " +
+        "div[class~='gallery']") || galleryBox(r);
+    }
+    if (box) scan(box, true);
+
+    // --- fallback: still nothing (markup changed hard) -> old size heuristic
+    //     over the briefing, strict so a bare logo cannot sneak in. ---
+    if (seen.size === 0) {
+      const g = galleryBox(r);
+      scan(g || r, false);
+    }
+
+    // variant thumbnails live in the info column, inside the variation buttons
+    r.querySelectorAll("button[class*='variation' i] img").forEach((img) => add(img.currentSrc || img.src, img, false));
     return [...seen.values()];
   }
 

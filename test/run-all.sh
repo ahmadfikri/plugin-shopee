@@ -151,8 +151,8 @@ echo "=== 28. Test: rating hanya disebut kalau >=4.8 (caption & prompt) ==="
 node test/e2e-rating-gate.js || fail=1
 
 echo
-echo "=== 29. Test: hashtag kampanye 10.10 wajib ada di setiap caption ==="
-node test/e2e-campaign-hashtag.js || fail=1
+echo "=== 29. Test: caption SEO-first + niche tag + disclaimer ==="
+node test/e2e-caption-seo.js || fail=1
 
 echo
 echo "=== 30. Test: larangan harga ditegakkan di OUTPUT caption & prompt video ==="

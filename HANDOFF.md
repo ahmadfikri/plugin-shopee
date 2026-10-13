@@ -82,6 +82,13 @@ jualan barang. Maka:
   Dikunci `test/e2e-case-prompt.js`.
 - **Caption: SATU saja** (bukan 3 variasi), teks biasa tanpa markdown, diakhiri
   blok **6–9 hashtag** (2 reach + niche searchable + buyer-intent).
+- **Caption SEO-first + disclaimer (v0.9.24, Fikri 2026-10-13).** Kalimat pertama
+  wajib memuat 1 kata kunci utama yang diketik pembeli (2-4 kata), badan memuat
+  2-3 variasi long-tail, 1-2 hashtag SEO dari kata kunci itu. Setiap caption
+  WAJIB berisi baris `CAPTION_DISCLAIMER` ("Catatan: tampilan produk asli mungkin
+  sedikit berbeda dari video.") tepat di atas baris hashtag — ditegakkan di
+  output oleh `ensureDisclaimer()`, jadi tetap muncul walau captionPrompt custom.
+  Dikunci `test/e2e-caption-seo.js`.
 - **ROTASI KONSEP** (`concepts.js` → `{{CONCEPT}}` di video & caption prompt,
   v0.6.0): 8 archetype (curiosity, price-shock, before/after, POV, mistake-warning,
   satisfying, problem-solve, comparison). `RMConcepts.next(tag)` memutar konsep
@@ -292,3 +299,9 @@ Tombol baru di panel halaman PRODUK: satu klik mengunduh semua gambar galeri + v
 
 ## v0.9.22 (2026-10-11) Gahwa Pack: galeri saja
 Logo toko dan logo kurir/pembayaran tidak ikut lagi. Gambar diambil dari kolom galeri (anchor: gambar utama terbesar) + tombol varian, ikon/rasio aneh dibuang. Detail: documentation/2026-10-11-gahwa-pack-galeri-saja.md
+
+## v0.9.23 (2026-10-11) Hashtag per niche + filter Gahwa Pack
+Tag kampanye 10.10 dihapus (kampanye selesai), diganti 2-3 tag niche per kategori produk (`NICHE_TAGS`). Detail: documentation/2026-10-11-hashtag-per-niche.md, documentation/2026-10-11-gahwa-pack-filter-v0923.md
+
+## v0.9.24 (2026-10-13) Caption SEO-first + disclaimer
+Prompt caption bawaan sekarang SEO-first (kata kunci utama di kalimat pertama, long-tail di badan, hashtag SEO dari kata kunci). Setiap caption dapat baris disclaimer "produk asli mungkin sedikit berbeda" di atas hashtag, ditegakkan di output. Detail: documentation/2026-10-13-caption-seo-disclaimer.md
