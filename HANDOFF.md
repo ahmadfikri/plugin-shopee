@@ -143,7 +143,12 @@ test/run-all.sh        verifikasi semuanya
 
 ## 7. DUA MODE
 - **MODE A — halaman detail produk** (`shopee.co.id/product/<shop>/<item>`):
-  scrape DOM → PRO score → panel analisa inline. Panel jadi **HIJAU kalau PRO ≥ 75**.
+  scrape DOM → `src/productpage.js` (v0.9.25): vonis dulu (IKLANKAN / LAYAK COBA /
+  HATI-HATI / LEWATI / UJI KECIL / IMPOR DATA), lalu prediksi ROAS + rentang,
+  P(untung), Max CPC Meta, chart nilai-per-klik-Meta vs CPC, chart patokan, risiko,
+  dasar data, kepercayaan pembeli, riwayat eksperimen, tombol konten.
+  Rumus: nilai 1 klik Meta = EPC × arrival; ROAS = itu ÷ CPC Meta (dari snapshot).
+  Drill-down di halaman listing tetap pakai `RMPanel.buildDetailModal` (tidak diubah).
 - **MODE B — halaman listing** (`affiliate.shopee.co.id/offer/product_offer`):
   scrape semua kartu → header ringkasan aksi + 2 chart ranking + tabel PRO +
   **Shortlist Kumulatif** (top 20, bisa dibuka semua) + dua tombol bulk scan.
@@ -305,3 +310,6 @@ Tag kampanye 10.10 dihapus (kampanye selesai), diganti 2-3 tag niche per kategor
 
 ## v0.9.24 (2026-10-13) Caption SEO-first + disclaimer
 Prompt caption bawaan sekarang SEO-first (kata kunci utama di kalimat pertama, long-tail di badan, hashtag SEO dari kata kunci). Setiap caption dapat baris disclaimer "produk asli mungkin sedikit berbeda" di atas hashtag, ditegakkan di output. Detail: documentation/2026-10-13-caption-seo-disclaimer.md
+
+## v0.9.25 (2026-10-19) Panel halaman produk dirombak + snapshot diperbaiki
+Panel halaman produk baru (`src/productpage.js`): keputusan dulu, baru bukti. Snapshot sekarang tanpa aviva/(none), EPC dari hari klik bersih, plus metaCpc/arrival/days per tag. `epc.js` memakai EPC dari snapshot. Test baru #36 dan #37. Detail: documentation/2026-10-19-product-page-v0.9.25.md

@@ -168,6 +168,12 @@ node test/e2e-browser-runview.js || fail=1
 echo "=== 35. Browser E2E: 🎞 Gahwa Pack di halaman produk (gambar full-res + job.json, tanpa harga/rating) ==="
 node test/e2e-browser-gahwa.js || fail=1
 
+echo "=== 36. Test: keputusan panel halaman produk (EPC x arrival vs CPC Meta, snapshot asli) ==="
+node test/e2e-productpage.js || fail=1
+
+echo "=== 37. Browser E2E: panel halaman produk v0.9.25 (vonis, chart, riwayat, tombol) ==="
+node test/e2e-browser-productpage.js || fail=1
+
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else

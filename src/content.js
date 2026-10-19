@@ -503,7 +503,12 @@
   function wireModal(modal, p) {
     const cfgP = RMStore.getConfig();
     modal.querySelector(".rm-modal-x") && modal.querySelector(".rm-modal-x").addEventListener("click", () => modal.remove());
-    modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+    // Backdrop click closes an OVERLAY modal only. The inline product-page panel
+    // has no backdrop — its padding is page space, so a stray click there must
+    // not delete the panel.
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal && !modal.classList.contains("rm-inline")) modal.remove();
+    });
     const star = modal.querySelector(".rm-star2");
     if (star) star.addEventListener("click", async () => {
       const cfg = await cfgP; let tag = "";
@@ -678,16 +683,25 @@
       }
       product.epcPred = epcPred;
       document.querySelectorAll(".rm-panel, .rm-diag, .rm-modal-bg").forEach((n) => n.remove());
-      const modal = RMPanel.buildDetailModal(product, {
+      const detailData = {
         error: null, name: d.name, price, rating: d.rating,
         totalReviews: d.totalReviews, starBreakdown: d.starBreakdown,
         historicalSold: d.historicalSold, likedCount: d.likedCount,
         stock: d.inStock ? "IN STOCK" : null, isOfficial: false
-      }, product.pro, epcPred);
+      };
+      // v0.9.25: product pages get the decision-first panel (productpage.js).
+      // The search-page drill-down keeps RMPanel.buildDetailModal.
+      const modal = window.RMProductPage
+        ? RMProductPage.build(product, detailData, product.pro, epcPred, cfg)
+        : RMPanel.buildDetailModal(product, detailData, product.pro, epcPred);
       // detail-page: render inline (not as overlay) so it sits with the page
       modal.classList.add("rm-inline");
       (document.querySelector("main") || document.body).prepend(modal);
       wireModal(modal, product);
+      if (window.RMProductPage && modal.classList.contains("rm-pp-root")) {
+        RMProductPage.fillHistory(modal, product, cfg.__perf)
+          .catch((e) => console.log("RM: riwayat eksperimen gagal:", e && e.message));
+      }
       lastAnalysis = { products: [product] };
       // AUTO-CAPTURE (Fikri: "biarkan data collector jalan tanpa pencet save").
       // Detail pages yield the RICHEST rows — rating, reviews, stars, sold, video.
