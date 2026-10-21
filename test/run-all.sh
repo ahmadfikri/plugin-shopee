@@ -151,8 +151,28 @@ echo "=== 28. Test: rating hanya disebut kalau >=4.8 (caption & prompt) ==="
 node test/e2e-rating-gate.js || fail=1
 
 echo
-echo "=== 29. Test: hashtag kampanye 10.10 wajib ada di setiap caption ==="
-node test/e2e-campaign-hashtag.js || fail=1
+echo "=== 29. Test: caption SEO-first + niche tag + disclaimer ==="
+node test/e2e-caption-seo.js || fail=1
+
+echo
+echo "=== 30. Test: larangan harga ditegakkan di OUTPUT caption & prompt video ==="
+node test/e2e-price-guard.js || fail=1
+
+echo
+echo "=== 31. Test BROWSER: log aktivitas mencatat klik + tiap tahap bulk scan ==="
+node test/e2e-browser-activitylog.js || fail=1
+
+echo "=== 34. Browser test: setelah bulk scan, tabel = hasil scan itu (BARU di atas) ==="
+node test/e2e-browser-runview.js || fail=1
+
+echo "=== 35. Browser E2E: 🎞 Gahwa Pack di halaman produk (gambar full-res + job.json, tanpa harga/rating) ==="
+node test/e2e-browser-gahwa.js || fail=1
+
+echo "=== 36. Test: keputusan panel halaman produk (EPC x arrival vs CPC Meta, snapshot asli) ==="
+node test/e2e-productpage.js || fail=1
+
+echo "=== 37. Browser E2E: panel halaman produk v0.9.25 (vonis, chart, riwayat, tombol) ==="
+node test/e2e-browser-productpage.js || fail=1
 
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."

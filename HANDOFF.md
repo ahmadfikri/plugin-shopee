@@ -46,9 +46,11 @@ jualan barang. Maka:
    men-flag sesi Shopee Fikri.
 
 ## 5. ATURAN KONTEN (video & caption) — jangan diubah tanpa diminta
-- **Bukti sosial: HANYA RATING.** Jangan sebut jumlah terjual, jumlah review,
-  persentase bintang, atau favorit. Data itu bahkan tidak dikirim ke AI
-  (lihat `ai.js#productContext`).
+- **TANPA RATING (aturan Fikri 2026-10-09, menggantikan "hanya rating").** Caption
+  dan prompt video tidak boleh menyebut rating, bintang, jumlah review, jumlah
+  terjual, atau favorit. Rating tidak dikirim ke AI (`ai.js#productContext`), semua
+  template memuat `RATING_BAN`, dan `stripRating()` membersihkan OUTPUT. Rating tetap
+  dipakai di panel riset/skor (itu data, bukan konten).
 - **SEBUT NAMA PRODUK** dengan jelas.
 - **3 DETIK PERTAMA adalah prioritas tertinggi** — kedua template video punya blok
   khusus yang menuntut penjelasan detik-per-detik.
@@ -80,6 +82,13 @@ jualan barang. Maka:
   Dikunci `test/e2e-case-prompt.js`.
 - **Caption: SATU saja** (bukan 3 variasi), teks biasa tanpa markdown, diakhiri
   blok **6–9 hashtag** (2 reach + niche searchable + buyer-intent).
+- **Caption SEO-first + disclaimer (v0.9.24, Fikri 2026-10-13).** Kalimat pertama
+  wajib memuat 1 kata kunci utama yang diketik pembeli (2-4 kata), badan memuat
+  2-3 variasi long-tail, 1-2 hashtag SEO dari kata kunci itu. Setiap caption
+  WAJIB berisi baris `CAPTION_DISCLAIMER` ("Catatan: tampilan produk asli mungkin
+  sedikit berbeda dari video.") tepat di atas baris hashtag — ditegakkan di
+  output oleh `ensureDisclaimer()`, jadi tetap muncul walau captionPrompt custom.
+  Dikunci `test/e2e-caption-seo.js`.
 - **ROTASI KONSEP** (`concepts.js` → `{{CONCEPT}}` di video & caption prompt,
   v0.6.0): 8 archetype (curiosity, price-shock, before/after, POV, mistake-warning,
   satisfying, problem-solve, comparison). `RMConcepts.next(tag)` memutar konsep
@@ -134,7 +143,12 @@ test/run-all.sh        verifikasi semuanya
 
 ## 7. DUA MODE
 - **MODE A — halaman detail produk** (`shopee.co.id/product/<shop>/<item>`):
-  scrape DOM → PRO score → panel analisa inline. Panel jadi **HIJAU kalau PRO ≥ 75**.
+  scrape DOM → `src/productpage.js` (v0.9.25): vonis dulu (IKLANKAN / LAYAK COBA /
+  HATI-HATI / LEWATI / UJI KECIL / IMPOR DATA), lalu prediksi ROAS + rentang,
+  P(untung), Max CPC Meta, chart nilai-per-klik-Meta vs CPC, chart patokan, risiko,
+  dasar data, kepercayaan pembeli, riwayat eksperimen, tombol konten.
+  Rumus: nilai 1 klik Meta = EPC × arrival; ROAS = itu ÷ CPC Meta (dari snapshot).
+  Drill-down di halaman listing tetap pakai `RMPanel.buildDetailModal` (tidak diubah).
 - **MODE B — halaman listing** (`affiliate.shopee.co.id/offer/product_offer`):
   scrape semua kartu → header ringkasan aksi + 2 chart ranking + tabel PRO +
   **Shortlist Kumulatif** (top 20, bisa dibuka semua) + dua tombol bulk scan.
@@ -267,3 +281,35 @@ Video: `.mp4` LANGSUNG di `down-tx-id.vod.susercontent.com` (bukan HLS).
   tanpa bukti.
 - Kalau ingest data Shopee: **update sheet DULU, tunjukkan buktinya, baru analisa.**
 - Eksekusi, jangan cuma menyarankan. Tapi jangan langgar batasan di §4.
+
+## v0.9.14 (2026-10-02)
+- Prompt video default 10 detik (sebelumnya 8). Lihat documentation/2026-10-02-durasi-video-10-detik.md
+- v0.9.15 (2026-10-02): LARANGAN HARGA — harga tidak dikirim ke AI, dilarang di prompt video & caption, konsep price_shock dihapus. Lihat documentation/2026-10-02-larangan-harga.md
+
+## v0.9.16 (2026-10-03)
+Experiment ID (Campaign Meta = Tag Shopee) dibuat unik: nama6+konsep2+yymmdd+sidikProduk3+acak3, cek bentrok. Lihat documentation/2026-10-03-experiment-id-unik.md
+
+## v0.9.17 (2026-10-03)
+Audit: price guard di output caption+video (stripPrice), template video custom tetap dapat {{context}}, {{price}} tidak bocor. Lihat documentation/2026-10-03-audit-bug-harga.md
+
+## v0.9.18 (2026-10-06) Log aktivitas
+src/activitylog.js merekam klik, input plugin/search, tiap tahap bulk scan, render shortlist (baris di layar), error JS.
+Ekspor via panel "⬇ Log aktivitas" atau popup. Lihat documentation/2026-10-06-log-aktivitas.md.
+
+## v0.9.19 (2026-10-06) Hasil bulk scan terlihat
+Log v0.9.18 membuktikan bulk scan menyimpan semua batch (1217→1231), tapi tabel tetap top-20 kumulatif yang sama, jadi terlihat "tidak terjadi apa-apa". Sekarang setelah bulk scan kategori tabel = hasil run itu (field `run` + `firstAt` di shortlist), BARU di atas dengan badge, ringkasan menyebut jumlah baru/sudah ada (produk unik). Test: `test/e2e-browser-runview.js`. Detail: `documentation/2026-10-06-hasil-bulk-scan-terlihat.md`.
+
+## v0.9.21 (2026-10-11) 🎞 Gahwa Pack
+Tombol baru di panel halaman PRODUK: satu klik mengunduh semua gambar galeri + varian (resolusi penuh, `_tn`/`@resize` dibuang, duplikat digabung), video listing (mp4 langsung; HLS dicatat URL-nya), dan `gahwa_job.json` (nama, varian, fitur dari deskripsi, saran hook/caption/CTA — TANPA harga & rating) ke `~/Downloads/gahwa/<yymmdd>-<slug>/`. Unduhan lewat `chrome.downloads` di service worker baru `src/background.js` (izin baru: `downloads`). Modul: `src/gahwapack.js`. Engine: `python gahwa.py --job ~/Downloads/gahwa/<folder>` (di `/Users/clawbot/Documents/money-maker/gahwa/`). Test: `test/e2e-browser-gahwa.js` (Chromium asli). Detail: `documentation/2026-10-11-gahwa-pack.md`.
+
+## v0.9.22 (2026-10-11) Gahwa Pack: galeri saja
+Logo toko dan logo kurir/pembayaran tidak ikut lagi. Gambar diambil dari kolom galeri (anchor: gambar utama terbesar) + tombol varian, ikon/rasio aneh dibuang. Detail: documentation/2026-10-11-gahwa-pack-galeri-saja.md
+
+## v0.9.23 (2026-10-11) Hashtag per niche + filter Gahwa Pack
+Tag kampanye 10.10 dihapus (kampanye selesai), diganti 2-3 tag niche per kategori produk (`NICHE_TAGS`). Detail: documentation/2026-10-11-hashtag-per-niche.md, documentation/2026-10-11-gahwa-pack-filter-v0923.md
+
+## v0.9.24 (2026-10-13) Caption SEO-first + disclaimer
+Prompt caption bawaan sekarang SEO-first (kata kunci utama di kalimat pertama, long-tail di badan, hashtag SEO dari kata kunci). Setiap caption dapat baris disclaimer "produk asli mungkin sedikit berbeda" di atas hashtag, ditegakkan di output. Detail: documentation/2026-10-13-caption-seo-disclaimer.md
+
+## v0.9.25 (2026-10-19) Panel halaman produk dirombak + snapshot diperbaiki
+Panel halaman produk baru (`src/productpage.js`): keputusan dulu, baru bukti. Snapshot sekarang tanpa aviva/(none), EPC dari hari klik bersih, plus metaCpc/arrival/days per tag. `epc.js` memakai EPC dari snapshot. Test baru #36 dan #37. Detail: documentation/2026-10-19-product-page-v0.9.25.md

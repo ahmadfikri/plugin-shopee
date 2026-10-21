@@ -63,7 +63,12 @@
     for (const [tag, t] of Object.entries(tags)) {
       const clicks = Number(t.clicks) || 0;
       const comm = Number(t.commission) || 0;
-      const realized = clicks > 0 ? comm / clicks : globalEpc;
+      // Prefer the snapshot's own EPC: since 2026-10-19 the export computes it
+      // from clean-click days only (commission AND clicks of the same days),
+      // while `commission` also covers ANOMALY_DATES for ROAS. Dividing that
+      // commission by clean clicks would overstate EPC.
+      const realized = (t.epc != null && Number.isFinite(Number(t.epc)) && clicks > 0)
+        ? Number(t.epc) : (clicks > 0 ? comm / clicks : globalEpc);
       // posterior mean (shrinkage toward global prior)
       const shrunk = (clicks * realized + K * globalEpc) / (clicks + K);
       // uncertainty: standard error of a mean shrinks with sqrt(clicks + K).

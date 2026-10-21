@@ -7,10 +7,20 @@
   // presenter preferences (adult hijab woman, natural not lebay, outdoor daylight,
   // casual Indonesian, 9:16 vertical, ends "link di bio"). {{context}} is filled
   // with the scraped product knowledge; the model returns the finished prompt.
+  // Fikri's rule (2026-10-09): rating is NEVER mentioned — not in captions, not
+  // in video prompts, not as a hook, not as on-screen text. One constant feeds
+  // every prompt template and productContext(); stripRating() enforces it on
+  // the OUTPUT so a stale stored prompt or an ignoring model still can't leak it.
+  const RATING_BAN =
+    "JANGAN sebut, tulis, atau singgung RATING dalam bentuk apa pun — tidak ada angka rating " +
+    "apa pun, bintang atau emoji bintang, 'rating tinggi', jumlah review/ulasan, " +
+    "persentase bintang, jumlah terjual/sudah laku berapa, atau jumlah favorit. " +
+    "Angkat sisi lain: fungsi produk, masalah yang dipecahkan, tampilan, momen pemakaian.";
+
   const DEFAULT_VIDEO_PROMPT =
     "Kamu penulis prompt video Veo/Gemini untuk iklan Shopee affiliate. " +
     "Buatkan SATU prompt video sinematik siap-tempel ke Google Flow/Veo, format " +
-    "9:16 vertikal (HP), durasi 8 detik, dari data produk ini:\n{{context}}\n\n" +
+    "9:16 vertikal (HP), durasi 10 detik, dari data produk ini:\n{{context}}\n\n" +
     "{{CONCEPT}}" +
     "{{GEMINI_RULES}}" +
     "=== PRIORITAS TERTINGGI: 3 DETIK PERTAMA ===\n" +
@@ -19,9 +29,8 @@
     "- FRAME PERTAMA sudah ada gerakan/ekspresi + produk terlihat. JANGAN mulai dari " +
     "frame kosong, logo, teks pembuka, atau presenter yang belum melakukan apa pun.\n" +
     "- Buka dengan hook verbal SINGKAT (maks 5-6 kata, langsung ke inti/rasa penasaran) " +
-    "ATAU hook visual kuat — boleh manfaatkan RATING kalau angkanya mengesankan " +
-    "(JANGAN sebut jumlah terjual atau jumlah review) " +
-    "kalau angkanya memang mengesankan.\n" +
+    "ATAU hook visual kuat (fungsi produk, masalah yang dipecahkan, momen reveal). " +
+    "JANGAN pakai rating, bintang, jumlah terjual, atau jumlah review sebagai hook.\n" +
     "- Ada momen visual PUNCAK sebelum detik ke-3, bukan ditahan sampai akhir.\n" +
     "- Gerakan kamera di 3 detik pertama harus dinamis (push-in cepat / whip pan / reveal).\n" +
     "Tulis bagian ini paling detail dibanding bagian lain.\n\n" +
@@ -41,18 +50,18 @@
     "{{SIZE_RULES}}" +
     "Aturan wajib lainnya: gaya main NATURAL & santai (jangan lebay/over-acting), " +
     "nada ngobrol ringan seperti teman. Setting OUTDOOR (taman/halaman/teras) siang " +
-    "hari cahaya alami. Dialog bahasa Indonesia kasual. Alur 3-8s: perlihatkan produk " +
+    "hari cahaya alami. Dialog bahasa Indonesia kasual. Alur 3-10s: perlihatkan produk " +
     "& manfaatnya, akhiri dengan ajakan 'link di bio'. " +
     "Sertakan: subject, action per detik, scene, camera movement, lens, lighting, mood, " +
     "dan audio/voice. Produk asli " +
     "akan di-drag user sebagai gambar referensi (Ingredients to Video), jadi JANGAN " +
     "deskripsikan detail bentuk produk secara spesifik — cukup rujuk 'produk ini'. " +
+    "LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga. " +
     "SEBUT NAMA PRODUK secara jelas dalam dialog dan/atau on-screen text — jangan ragu " +
-    "menyebut nama/brand-nya. Kalau memakai bukti sosial, CUKUP RATING saja; " +
-    "JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, persentase bintang, " +
-    "atau jumlah favorit. " +
+    "menyebut nama/brand-nya. " +
+    "LARANGAN RATING: " + RATING_BAN + " " +
     "PENTING: prompt harus BERUPA PERINTAH langsung ke AI video. Awali dengan kalimat " +
-    "perintah eksplisit, contoh: \"Buatkan video vertikal 9:16 berdurasi 8 detik dengan " +
+    "perintah eksplisit, contoh: \"Buatkan video vertikal 9:16 berdurasi 10 detik dengan " +
     "spesifikasi berikut:\" — sehingga bisa langsung ditempel ke Gemini/Veo dan dieksekusi, " +
     "bukan sekadar deskripsi. " +
     "Keluarkan HANYA teks prompt-nya, tanpa penjelasan tambahan.";
@@ -174,7 +183,7 @@
     "- Gambar referensi adalah SATU-SATUNYA sumber kebenaran produk. Pertahankan " +
     "siluet, warna, motif, material, logo, proporsi, dan posisi detail produk SAMA " +
     "di setiap frame; jangan mengarang varian atau dekorasi baru.\n" +
-    "- Maksimal 3 shot dalam 8 detik. Setiap cut harus mempertahankan produk yang " +
+    "- Maksimal 3 shot dalam 10 detik. Setiap cut harus mempertahankan produk yang " +
     "sama secara temporal — tidak morphing, tidak berubah warna/bentuk/ukuran.\n" +
     "- Hanya SATU unit produk utama. Jangan menduplikasi produk, jangan membuat " +
     "objek menyatu/menembus tangan, dan jangan memunculkan tangan/jari tambahan.\n" +
@@ -219,7 +228,7 @@
   const HANDS_VIDEO_PROMPT =
     "Kamu penulis prompt video Veo/Gemini untuk iklan Shopee affiliate produk yang " +
     "bisa dipegang tangan. Buatkan SATU prompt video siap-tempel ke Google Flow/Veo, " +
-    "format 9:16 VERTIKAL (HP), durasi 8 detik, dari data produk ini:\n{{context}}\n\n" +
+    "format 9:16 VERTIKAL (HP), durasi 10 detik, dari data produk ini:\n{{context}}\n\n" +
     "{{CONCEPT}}" +
     "{{GEMINI_RULES}}" +
     "=== PRIORITAS TERTINGGI: 3 DETIK PERTAMA ===\n" +
@@ -242,9 +251,9 @@
     "perempuan/beauty → tangan perempuan; produk netral → bebas, yang paling wajar. " +
     "Sebutkan pilihanmu secara eksplisit.\n" +
     "{{CASE_RULES}}" +
-    "- Alur sisanya: 3-6s DEMO cepat (pakai/buka/tunjukkan tekstur & detail, " +
+    "- Alur sisanya: 3-7s DEMO cepat (pakai/buka/tunjukkan tekstur & detail, " +
     "fungsi utamanya; putar 360 hanya jika produk BUKAN casing HP), " +
-    "6-8s HERO SHOT produk + on-screen text 'Link di bio'.\n" +
+    "7-10s HERO SHOT produk + on-screen text 'Link di bio'.\n" +
     "- Editing MENGIKUTI BEAT: potongan cepat sinkron ke ketukan, 2-3 cut on beat, " +
     "gerakan produk tepat di beat drop.\n" +
     "- AUDIO: musik upbeat/trending beat instrumental (bukan voice-over, TANPA dialog), " +
@@ -255,13 +264,12 @@
     "(macro push-in, top-down, orbit kecil), lens (35mm/50mm macro), lighting, mood, audio.\n" +
     "- Produk asli akan di-drag user sebagai gambar referensi (Ingredients to Video), " +
     "jadi JANGAN deskripsikan bentuk/warna produk secara spesifik — cukup rujuk 'produk ini'.\n" +
+    "- LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga.\n" +
     "- SEBUT NAMA PRODUK secara jelas (di on-screen text dan/atau teks akhir). Jangan " +
     "ragu menyebut nama/brand-nya.\n" +
-    "- Kalau memakai bukti sosial, CUKUP RATING saja. " +
-    "JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, persentase bintang, " +
-    "atau jumlah favorit.\n" +
+    "- LARANGAN RATING: " + RATING_BAN + "\n" +
     "PENTING: prompt harus BERUPA PERINTAH langsung ke AI video. Awali dengan kalimat " +
-    "perintah eksplisit, contoh: \"Buatkan video vertikal 9:16 berdurasi 8 detik, " +
+    "perintah eksplisit, contoh: \"Buatkan video vertikal 9:16 berdurasi 10 detik, " +
     "hands-only, dengan spesifikasi berikut:\" — sehingga bisa langsung ditempel ke " +
     "Gemini/Veo dan dieksekusi, bukan sekadar deskripsi.\n" +
     "Keluarkan HANYA teks prompt-nya, tanpa penjelasan tambahan.";
@@ -269,7 +277,7 @@
   function fill(tpl, product) {
     return tpl
       .replace(/{{name}}/g, product.name || "")
-      .replace(/{{price}}/g, product.price != null ? "Rp" + product.price.toLocaleString("id-ID") : "");
+      .replace(/{{price}}/g, "");
   }
 
   async function call(cfg, prompt, temperature) {
@@ -292,42 +300,95 @@
     return (data.choices && data.choices[0] && data.choices[0].message.content || "").trim();
   }
 
-  // Campaign hashtags that MUST appear in every caption (Fikri, 24 Sep 2026).
-  // Time-bound to the running Shopee campaign — edit this one line when it ends.
-  const CAMPAIGN_TAGS = ["#1010BrandsFestival", "#1010ShopeeMall"];
+  // Per-NICHE Indonesian hashtags (replaces the expired 10.10 campaign tags,
+  // Fikri 2026-10-11). The 10.10 BrandsFestival / ShopeeMall campaign is OVER;
+  // forcing a dead campaign tag into every caption only wastes a hashtag slot.
+  // Instead each caption now carries 2-3 tags for the product's OWN niche —
+  // terms Indonesian buyers actually type into search, so they do SEO work.
+  // Each niche: [classifier regex, [tags...]]. First match wins; order matters
+  // (specific before generic). `generic` is the fallback when nothing matches.
+  // These are derived from the real product-category keyword lists above, i.e.
+  // the words buyers use — not invented "trending" tags.
+  const NICHE_TAGS = [
+    [/\b(case|casing|kesing|softcase|hardcase|silikon|sarung hp)\b/i, ["#casinghp", "#casehp", "#aksesorishp"]],
+    [/\b(tempered|anti gores|screen protector|pelindung layar)\b/i, ["#antigores", "#temperedglass", "#pelindunglayar"]],
+    [/\b(tws|earphone|headset|airpod|earbud|headphone)\b/i, ["#twsmurah", "#earphone", "#headsetbluetooth"]],
+    [/\b(powerbank|power bank|charger|kabel data|kabel charger|adaptor)\b/i, ["#powerbank", "#chargerhp", "#aksesorishp"]],
+    [/\b(holder|popsocket|ring stand|tongsis|tripod|gimbal|stand hp)\b/i, ["#holderhp", "#aksesorishp", "#gadgetmurah"]],
+    [/\b(tumbler|tumblr|botol|bottle|mug|gelas|termos|cangkir)\b/i, ["#tumbler", "#botolminum", "#peralatanrumah"]],
+    [/\b(dompet|wallet|pouch)\b/i, ["#dompet", "#dompetmurah", "#fashionpria"]],
+    [/\b(jam tangan|smartwatch)\b/i, ["#jamtangan", "#smartwatch", "#jamtanganmurah"]],
+    [/\b(parfum|perfume|body mist|skincare|serum|toner|sunscreen|lipstik|lipstick|lip tint)\b/i, ["#skincare", "#parfummurah", "#racunkecantikan"]],
+    [/\b(kacamata|sunglasses)\b/i, ["#kacamata", "#sunglasses", "#kacamatafashion"]],
+    [/\b(squishy|fidget|pop it|popit|mainan|tcg|kartu)\b/i, ["#mainanmurah", "#mainananak", "#koleksimainan"]],
+    [/\b(mouse|keyboard|flashdisk|usb|otg|speaker mini)\b/i, ["#gadgetmurah", "#aksesoriskomputer", "#gadget"]],
+    [/\b(lemari|rak\b|meja|kursi|sofa|kabinet|nakas|dipan|buffet)\b/i, ["#perabotrumah", "#furnituremurah", "#dekorasirumah"]],
+    [/\b(kasur|springbed|matras|bantal|guling|sprei|selimut|karpet|tirai|gorden)\b/i, ["#peralatantidur", "#dekorasirumah", "#homeliving"]],
+    [/\b(kulkas|mesin cuci|dispenser|kipas angin|air cooler|oven|kompor|microwave|rice cooker|blender|vacuum|setrika)\b/i, ["#alatrumahtangga", "#elektronikrumah", "#perkakasdapur"]],
+    [/\b(gamis|mukena|hijab|jilbab|khimar|abaya|koko|sajadah)\b/i, ["#fashionmuslim", "#gamismurah", "#ootdhijab"]],
+    [/\b(dress|gaun|kemeja|kaos|tshirt|t-shirt|blouse|atasan|rok\b|celana|jeans|jaket|hoodie|sweater|cardigan|daster|piyama)\b/i, ["#ootd", "#fashionmurah", "#outfitharian"]],
+    [/\b(tas\b|backpack|ransel|koper|handbag|totebag|selempang)\b/i, ["#tasmurah", "#fashiontas", "#ootd"]],
+    [/\b(sepatu|sandal|sneakers|heels|boots|sendal)\b/i, ["#sepatumurah", "#ootd", "#sepatuviral"]],
+    [/\b(helm|jas hujan|raincoat)\b/i, ["#aksesorismotor", "#perlengkapanmotor", "#otomotif"]],
+  ];
+  const GENERIC_NICHE_TAGS = ["#shopeefinds", "#rekomendasibarang", "#belanjaonline"];
+  function nicheTags(name) {
+    const n = String(name || "");
+    for (const [re, tags] of NICHE_TAGS) if (re.test(n)) return tags;
+    return GENERIC_NICHE_TAGS;
+  }
 
   // Default caption template — ONE caption, ready to copy-paste. No variants:
   // choosing between three was friction, not value.
+  // Disclaimer line appended to EVERY caption (Fikri 2026-10-13): the videos are
+  // AI-generated, so the real item can look slightly different. Enforced on the
+  // output by ensureDisclaimer(), not just requested in the prompt.
+  const CAPTION_DISCLAIMER = "Catatan: tampilan produk asli mungkin sedikit berbeda dari video.";
+
+  // SEO-first caption (Fikri 2026-10-13: "caption fokus sekali lagi di SEO").
+  // TikTok/IG/FB search index the caption TEXT, and the first line (before the
+  // "more" fold) carries the most weight, so the prompt forces one buyer-typed
+  // main keyword into the first sentence plus 2-3 natural long-tail variants.
   const DEFAULT_CAPTION_PROMPT =
-    "Kamu copywriter iklan Shopee affiliate Indonesia. Buatkan SATU caption " +
-    "siap-posting (Facebook/Instagram/TikTok) dari data produk ini:\n{{context}}\n\n" +
+    "Kamu copywriter iklan Shopee affiliate Indonesia yang paham SEO pencarian " +
+    "TikTok/Instagram/Facebook. Buatkan SATU caption siap-posting dari data produk ini:\n" +
+    "{{context}}\n\n" +
     "{{CONCEPT}}" +
-    "Aturan caption: bahasa Indonesia santai dan WAJAR seperti orang biasa cerita, " +
+    "PRIORITAS UTAMA = SEO: caption ini harus bisa DITEMUKAN lewat kolom pencarian " +
+    "TikTok/IG/FB, karena platform membaca teks caption untuk pencarian.\n" +
+    "1. Tentukan SATU kata kunci utama 2-4 kata yang paling mungkin DIKETIK pembeli " +
+    "Indonesia untuk mencari produk ini — bahasa sehari-hari, BUKAN judul Shopee yang " +
+    "panjang (contoh: 'casing iphone 15 polkadot', 'rak dapur susun', 'tumbler stainless'). " +
+    "Jangan tulis label 'kata kunci'.\n" +
+    "2. KALIMAT PERTAMA WAJIB memuat kata kunci utama itu persis, di 3-6 kata awal — " +
+    "baris pertama adalah yang terlihat sebelum 'lainnya' dan paling berbobot untuk pencarian.\n" +
+    "3. Di badan caption masukkan 2-3 variasi kata kunci turunan secara alami (long-tail: " +
+    "jenis, bahan, fungsi, untuk siapa, tipe HP/ukuran kalau ada di nama — mis. " +
+    "'case hp bening', 'casing anti kuning'). DILARANG keyword stuffing: tiap kalimat " +
+    "tetap enak dibaca seperti orang cerita.\n" +
+    "4. Sebut manfaat konkret pakai kata yang dicari orang ('anti gores', 'muat banyak', " +
+    "'gampang dibersihkan'), bukan kata sifat kosong.\n\n" +
+    "Gaya: bahasa Indonesia santai dan WAJAR seperti orang biasa cerita, " +
     "JANGAN alay/lebay, JANGAN hard-selling, JANGAN pakai huruf kapital berlebihan " +
-    "atau emoji bertumpuk. Hook di kalimat PERTAMA boleh menarik tapi tetap masuk akal " +
+    "atau emoji bertumpuk. Hook di kalimat pertama boleh menarik tapi tetap masuk akal " +
     "— tanpa hiperbola (hindari 'GILA', 'auto sultan', 'terbaik sedunia', 'wajib punya " +
-    "atau nyesel'). 2-4 baris saja, akhiri dengan ajakan cek link. " +
+    "atau nyesel'). 3-5 baris saja, akhiri dengan ajakan cek link. " +
     "SEBUT NAMA PRODUK-nya — jangan ragu. " +
-    "HARGA & DISKON: sebut angka HANYA jika ada di data produk; JANGAN mengarang harga, " +
-    "diskon, persentase hemat, atau perbandingan 'biasanya Rpxxx sekarang Rpxxx'. " +
-    "Kalau tidak ada data harga, jangan singgung harga sama sekali. " +
-    "Kalau memakai bukti sosial, CUKUP " +
-    "RATING saja; JANGAN sebut jumlah terjual/sudah laku berapa, jumlah review, " +
-    "persentase bintang, atau jumlah favorit.\n\n" +
+    "LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga. " +
+    "LARANGAN RATING: " + RATING_BAN + "\n\n" +
     "HASHTAG — WAJIB ADA, taruh di baris terpisah setelah caption, 6-9 hashtag " +
-    "organik DITAMBAH 2 tag kampanye wajib di bawah (riset 2026: sedikit tapi bisa " +
-    "DICARI mengalahkan tumpukan tag). Struktur:\n" +
-    "(a) 2 tag KAMPANYE yang WAJIB selalu ada, tulis PERSIS termasuk huruf besarnya: " +
-    CAMPAIGN_TAGS.join(" ") + "\n" +
+    "organik (riset 2026: sedikit tapi bisa DICARI mengalahkan tumpukan tag). Struktur:\n" +
+    "(a) 2-3 tag NICHE produk ini yang WAJIB ada, tulis PERSIS: {{NICHE_TAGS}}\n" +
     "(b) 2 tag reach: #fyp #viral\n" +
-    "(c) 2-4 tag NICHE yang benar-benar diketik pembeli (turunkan dari nama/kategori " +
-    "produk dalam bahasa Indonesia — mis. #casinghp #rakdapur #lamputidur), " +
-    "ini yang jadi SEO/temuan\n" +
+    "(c) 1-2 tag SEO dari kata kunci utama tadi, ditulis tanpa spasi (mis. " +
+    "#casingiphone15 #rakdapursusun) — ini yang jadi temuan pencarian\n" +
     "(d) 2-3 tag niat-beli: #racunshopee #shopeefinds #checkoutdulu #tiktokmademebuyit\n" +
-    "Selain tag kampanye di (a), semua hashtag huruf kecil, dipisah spasi, " +
+    "Semua hashtag huruf kecil, dipisah spasi, " +
     "tanpa tanda baca lain.\n\n" +
+    "DISCLAIMER WAJIB: setelah ajakan cek link, tulis satu baris PERSIS ini: " +
+    CAPTION_DISCLAIMER + "\n\n" +
     "FORMAT OUTPUT — persis seperti ini, tanpa judul/penjelasan/nomor variasi:\n" +
-    "<isi caption 2-4 baris>\n\n<baris hashtag>\n\n" +
+    "<isi caption 3-5 baris>\n" + CAPTION_DISCLAIMER + "\n\n<baris hashtag>\n\n" +
     "DILARANG: kalimat pembuka seperti 'Berikut caption...', markdown apa pun " +
     "(**bold**, ###, >, -, `), tanda kutip pembungkus, label 'Caption:'/'Hashtag:', " +
     "dan lebih dari satu caption. Keluarkan TEKS BIASA saja yang siap langsung " +
@@ -345,11 +406,13 @@
     return words.slice(0, 2).map((w) => "#" + w).join(" ");
   }
 
-  // Campaign tags are NON-NEGOTIABLE: enforce them on the finished caption no
-  // matter what the model returned (or what stale stored prompt it ran on).
-  function ensureCampaignTags(text) {
+  // Niche tags are enforced on the finished caption no matter what the model
+  // returned (or what stale stored prompt it ran on) — same non-negotiable
+  // "enforce on output" pattern the campaign tags used before 10.10 ended.
+  function ensureNicheTags(text, product) {
     let t = String(text || "");
-    const missing = CAMPAIGN_TAGS.filter(
+    const want = nicheTags(product && product.name);
+    const missing = want.filter(
       (tag) => !new RegExp("(^|\\s)" + tag + "\\b", "i").test(t)
     );
     if (!missing.length) return t;
@@ -371,8 +434,57 @@
 
   // Safety net for the single-caption output: strip stray variant labels, keep only
   // the FIRST caption (cut right after its hashtag line), and guarantee hashtags.
+  // OUTPUT-side price guard (Fikri's rule 2026-10-02: no price anywhere).
+  // The prompt already forbids price, but an LLM can still slip one in, so the
+  // finished caption / video prompt is scrubbed too — same "non-negotiable,
+  // enforce on output" pattern as ensureNicheTags.
+  const PRICE_PATTERNS = [
+    /\bRp\.?\s?\d[\d.,]*(\s?(rb|ribu|k|jt|juta))?\b/gi,           // Rp39.000, Rp 25rb
+    /\b\d[\d.,]*\s?(rb|ribu)\s?(an|aja|saja)?\b/gi,                // 25rb, 30 ribuan
+    /\b(diskon|potongan|hemat|cashback|off)\s*(s\.?d\.?\s*)?\d+\s?%/gi, // diskon 50%
+    /\b\d+\s?%\s*(off|diskon)\b/gi,                                 // 50% off
+    /#(harga\w*|murah\w*|diskon\w*|promo\w*|sale|flashsale|cuci\w*gudang)\b/gi,
+    /\b(harga\s+(murah|miring|terjangkau|bersahabat|grosir|termurah)|murah\s+(banget|meriah|pol)|super\s+murah|termurah|harga\s+promo)\b/gi
+  ];
+  function stripPrice(text) {
+    let t = String(text || "");
+    for (const re of PRICE_PATTERNS) t = t.replace(re, "");
+    return t
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/[ \t]+([,.!?])/g, "$1")
+      .replace(/^[ \t]*[,.:;-]+[ \t]*$/gm, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  // OUTPUT-side rating guard (Fikri's rule 2026-10-09: no rating anywhere).
+  const RATING_PATTERNS = [
+    /#(?:rating|bintang|review|ulasan)\w*/gi,                                      // hashtags first
+    /(⭐️?|★|☆)+\s?(\d(?:[.,]\d)?(?:\s?\/\s?5)?)?/g,                           // ⭐⭐⭐⭐⭐  ⭐4.9
+    /\b(?:rating|rate)\s*:?\s*\d(?:[.,]\d)?(?:\s?\/\s?5)?/gi,                  // rating 4.9, Rating: 4.8/5
+    /\b\d(?:[.,]\d)?\s?\/\s?5\b/g,                                            // 4.9/5
+    /\b(?:rating|ulasan|review)\s+(?:tinggi|bagus|sempurna|terbaik|bintang\s*\w+)\b/gi,
+    /\b(?:bintang\s*(?:5|lima)|(?:5|lima)\s*bintang)\b/gi,                     // bintang 5, 5 bintang
+    /\b(?:ribuan|ratusan|puluhan)\s+(?:review|ulasan|penilaian)\b/gi,
+    /\b\d[\d.,]*\s?(?:rb|ribu|k)?\+?\s*(?:review|ulasan|penilaian)\b/gi         // 2rb review, 1.200 ulasan
+  ];
+  function stripRating(text) {
+    let t = String(text || "");
+    for (const re of RATING_PATTERNS) t = t.replace(re, "");
+    return t
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/[ \t]+([,.!?])/g, "$1")
+      .replace(/([,.!?])\s*\1+/g, "$1")
+      .replace(/^[ \t]*[,.:;-]+[ \t]*$/gm, "")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
   function ensureHashtags(text, product) {
-    let t = String(text || "")
+    let t = stripPrice(stripRating(text))
+      // 10.10 campaign is over (Fikri 2026-10-11): strip the dead tags if a
+      // stale stored captionPrompt still produces them.
+      .replace(/#1010(BrandsFestival|ShopeeMall)\b/gi, "")
       // drop a leading preamble line like "Berikut 3 variasi caption ... :"
       .replace(/^\s*(berikut|ini(?:lah)?)\b[^\n]*:\s*\n+/i, "")
       // drop variant labels / headings / separators
@@ -400,10 +512,31 @@
     }
 
     const tagCount = (t.match(/#\w+/g) || []).length;
-    if (tagCount >= 6) return ensureCampaignTags(t);
-    const block = [slugTags(product.name), FYP_TAGS, SHOP_TAGS]
+    if (tagCount >= 6) return ensureDisclaimer(ensureNicheTags(t, product));
+    const block = [nicheTags(product.name).join(" "), slugTags(product.name), FYP_TAGS, SHOP_TAGS]
       .filter(Boolean).join(" ");
-    return ensureCampaignTags(t.replace(/\s*$/, "") + "\n\n" + block);
+    return ensureDisclaimer(ensureNicheTags(t.replace(/\s*$/, "") + "\n\n" + block, product));
+  }
+
+  // Exactly ONE canonical disclaimer line, sitting right above the hashtag line
+  // (so it stays part of the caption body, not lost among the tags). Any
+  // model-written variant ("*produk mungkin sedikit berbeda") is replaced, so a
+  // stale stored captionPrompt still ends up with the disclaimer.
+  function ensureDisclaimer(text) {
+    const lines = String(text || "").split("\n")
+      .filter((l) => !/mungkin\s+(sedikit\s+)?berbeda/i.test(l));
+    const isTagLine = (l) => {
+      const toks = l.trim().split(/\s+/).filter(Boolean);
+      return toks.length >= 2 && toks.filter((w) => w.startsWith("#")).length >= toks.length - 1;
+    };
+    let idx = -1;
+    for (let i = lines.length - 1; i >= 0; i--) if (isTagLine(lines[i])) { idx = i; break; }
+    if (idx === -1) {
+      return (lines.join("\n").replace(/\s*$/, "") + "\n" + CAPTION_DISCLAIMER).trim();
+    }
+    const body = lines.slice(0, idx).join("\n").replace(/\s*$/, "");
+    const tags = lines.slice(idx).join("\n");
+    return ((body ? body + "\n" : "") + CAPTION_DISCLAIMER + "\n\n" + tags).trim();
   }
 
   // Build the CONCEPT directive injected into video/caption prompts. Forces THIS
@@ -479,8 +612,9 @@
     product.__experimentConcept = product.__concept;
     const raw = await call(cfg, tpl.replace(/{{context}}/g, ctx)
       .replace(/{{CONCEPT}}/g, conceptBlock(concept, false))
+      .replace(/{{NICHE_TAGS}}/g, nicheTags(product.name).join(" "))
       .replace(/{{name}}/g, product.name || "")
-      .replace(/{{price}}/g, product.price != null ? "Rp" + product.price.toLocaleString("id-ID") : ""), 0.75);
+      .replace(/{{price}}/g, ""), 0.75);
     return ensureHashtags(raw, product);
   }
   async function generateTag(cfg, product) {
@@ -488,29 +622,19 @@
     return raw.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 20);
   }
 
-  // Lean context. Fikri's rule (updated 2026-09-13): social proof = RATING ONLY.
-  // Jumlah terjual is deliberately NOT passed to the AI so it can never leak into
-  // a caption or video prompt. No review counts, no star percentages either.
+  // Lean context. Fikri's rules: NO price (2026-10-02) and, since 2026-10-09,
+  // NO rating either. Neither price, rating, jumlah terjual nor review counts
+  // are passed to the AI, so they can never leak into a caption or video prompt.
+  // (Rating stays in the research panel/dataset — it only never reaches the AI.)
   function productContext(p) {
     const parts = [];
     if (p.name) parts.push("Nama produk (SEBUT dalam video/caption): " + p.name);
-    if (p.price != null) parts.push("Harga: Rp" + p.price.toLocaleString("id-ID"));
+    // Fikri's rule (2026-10-02): NO PRICE in video prompt or caption. Price is
+    // deliberately NOT passed to the AI (same pattern as jumlah terjual).
+    parts.push("LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga.");
+    parts.push("LARANGAN RATING: " + RATING_BAN);
     if (p.commissionPct != null || (p.economics && p.economics.commissionPct))
       parts.push("Komisi: " + (p.commissionPct || p.economics.commissionPct) + "%");
-    // Rating hanya disebut kalau BAGUS (>= 4.8). Rating 4.5 atau 4.2 secara
-    // teknis "tinggi" tapi di iklan Shopee justru menurunkan kepercayaan —
-    // pembeli Indonesia membaca apa pun di bawah 4.8 sebagai sinyal ragu. Di
-    // bawah ambang: rating TIDAK dikirim ke model sama sekali, plus larangan
-    // eksplisit supaya model tidak mengarang atau menyinggung rating sendiri.
-    const RATING_MIN_SEBUT = 4.8;
-    const rating = Number(p.rating);
-    if (Number.isFinite(rating) && rating >= RATING_MIN_SEBUT) {
-      parts.push("Rating: " + p.rating + "/5");
-    } else {
-      parts.push("LARANGAN: JANGAN sebut, tulis, atau singgung rating/bintang/" +
-                 "ulasan sama sekali — angkat sisi lain (fungsi, harga, masalah " +
-                 "yang dipecahkan). Jangan mengarang angka rating.");
-    }
     return parts.join(" | ");
   }
 
@@ -525,7 +649,11 @@
     const handsMode = size === "small";
     // a user-customised videoPrompt in Admin Panel always wins
     const custom = cfg.ai && cfg.ai.videoPrompt && cfg.ai.videoPrompt.trim();
-    const tpl = custom || (handsMode ? HANDS_VIDEO_PROMPT : DEFAULT_VIDEO_PROMPT);
+    // A custom template without {{context}} used to drop the product data AND
+    // the price ban entirely — append it, same as the caption path does.
+    const tpl = custom
+      ? (/{{context}}/.test(custom) ? custom : custom + "\n\nData produk: {{context}}")
+      : (handsMode ? HANDS_VIDEO_PROMPT : DEFAULT_VIDEO_PROMPT);
     const sizeBlock = handsMode ? ""
       : (size === "large" ? SIZE_RULES_LARGE : SIZE_RULES_JUDGE);
     // Phone cases get extra hard rules (female manicured hands; never flip the
@@ -541,11 +669,12 @@
       .replace(/{{CASE_RULES}}/g, caseBlock)
       .replace(/{{CONCEPT}}/g, conceptBlock(concept, true))
       .replace(/{{context}}/g, ctx)
-      .replace(/{{name}}/g, product.name || "");
+      .replace(/{{name}}/g, product.name || "")
+      .replace(/{{price}}/g, "");   // was left as literal "{{price}}" here
     // NOTE: no mode label is prefixed — the whole textarea gets pasted into
     // Gemini/Veo, so any bracketed note would become noise in the prompt.
     // The mode is surfaced in the panel's section title instead (see content.js).
-    return call(cfg, instruction, 0.35);
+    return stripPrice(stripRating(await call(cfg, instruction, 0.35)));
   }
 
   // Which video template a product will use — for labelling in the UI.
@@ -562,5 +691,5 @@
 
   global.RMAi = { generateCaption, generateTag, generateVideoPrompt, productContext,
                   isPhoneAccessory, isHandheld, isPhoneCase, productSize, videoMode,
-                  ensureHashtags, CAMPAIGN_TAGS, DEFAULT_CAPTION_PROMPT };
+                  ensureHashtags, stripPrice, stripRating, RATING_BAN, NICHE_TAGS, nicheTags, ensureNicheTags, ensureDisclaimer, CAPTION_DISCLAIMER, DEFAULT_CAPTION_PROMPT };
 })(typeof window !== "undefined" ? window : this);

@@ -1,65 +1,68 @@
 #!/usr/bin/env node
 /**
- * Regression: rating is only ever mentioned when it is GOOD (>= 4.8).
+ * Regression (2026-10-09): NO RATING anywhere in generated captions / video
+ * prompts. Supersedes the old "mention rating only if >= 4.8" gate.
  *
- * Rule from Fikri: a 4.5 or 4.2 rating is technically "high" but in a Shopee ad
- * it LOWERS trust — Indonesian buyers read anything under 4.8 as a hesitation
- * signal. So below the threshold the rating must not reach the model at all, and
- * the model must be told explicitly not to invent or discuss one.
- *
- * productContext() feeds BOTH the caption and the video prompt, so gating it
- * there covers every generated asset. This test asserts the gate from both
- * sides: the number is present above the threshold, absent below it.
+ * Enforced on both sides: the rating never reaches the model (productContext),
+ * every prompt template carries the ban, and the OUTPUT is scrubbed so a stale
+ * stored prompt or an ignoring model can't leak one.
  */
 const assert = require("assert");
 const fs = require("fs");
 const vm = require("vm");
 
-const ctx = vm.createContext({ console, Math, Object, Number, Array, String, JSON, fetch: () => {} });
+let lastPrompt = "";
+let reply = "";
+const fetch = async (_u, opts) => {
+  lastPrompt = JSON.parse(opts.body).messages.map((m) => m.content).join("\n");
+  return { ok: true, json: async () => ({ choices: [{ message: { content: reply } }] }) };
+};
+const ctx = vm.createContext({ console, Math, Object, Number, Array, String, JSON, RegExp, Promise, fetch });
 vm.runInContext(fs.readFileSync(__dirname + "/../src/ai.js", "utf8"), ctx);
 const RMAi = ctx.RMAi;
-assert(RMAi && typeof RMAi.productContext === "function", "RMAi.productContext tidak diekspor");
+assert(RMAi && RMAi.productContext && RMAi.stripRating, "RMAi.productContext/stripRating tidak diekspor");
 
 const base = { name: "Case Bening iPhone 15", price: 45000, commissionPct: 8 };
 
-// --- above / at the threshold: rating IS mentioned ---------------------------
-for (const r of [4.8, 4.9, 5, "4.85"]) {
-  const out = RMAi.productContext(Object.assign({}, base, { rating: r }));
-  assert(/Rating:/.test(out), `rating ${r} (>=4.8) harus disebut, dapat: ${out}`);
-  assert(out.includes(String(r)), `nilai rating ${r} harus muncul apa adanya`);
-  assert(!/LARANGAN/.test(out), `rating bagus ${r} tidak boleh memicu larangan`);
-}
-
-// --- below the threshold: rating is NOT mentioned, and it is forbidden -------
-for (const r of [4.79, 4.5, 4.2, 3.9, 0, "4.1"]) {
-  const out = RMAi.productContext(Object.assign({}, base, { rating: r }));
-  assert(!/Rating:/.test(out), `rating ${r} (<4.8) TIDAK boleh disebut, dapat: ${out}`);
-  assert(!new RegExp("\\b" + String(r).replace(".", "\\.") + "\\b").test(out),
-    `angka rating ${r} bocor ke konteks: ${out}`);
-  assert(/LARANGAN/.test(out) && /rating/i.test(out),
-    `harus ada larangan eksplisit menyebut rating untuk ${r}: ${out}`);
-}
-
-// --- missing / unusable rating behaves like "below threshold" ----------------
-for (const r of [null, undefined, "", "n/a", NaN]) {
+// 1. rating value never reaches the model, at any value; ban always present.
+for (const r of [5, 4.9, 4.8, "4.85", 4.5, 3.9, 0, null, undefined, "n/a", NaN]) {
   const p = Object.assign({}, base);
   if (r !== undefined) p.rating = r;
   const out = RMAi.productContext(p);
-  assert(!/Rating:/.test(out), `rating kosong (${String(r)}) tidak boleh disebut`);
-  assert(/LARANGAN/.test(out), `rating kosong (${String(r)}) harus memicu larangan`);
+  assert(!/Rating:/.test(out), `rating ${String(r)} bocor ke konteks: ${out}`);
+  assert(!/\b4\.9\b|\b4\.85\b/.test(out), `angka rating ${String(r)} bocor: ${out}`);
+  assert(/LARANGAN RATING/.test(out), `larangan rating wajib ada (${String(r)})`);
+  assert(out.includes("Case Bening iPhone 15"), "nama produk hilang");
+  assert(/LARANGAN HARGA/.test(out) && /Komisi: 8%/.test(out), "harga/komisi rusak");
 }
 
-// --- the rest of the context is untouched by the gate -----------------------
-const good = RMAi.productContext(Object.assign({}, base, { rating: 4.9 }));
-const bad = RMAi.productContext(Object.assign({}, base, { rating: 4.2 }));
-for (const out of [good, bad]) {
-  assert(out.includes("Case Bening iPhone 15"), "nama produk hilang dari konteks");
-  assert(/Rp45\.000/.test(out), "harga hilang dari konteks");
-  assert(/Komisi: 8%/.test(out), "komisi hilang dari konteks");
-}
+// 2. no prompt template tells the model rating is OK.
+const cfg = { ai: { enabled: true, apiKey: "x", baseUrl: "http://stub", model: "m", captionPrompt: "", videoPrompt: "" } };
+(async () => {
+  const names = ["Case iPhone 16 Pro Floral", "Rak Dapur Susun 3 Tingkat", "Gamis Syari Premium Wanita"]; // hands / judge / large
+  for (const n of names) {
+    const product = { name: n, price: 39000, rating: 4.9 };
+    reply = "Nemu banget. Rating 4.9/5 ⭐⭐⭐⭐⭐, 2rb review, bintang 5!\n#fyp #viral #shopeefinds #racunshopee #checkoutdulu #rating5";
+    for (const [label, fn] of [["video", RMAi.generateVideoPrompt], ["caption", RMAi.generateCaption]]) {
+      const out = await fn(cfg, product);
+      assert(!/rating|⭐|★|bintang|\/5\b|review/i.test(out), `${label} ${n} masih ada rating: ${out}`);
+      assert(/LARANGAN RATING/.test(lastPrompt), `${label} ${n}: ban tidak ada di prompt`);
+      assert(!/CUKUP RATING|boleh manfaatkan RATING/i.test(lastPrompt), `${label} ${n}: prompt masih mengizinkan rating`);
+      assert(!/Rating:\s*4\.9/.test(lastPrompt), `${label} ${n}: rating dikirim ke model`);
+    }
+  }
 
-console.log("RATING GATE LULUS");
-console.log("  >=4.8 disebut (4.8, 4.9, 5): OK");
-console.log("  <4.8 disembunyikan + dilarang (4.79, 4.5, 4.2, 3.9): OK");
-console.log("  rating kosong/NaN diperlakukan seperti di bawah ambang: OK");
-console.log("  nama/harga/komisi tetap utuh: OK");
+  // 3. stripRating scrubs the forms but leaves normal text alone.
+  const dirty = "Case ini tahan banting. Rating 4.9/5 dari pembeli, ⭐4.8, ratusan review, 1.200 ulasan, bintang 5 semua.\nWarna 5 pilihan, muat 5 buah.\n#fyp #ratingtinggi #casehp";
+  const clean = RMAi.stripRating(dirty);
+  assert(!/rating|⭐|\/5|review|ulasan|bintang/i.test(clean), "masih ada rating: " + clean);
+  assert(/Case ini tahan banting/.test(clean), "teks normal ikut terhapus");
+  assert(/Warna 5 pilihan, muat 5 buah/.test(clean), "angka non-rating ikut terhapus");
+  assert(/#fyp/.test(clean) && /#casehp/.test(clean), "hashtag normal ikut terhapus");
+
+  console.log("NO-RATING LULUS");
+  console.log("  rating tak pernah dikirim ke model (semua nilai): OK");
+  console.log("  semua template (tangan/presenter/besar) + caption bawa larangan: OK");
+  console.log("  output caption & video prompt di-scrub: OK");
+  console.log("  teks/angka/hashtag normal utuh: OK");
+})().catch((e) => { console.error(e); process.exit(1); });

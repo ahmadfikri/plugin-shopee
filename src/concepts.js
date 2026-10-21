@@ -25,10 +25,8 @@
       angle: "buka dengan pertanyaan/teka-teki yang HANYA terjawab oleh produk; frame 1 tunjukkan MASALAH sedang terjadi, bukan produk dulu",
       hook: "pertanyaan singkat ('kenapa…', 'gimana bisa…')",
       set: "sudut close-up dramatis, 1 titik fokus" },
-    { id: "price_shock", label: "Harga apa adanya",
-      angle: "kalau harga produk memang menarik, tampilkan angka ASLI dari data apa adanya — JANGAN membesar-besarkan, jangan klaim 'termurah' atau 'tak masuk akal'; biarkan angkanya bicara sendiri",
-      hook: "sebut harga asli produk secara wajar ('cuma segini dapat …')",
-      set: "produk dipegang, reveal harga cepat" },
+    // "price_shock" concept removed 2026-10-02: Fikri's rule — no price in
+    // video prompt or caption. Its id stays in experiment.js for old ledger rows.
     { id: "before_after", label: "Before / after",
       angle: "kontras dramatis sebelum→sesudah dalam 3 detik pertama; transformasi memuncak sebelum detik ke-3",
       hook: "'gara-gara ini…' / 'sebelum vs sesudah'",
