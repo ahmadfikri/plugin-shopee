@@ -217,6 +217,49 @@
       `</tr>`;
   }
 
+  /* v0.9.26: Thompson-sampling test plan over the products currently shown.
+   * Read-only block: no buttons, no handlers, so it cannot disturb bulk scan. */
+  function testPlanBlock(items) {
+    const B = global.RMBandit;
+    if (!B || !items || !items.length) return "";
+    const r = B.plan(items, { k: 3 });
+    if (r.eligible < 2) {
+      return `<div class="rm-plan rm-sub">🎲 Rencana uji butuh prediksi ROAS. ` +
+        `Impor snapshot terbaru di Admin Panel → Feedback Loop, lalu scan ulang.</div>`;
+    }
+    const NL = (global.RMNiche && global.RMNiche.LABEL) || {};
+    const pc = (v) => (v >= 0.995 ? "≥99" : v <= 0.005 ? "≤1" : Math.round(v * 100)) + "%";
+    const rows = r.picks.map((p, i) => {
+      const x = p.item, href = safeHref(x.href);
+      return `<tr><td>${i + 1}</td>` +
+        `<td class="rm-name" title="${esc(x.name || "")}">${esc((x.name || "").slice(0, 48))}` +
+        (href ? ` <a href="${href}" target="_blank" rel="noopener" title="Buka di Shopee">🔗</a>` : "") + `</td>` +
+        `<td>${esc(NL[x.niche] || x.niche || "?")}</td>` +
+        `<td>${x.epcTag ? "tag " + esc(x.epcTag) : "produk baru"}</td>` +
+        `<td><b>${p.roas.toFixed(2)}x</b></td>` +
+        `<td>${pc(p.pAbove1)}</td>` +
+        `<td>${pc(p.pPick)}</td></tr>`;
+    }).join("");
+    // When even the best candidates almost surely lose, say so instead of
+    // recommending a test (P(ROAS>=1) < 10% for every pick).
+    const weak = r.picks.every((p) => p.pAbove1 < 0.10);
+    return `<div class="rm-plan${weak ? " rm-plan-weak" : ""}">` +
+      `<div class="rm-plan-t"><b>${weak ? "⚠ Belum ada kandidat yang layak diuji"
+        : `🎲 Uji ${r.k} produk ini dulu`}</b> ` +
+      `<span class="rm-sub">Thompson sampling, ${r.draws} simulasi dari ${r.eligible} kandidat · budget uji maks Rp30rb per produk</span></div>` +
+      `<table class="rm-table rm-plan-table"><thead><tr><th>#</th><th>Produk</th><th>Niche</th><th>Dasar</th>` +
+      `<th title="Prediksi ROAS (rata-rata posterior)">ROAS</th>` +
+      `<th title="Peluang ROAS ≥ 1x menurut posterior">P(≥1x)</th>` +
+      `<th title="Seberapa sering produk ini masuk ${r.k} besar dalam simulasi">Dipilih</th></tr></thead>` +
+      `<tbody>${rows}</tbody></table>` +
+      (weak ? `<div class="rm-sub">Ini ${r.k} terbaik dari yang ada, tapi peluang ROAS ≥1x semuanya di bawah 10%. ` +
+        `Lebih baik scan niche lain (casing HP / rumah & dapur) daripada membakar budget uji di sini.</div>` : "") +
+      (r.ties ? `<div class="rm-sub">${r.ties} dari ${r.k} pilihan punya prediksi yang sama persis dengan produk lain yang tidak terpilih ` +
+        `(produk baru di niche yang sama). Di antara mereka urutannya untung-untungan, belum ada data yang membedakan.</div>` : "") +
+      (r.skipped ? `<div class="rm-sub">${r.skipped} produk tidak ikut: terbukti 0 order, atau dipindai sebelum snapshot v0.9.26 (scan ulang).</div>` : "") +
+      `</div>`;
+  }
+
   function shortlistSection(meta, expanded, filterKeyword, pageLabel) {
     const allItems = (meta && meta.items) || [];
     const SL = global.RMShortlist;
@@ -279,6 +322,7 @@
       `<button class="rm-sl-kwscan">🔎 Bulk Scan Keyword</button>` +
       `</div>` +
       `<div class="rm-sl-progress" style="display:none"></div>` +
+      testPlanBlock(items) +
       `<table class="rm-table rm-sl-table rm-sortable"><thead><tr>` +
       sortHead("#", 0, "number") + sortHead("Produk", 1, "text") +
       sortHead("Harga", 2, "number") + sortHead("Komisi", 3, "number") +
@@ -311,5 +355,5 @@
     return wrap;
   }
 
-  global.RMPanel = { build, buildDetailModal, shortlistSection };
+  global.RMPanel = { build, buildDetailModal, shortlistSection, testPlanBlock };
 })(typeof window !== "undefined" ? window : this);

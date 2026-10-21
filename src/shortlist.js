@@ -77,6 +77,10 @@
           epcBasis: ep ? ep.basis : null,
           epcTag: ep ? (ep.matchedTag || null) : null,
           epcZero: ep ? !!ep.zeroConverter : false,
+          // ---- v0.9.26: niche + ROAS posterior for the Thompson test plan ----
+          niche: ep && ep.niche ? ep.niche : null,
+          roas: ep && Number.isFinite(ep.roas) ? Math.round(ep.roas * 1000) / 1000 : null,
+          roasSd: ep && Number.isFinite(ep.roasSd) ? Math.round(ep.roasSd * 1000) / 1000 : null,
           keyword: keyword || "",
           href: p.href || "",
           at: now,
@@ -175,7 +179,7 @@
 
   function toCsv(items) {
     const head = ["epcScore", "epcAction", "epc", "epcLow", "epcHigh",
-                  "epcConfidence", "epcBasis", "epcTag", "epcZero",
+                  "epcConfidence", "epcBasis", "epcTag", "epcZero", "niche", "roas", "roasSd",
                   "pro", "action", "name", "price", "commissionPct", "maxCPC",
                   "basis", "rating", "unitsPerMonth", "keyword", "href"];
     const esc = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T23:34:05",
+  "generatedAt": "2026-10-21T22:21:31",
   "source": "syabab affiliate masters (read-only export)",
   "excluded": {
     "personalTags": [
@@ -13,20 +13,67 @@
     ]
   },
   "global": {
-    "clicks": 82115,
-    "orders": 4179,
-    "conversionRate": 4.76,
-    "epc": 137.7,
-    "roas": 1.28,
-    "commission": 12136212,
-    "spend": 9492426,
-    "metaClicks": 55986,
-    "metaCpc": 161.2,
-    "arrival": 1.478
+    "clicks": 90227,
+    "orders": 4523,
+    "conversionRate": 4.71,
+    "epc": 136.2,
+    "roas": 1.27,
+    "commission": 13112137,
+    "spend": 10353471,
+    "metaClicks": 62082,
+    "metaCpc": 159.3,
+    "arrival": 1.463
   },
   "minClicksTrust": 25,
+  "minTestSpend": 10000,
+  "niches": {
+    "hp": {
+      "tags": 65,
+      "tested": 24,
+      "paidBack": 8,
+      "clicks": 56105,
+      "orders": 3156,
+      "commission": 8910956,
+      "spend": 6404764,
+      "epc": 146.5,
+      "roas": 1.39,
+      "metaClicks": 36854,
+      "metaCpc": 163.4,
+      "arrival": 1.531
+    },
+    "lainnya": {
+      "tags": 42,
+      "tested": 12,
+      "paidBack": 0,
+      "clicks": 4543,
+      "orders": 121,
+      "commission": 250537,
+      "spend": 820130,
+      "epc": 54.0,
+      "roas": 0.31,
+      "metaClicks": 4275,
+      "metaCpc": 187.8,
+      "arrival": 1.02
+    },
+    "rumah": {
+      "tags": 39,
+      "tested": 22,
+      "paidBack": 4,
+      "clicks": 29579,
+      "orders": 1246,
+      "commission": 3950644,
+      "spend": 3128577,
+      "epc": 129.2,
+      "roas": 1.26,
+      "metaClicks": 20953,
+      "metaCpc": 146.1,
+      "arrival": 1.436
+    }
+  },
   "tags": {
     "A17CaseManual": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 5,
       "orders": 0,
       "commission": 0,
@@ -44,6 +91,8 @@
       "arrival": null
     },
     "CaseFashionWave": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 15,
       "orders": 0,
       "commission": 0,
@@ -61,6 +110,8 @@
       "arrival": null
     },
     "CaseLucu": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 312,
       "orders": 19,
       "commission": 30894,
@@ -78,6 +129,8 @@
       "arrival": 0.386
     },
     "Coklat": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 3,
       "orders": 0,
       "commission": 0,
@@ -95,6 +148,8 @@
       "arrival": null
     },
     "HanasuiKuning": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 1,
       "orders": 0,
       "commission": 0,
@@ -112,6 +167,8 @@
       "arrival": null
     },
     "KupuA17": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 6694,
       "orders": 248,
       "commission": 707458,
@@ -129,6 +186,8 @@
       "arrival": 1.59
     },
     "LeatherDIY": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 26,
       "orders": 1,
       "commission": 5752,
@@ -146,6 +205,8 @@
       "arrival": 0.731
     },
     "LocknLockMetro": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 2,
       "orders": 0,
       "commission": 0,
@@ -163,6 +224,8 @@
       "arrival": null
     },
     "LocknLockMetroAI": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 32,
       "orders": 0,
       "commission": 0,
@@ -180,7 +243,9 @@
       "arrival": null
     },
     "PinkCase": {
-      "clicks": 4,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 6,
       "orders": 0,
       "commission": 0,
       "spend": 0,
@@ -190,13 +255,15 @@
       "trusted": false,
       "verdict": "no-spend",
       "firstDate": "2026-10-01",
-      "lastDate": "2026-10-13",
-      "days": 3,
+      "lastDate": "2026-10-20",
+      "days": 4,
       "metaClicks": 0,
       "metaCpc": null,
       "arrival": null
     },
     "PinkLucu": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 3,
       "orders": 0,
       "commission": 0,
@@ -214,6 +281,8 @@
       "arrival": null
     },
     "PiringIndh": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 6,
       "orders": 0,
       "commission": 0,
@@ -231,23 +300,27 @@
       "arrival": null
     },
     "PolkadotMag": {
-      "clicks": 3667,
-      "orders": 250,
-      "commission": 806226,
-      "spend": 730419,
-      "conversionRate": 6.05,
-      "epc": 202.1,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 3708,
+      "orders": 256,
+      "commission": 810744,
+      "spend": 735675,
+      "conversionRate": 6.15,
+      "epc": 201.1,
       "roas": 1.1,
       "trusted": true,
       "verdict": "profitable",
       "firstDate": "2026-09-08",
-      "lastDate": "2026-10-18",
-      "days": 41,
-      "metaClicks": 2668,
-      "metaCpc": 246.3,
-      "arrival": 1.367
+      "lastDate": "2026-10-20",
+      "days": 43,
+      "metaClicks": 2697,
+      "metaCpc": 245.6,
+      "arrival": 1.366
     },
     "SpideyCase": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 10,
       "orders": 1,
       "commission": 0,
@@ -265,6 +338,8 @@
       "arrival": null
     },
     "WadrahCeramide": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 42,
       "orders": 0,
       "commission": 0,
@@ -282,23 +357,27 @@
       "arrival": 0.452
     },
     "acrylicMarker": {
-      "clicks": 606,
-      "orders": 16,
-      "commission": 17551,
-      "spend": 59645,
-      "conversionRate": 2.64,
-      "epc": 29.0,
-      "roas": 0.29,
+      "niche": "lainnya",
+      "nicheSource": "default",
+      "clicks": 946,
+      "orders": 26,
+      "commission": 45292,
+      "spend": 98346,
+      "conversionRate": 2.75,
+      "epc": 47.9,
+      "roas": 0.46,
       "trusted": true,
       "verdict": "loser",
       "firstDate": "2026-10-15",
-      "lastDate": "2026-10-18",
-      "days": 4,
-      "metaClicks": 465,
-      "metaCpc": 128.3,
-      "arrival": 1.299
+      "lastDate": "2026-10-20",
+      "days": 6,
+      "metaClicks": 726,
+      "metaCpc": 135.5,
+      "arrival": 1.3
     },
     "alatPel": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 124,
       "orders": 0,
       "commission": 0,
@@ -316,6 +395,8 @@
       "arrival": 1.017
     },
     "alphabet": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 17,
       "orders": 0,
       "commission": 0,
@@ -332,7 +413,28 @@
       "metaCpc": 393.1,
       "arrival": null
     },
+    "antiheatPhone": {
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 24,
+      "orders": 2,
+      "commission": 5630,
+      "spend": 4720,
+      "conversionRate": 8.33,
+      "epc": 234.6,
+      "roas": 1.19,
+      "trusted": false,
+      "verdict": "profitable",
+      "firstDate": "2026-10-19",
+      "lastDate": "2026-10-20",
+      "days": 2,
+      "metaClicks": 14,
+      "metaCpc": 337.1,
+      "arrival": null
+    },
     "asadtsujnwpr26100101": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 3,
       "orders": 0,
       "commission": 0,
@@ -350,23 +452,27 @@
       "arrival": null
     },
     "bablovMantap": {
-      "clicks": 3333,
-      "orders": 153,
-      "commission": 317357,
-      "spend": 246054,
-      "conversionRate": 4.59,
-      "epc": 95.2,
-      "roas": 1.29,
+      "niche": "rumah",
+      "nicheSource": "keyword",
+      "clicks": 4072,
+      "orders": 175,
+      "commission": 366005,
+      "spend": 300810,
+      "conversionRate": 4.3,
+      "epc": 89.9,
+      "roas": 1.22,
       "trusted": true,
       "verdict": "profitable",
       "firstDate": "2026-10-07",
-      "lastDate": "2026-10-18",
-      "days": 12,
-      "metaClicks": 1981,
-      "metaCpc": 124.2,
-      "arrival": 1.681
+      "lastDate": "2026-10-20",
+      "days": 14,
+      "metaClicks": 2465,
+      "metaCpc": 122.0,
+      "arrival": 1.651
     },
     "bagus": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 12,
       "orders": 0,
       "commission": 0,
@@ -384,24 +490,28 @@
       "arrival": null
     },
     "beatsCase": {
-      "clicks": 181,
-      "orders": 4,
-      "commission": 73930,
-      "spend": 25591,
-      "conversionRate": 2.21,
-      "epc": 408.5,
-      "roas": 2.89,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 518,
+      "orders": 13,
+      "commission": 99055,
+      "spend": 68392,
+      "conversionRate": 2.51,
+      "epc": 191.2,
+      "roas": 1.45,
       "trusted": true,
-      "verdict": "winner",
+      "verdict": "profitable",
       "firstDate": "2026-10-17",
-      "lastDate": "2026-10-18",
-      "days": 2,
-      "metaClicks": 91,
-      "metaCpc": 281.2,
-      "arrival": 1.989
+      "lastDate": "2026-10-20",
+      "days": 4,
+      "metaClicks": 250,
+      "metaCpc": 273.6,
+      "arrival": 2.072
     },
     "bintangSamsung": {
-      "clicks": 44,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 45,
       "orders": 0,
       "commission": 0,
       "spend": 6640,
@@ -411,13 +521,15 @@
       "trusted": true,
       "verdict": "zero-converter",
       "firstDate": "2026-10-10",
-      "lastDate": "2026-10-17",
-      "days": 6,
+      "lastDate": "2026-10-19",
+      "days": 7,
       "metaClicks": 13,
       "metaCpc": 510.8,
       "arrival": null
     },
     "bling": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 5,
       "orders": 0,
       "commission": 0,
@@ -435,6 +547,8 @@
       "arrival": null
     },
     "blingReborn": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 68,
       "orders": 0,
       "commission": 0,
@@ -452,7 +566,9 @@
       "arrival": 0.4
     },
     "blinkShiny": {
-      "clicks": 7,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 8,
       "orders": 0,
       "commission": 0,
       "spend": 3674,
@@ -462,13 +578,15 @@
       "trusted": false,
       "verdict": "loser",
       "firstDate": "2026-09-13",
-      "lastDate": "2026-09-16",
-      "days": 2,
+      "lastDate": "2026-10-19",
+      "days": 3,
       "metaClicks": 7,
       "metaCpc": 524.9,
       "arrival": null
     },
     "botolminum": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 382,
       "orders": 7,
       "commission": 18328,
@@ -486,6 +604,8 @@
       "arrival": 0.669
     },
     "cabe": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 8,
       "orders": 0,
       "commission": 0,
@@ -503,6 +623,8 @@
       "arrival": null
     },
     "caseBurit": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 6,
       "orders": 0,
       "commission": 0,
@@ -520,6 +642,8 @@
       "arrival": null
     },
     "caseCouple": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 15,
       "orders": 1,
       "commission": 345,
@@ -537,6 +661,8 @@
       "arrival": null
     },
     "caseDicuci": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 18,
       "orders": 0,
       "commission": 0,
@@ -554,6 +680,8 @@
       "arrival": null
     },
     "caseDuyung": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 43,
       "orders": 3,
       "commission": 11999,
@@ -571,6 +699,8 @@
       "arrival": null
     },
     "caseItemKuman": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 22,
       "orders": 1,
       "commission": 1696,
@@ -588,6 +718,8 @@
       "arrival": null
     },
     "caseLove": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 58,
       "orders": 2,
       "commission": 1890,
@@ -605,6 +737,8 @@
       "arrival": 1.217
     },
     "caseOpoGahwa": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 7,
       "orders": 0,
       "commission": 0,
@@ -622,6 +756,8 @@
       "arrival": null
     },
     "casePitaA17": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 33,
       "orders": 1,
       "commission": 358,
@@ -639,6 +775,8 @@
       "arrival": 1.192
     },
     "caseSamsungBlink": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 4820,
       "orders": 283,
       "commission": 640969,
@@ -656,6 +794,8 @@
       "arrival": 1.903
     },
     "caseSwaroskiIphone": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 40,
       "orders": 3,
       "commission": 5036,
@@ -673,23 +813,27 @@
       "arrival": 0.804
     },
     "caseTPC": {
-      "clicks": 393,
-      "orders": 11,
-      "commission": 36742,
-      "spend": 58603,
-      "conversionRate": 2.8,
-      "epc": 93.5,
-      "roas": 0.63,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 507,
+      "orders": 21,
+      "commission": 64603,
+      "spend": 74276,
+      "conversionRate": 4.14,
+      "epc": 127.4,
+      "roas": 0.87,
       "trusted": true,
       "verdict": "thin",
       "firstDate": "2026-10-16",
-      "lastDate": "2026-10-18",
-      "days": 3,
-      "metaClicks": 236,
-      "metaCpc": 248.3,
-      "arrival": 1.665
+      "lastDate": "2026-10-20",
+      "days": 5,
+      "metaClicks": 302,
+      "metaCpc": 245.9,
+      "arrival": 1.675
     },
     "caseVolia": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 6,
       "orders": 0,
       "commission": 0,
@@ -707,7 +851,9 @@
       "arrival": null
     },
     "caselifyMag": {
-      "clicks": 6,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 7,
       "orders": 0,
       "commission": 0,
       "spend": 2759,
@@ -717,13 +863,15 @@
       "trusted": false,
       "verdict": "loser",
       "firstDate": "2026-09-13",
-      "lastDate": "2026-09-22",
-      "days": 3,
+      "lastDate": "2026-10-20",
+      "days": 4,
       "metaClicks": 4,
       "metaCpc": 689.8,
       "arrival": null
     },
     "caselucu8rba26092402": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 1,
       "orders": 0,
       "commission": 0,
@@ -741,6 +889,8 @@
       "arrival": null
     },
     "caselucu8rmw26092703": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 3,
       "orders": 0,
       "commission": 0,
@@ -758,6 +908,8 @@
       "arrival": null
     },
     "caselucu8rpr26092401": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 2,
       "orders": 0,
       "commission": 0,
@@ -775,6 +927,8 @@
       "arrival": null
     },
     "caselucu8rpv26100202": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 13,
       "orders": 0,
       "commission": 0,
@@ -792,6 +946,8 @@
       "arrival": null
     },
     "casepitaapmw26092801": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 20,
       "orders": 0,
       "commission": 0,
@@ -809,6 +965,8 @@
       "arrival": null
     },
     "caseswar18ba26092701": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 2,
       "orders": 0,
       "commission": 0,
@@ -826,6 +984,8 @@
       "arrival": null
     },
     "caseswar18cp26092302": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 15,
       "orders": 3,
       "commission": 25950,
@@ -843,6 +1003,8 @@
       "arrival": 0.343
     },
     "caseswar18mw26092407": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 2,
       "orders": 0,
       "commission": 0,
@@ -860,6 +1022,8 @@
       "arrival": null
     },
     "caseswar18mw26092801": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 255,
       "orders": 3,
       "commission": 7945,
@@ -877,6 +1041,8 @@
       "arrival": 0.681
     },
     "caseswar18mw26100202": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 35,
       "orders": 0,
       "commission": 0,
@@ -894,6 +1060,8 @@
       "arrival": null
     },
     "caseswar18pr26092402": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 11,
       "orders": 5,
       "commission": 26702,
@@ -911,6 +1079,8 @@
       "arrival": null
     },
     "caseswar18ps26100101": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 18,
       "orders": 0,
       "commission": 0,
@@ -928,6 +1098,8 @@
       "arrival": null
     },
     "caseswar18pv26092406": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 3,
       "orders": 2,
       "commission": 1196,
@@ -945,6 +1117,8 @@
       "arrival": null
     },
     "caseswar18pv26092707": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 9,
       "orders": 0,
       "commission": 0,
@@ -962,6 +1136,8 @@
       "arrival": null
     },
     "casingBo": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 8,
       "orders": 2,
       "commission": 3888,
@@ -979,6 +1155,8 @@
       "arrival": null
     },
     "casingOppo": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 15,
       "orders": 0,
       "commission": 0,
@@ -996,6 +1174,8 @@
       "arrival": null
     },
     "casingunspmw26092701": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 4,
       "orders": 0,
       "commission": 0,
@@ -1013,6 +1193,8 @@
       "arrival": null
     },
     "catEarsCase": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 92,
       "orders": 0,
       "commission": 0,
@@ -1030,6 +1212,8 @@
       "arrival": 1.82
     },
     "cerminBunga": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 8,
       "orders": 0,
       "commission": 0,
@@ -1047,6 +1231,8 @@
       "arrival": null
     },
     "cid3in1mq8mw26092802": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 3,
       "orders": 0,
       "commission": 0,
@@ -1064,23 +1250,27 @@
       "arrival": null
     },
     "coachPhone": {
-      "clicks": 8500,
-      "orders": 429,
-      "commission": 1149578,
-      "spend": 668235,
-      "conversionRate": 4.73,
-      "epc": 126.4,
-      "roas": 1.72,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 9173,
+      "orders": 478,
+      "commission": 1297980,
+      "spend": 729076,
+      "conversionRate": 4.92,
+      "epc": 133.3,
+      "roas": 1.78,
       "trusted": true,
       "verdict": "winner",
       "firstDate": "2026-09-24",
-      "lastDate": "2026-10-18",
-      "days": 25,
-      "metaClicks": 4451,
-      "metaCpc": 138.5,
-      "arrival": 1.91
+      "lastDate": "2026-10-20",
+      "days": 27,
+      "metaClicks": 4847,
+      "metaCpc": 139.7,
+      "arrival": 1.893
     },
     "containerTumpuk": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 28,
       "orders": 1,
       "commission": 10000,
@@ -1098,7 +1288,9 @@
       "arrival": 0.931
     },
     "cookingSet": {
-      "clicks": 1081,
+      "niche": "rumah",
+      "nicheSource": "keyword",
+      "clicks": 1082,
       "orders": 36,
       "commission": 62628,
       "spend": 138411,
@@ -1108,13 +1300,15 @@
       "trusted": true,
       "verdict": "loser",
       "firstDate": "2026-10-08",
-      "lastDate": "2026-10-18",
-      "days": 11,
+      "lastDate": "2026-10-19",
+      "days": 12,
       "metaClicks": 734,
       "metaCpc": 188.6,
       "arrival": 1.458
     },
     "cucuLemonTumbler": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 25,
       "orders": 1,
       "commission": 120,
@@ -1132,6 +1326,8 @@
       "arrival": null
     },
     "digidiMaroon": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 79,
       "orders": 2,
       "commission": 1235,
@@ -1149,6 +1345,8 @@
       "arrival": 0.379
     },
     "dotCaseIphone": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 16,
       "orders": 2,
       "commission": 1705,
@@ -1166,6 +1364,8 @@
       "arrival": null
     },
     "dukbillTiktok": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 2,
       "orders": 0,
       "commission": 0,
@@ -1183,6 +1383,8 @@
       "arrival": null
     },
     "elmoOrange": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 8,
       "orders": 2,
       "commission": 6219,
@@ -1200,23 +1402,27 @@
       "arrival": null
     },
     "expandableKotak": {
-      "clicks": 179,
-      "orders": 0,
-      "commission": 0,
-      "spend": 22600,
-      "conversionRate": 0.0,
-      "epc": 0.0,
-      "roas": 0.0,
+      "niche": "rumah",
+      "nicheSource": "keyword",
+      "clicks": 415,
+      "orders": 9,
+      "commission": 25330,
+      "spend": 49552,
+      "conversionRate": 2.17,
+      "epc": 61.0,
+      "roas": 0.51,
       "trusted": true,
-      "verdict": "zero-converter",
+      "verdict": "thin",
       "firstDate": "2026-10-17",
-      "lastDate": "2026-10-18",
-      "days": 2,
-      "metaClicks": 134,
-      "metaCpc": 168.7,
-      "arrival": 1.328
+      "lastDate": "2026-10-20",
+      "days": 4,
+      "metaClicks": 299,
+      "metaCpc": 165.7,
+      "arrival": 1.385
     },
     "facebook": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 2,
       "orders": 0,
       "commission": 0,
@@ -1234,6 +1440,8 @@
       "arrival": null
     },
     "fakhri": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 0,
       "orders": 1,
       "commission": 5402,
@@ -1251,7 +1459,9 @@
       "arrival": null
     },
     "fnkocasiwcps26100203": {
-      "clicks": 33,
+      "niche": "lainnya",
+      "nicheSource": "default",
+      "clicks": 34,
       "orders": 0,
       "commission": 0,
       "spend": 7169,
@@ -1261,48 +1471,54 @@
       "trusted": true,
       "verdict": "zero-converter",
       "firstDate": "2026-10-03",
-      "lastDate": "2026-10-16",
-      "days": 4,
+      "lastDate": "2026-10-20",
+      "days": 5,
       "metaClicks": 15,
       "metaCpc": 477.9,
       "arrival": null
     },
     "foodContainerFridge": {
-      "clicks": 2968,
-      "orders": 109,
-      "commission": 311811,
-      "spend": 245575,
-      "conversionRate": 3.67,
-      "epc": 105.1,
-      "roas": 1.27,
+      "niche": "rumah",
+      "nicheSource": "keyword",
+      "clicks": 3577,
+      "orders": 126,
+      "commission": 349424,
+      "spend": 297294,
+      "conversionRate": 3.52,
+      "epc": 97.7,
+      "roas": 1.18,
       "trusted": true,
       "verdict": "profitable",
       "firstDate": "2026-10-08",
-      "lastDate": "2026-10-18",
-      "days": 11,
-      "metaClicks": 2026,
-      "metaCpc": 121.2,
-      "arrival": 1.465
+      "lastDate": "2026-10-20",
+      "days": 13,
+      "metaClicks": 2470,
+      "metaCpc": 120.4,
+      "arrival": 1.448
     },
     "furyCube": {
-      "clicks": 354,
-      "orders": 8,
-      "commission": 10113,
+      "niche": "lainnya",
+      "nicheSource": "default",
+      "clicks": 357,
+      "orders": 10,
+      "commission": 12647,
       "spend": 58646,
-      "conversionRate": 2.26,
-      "epc": 28.6,
-      "roas": 0.17,
+      "conversionRate": 2.8,
+      "epc": 35.4,
+      "roas": 0.22,
       "trusted": true,
       "verdict": "loser",
       "firstDate": "2026-10-15",
-      "lastDate": "2026-10-18",
-      "days": 4,
+      "lastDate": "2026-10-20",
+      "days": 6,
       "metaClicks": 288,
       "metaCpc": 203.6,
       "arrival": 1.222
     },
     "gamingChaho": {
-      "clicks": 34,
+      "niche": "lainnya",
+      "nicheSource": "default",
+      "clicks": 35,
       "orders": 0,
       "commission": 0,
       "spend": 5911,
@@ -1312,13 +1528,15 @@
       "trusted": true,
       "verdict": "zero-converter",
       "firstDate": "2026-10-11",
-      "lastDate": "2026-10-12",
-      "days": 2,
+      "lastDate": "2026-10-20",
+      "days": 3,
       "metaClicks": 18,
       "metaCpc": 328.4,
       "arrival": null
     },
     "gelangKupu": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 13,
       "orders": 0,
       "commission": 0,
@@ -1336,6 +1554,8 @@
       "arrival": null
     },
     "gelasKopi": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 45,
       "orders": 0,
       "commission": 0,
@@ -1353,6 +1573,8 @@
       "arrival": 0.467
     },
     "gellangSerutLucu": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 39,
       "orders": 2,
       "commission": 2395,
@@ -1370,6 +1592,8 @@
       "arrival": 1.147
     },
     "gliterFly": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 537,
       "orders": 20,
       "commission": 52603,
@@ -1387,6 +1611,8 @@
       "arrival": 1.549
     },
     "gojodoqKipas": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 6,
       "orders": 0,
       "commission": 0,
@@ -1404,6 +1630,8 @@
       "arrival": null
     },
     "goojodoqaycp26092801": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 3,
       "orders": 0,
       "commission": 0,
@@ -1421,6 +1649,8 @@
       "arrival": null
     },
     "halatiSlik": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 79,
       "orders": 0,
       "commission": 0,
@@ -1437,7 +1667,28 @@
       "metaCpc": 343.4,
       "arrival": 1.188
     },
+    "hermeCase": {
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 236,
+      "orders": 0,
+      "commission": 0,
+      "spend": 28194,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": true,
+      "verdict": "zero-converter",
+      "firstDate": "2026-10-19",
+      "lastDate": "2026-10-20",
+      "days": 2,
+      "metaClicks": 232,
+      "metaCpc": 121.5,
+      "arrival": 1.017
+    },
     "hitNyamuk": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 4,
       "orders": 0,
       "commission": 0,
@@ -1455,6 +1706,8 @@
       "arrival": null
     },
     "keyboardLucu": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 8,
       "orders": 1,
       "commission": 1092,
@@ -1472,23 +1725,27 @@
       "arrival": null
     },
     "kitchenCounter": {
-      "clicks": 12423,
-      "orders": 677,
-      "commission": 2429504,
-      "spend": 1056863,
-      "conversionRate": 5.12,
-      "epc": 185.2,
-      "roas": 2.3,
+      "niche": "rumah",
+      "nicheSource": "keyword",
+      "clicks": 13396,
+      "orders": 725,
+      "commission": 2654453,
+      "spend": 1126843,
+      "conversionRate": 5.11,
+      "epc": 188.6,
+      "roas": 2.36,
       "trusted": true,
       "verdict": "winner",
       "firstDate": "2026-09-13",
-      "lastDate": "2026-10-18",
-      "days": 36,
-      "metaClicks": 7060,
-      "metaCpc": 141.2,
-      "arrival": 1.76
+      "lastDate": "2026-10-20",
+      "days": 38,
+      "metaClicks": 7606,
+      "metaCpc": 140.3,
+      "arrival": 1.761
     },
     "kodokCase": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 8,
       "orders": 2,
       "commission": 11566,
@@ -1506,7 +1763,9 @@
       "arrival": null
     },
     "kuda": {
-      "clicks": 4,
+      "niche": "lainnya",
+      "nicheSource": "default",
+      "clicks": 5,
       "orders": 0,
       "commission": 0,
       "spend": 0,
@@ -1516,13 +1775,15 @@
       "trusted": false,
       "verdict": "no-spend",
       "firstDate": "2026-09-06",
-      "lastDate": "2026-09-06",
-      "days": 1,
+      "lastDate": "2026-10-20",
+      "days": 2,
       "metaClicks": 0,
       "metaCpc": null,
       "arrival": null
     },
     "lamputidsvpr26092606": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 1,
       "orders": 0,
       "commission": 0,
@@ -1540,6 +1801,8 @@
       "arrival": null
     },
     "lamputidur": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 31,
       "orders": 0,
       "commission": 0,
@@ -1557,6 +1820,8 @@
       "arrival": 0.345
     },
     "lucuKantongCase": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 941,
       "orders": 40,
       "commission": 59479,
@@ -1574,6 +1839,8 @@
       "arrival": 1.691
     },
     "luxuryCase": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 8,
       "orders": 0,
       "commission": 0,
@@ -1591,6 +1858,8 @@
       "arrival": null
     },
     "magnetFlower": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 2,
       "orders": 0,
       "commission": 0,
@@ -1608,6 +1877,8 @@
       "arrival": 0.037
     },
     "magnetFridge": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 298,
       "orders": 19,
       "commission": 44779,
@@ -1624,7 +1895,28 @@
       "metaCpc": 276.3,
       "arrival": 1.19
     },
+    "mantapLv": {
+      "niche": "lainnya",
+      "nicheSource": "default",
+      "clicks": 200,
+      "orders": 0,
+      "commission": 0,
+      "spend": 22038,
+      "conversionRate": 0.0,
+      "epc": 0.0,
+      "roas": 0.0,
+      "trusted": true,
+      "verdict": "zero-converter",
+      "firstDate": "2026-10-19",
+      "lastDate": "2026-10-20",
+      "days": 2,
+      "metaClicks": 115,
+      "metaCpc": 191.6,
+      "arrival": 1.739
+    },
     "maskerKn1": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 262,
       "orders": 14,
       "commission": 10182,
@@ -1642,6 +1934,8 @@
       "arrival": 0.648
     },
     "maskerkn2": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 40,
       "orders": 1,
       "commission": 974,
@@ -1659,6 +1953,8 @@
       "arrival": null
     },
     "metal": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 3883,
       "orders": 216,
       "commission": 480840,
@@ -1676,40 +1972,46 @@
       "arrival": 0.581
     },
     "moftCase": {
-      "clicks": 576,
-      "orders": 24,
-      "commission": 92036,
-      "spend": 101191,
-      "conversionRate": 4.17,
-      "epc": 159.8,
-      "roas": 0.91,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 732,
+      "orders": 32,
+      "commission": 102339,
+      "spend": 141203,
+      "conversionRate": 4.37,
+      "epc": 139.8,
+      "roas": 0.72,
       "trusted": true,
       "verdict": "thin",
       "firstDate": "2026-10-13",
-      "lastDate": "2026-10-18",
-      "days": 6,
-      "metaClicks": 398,
-      "metaCpc": 254.2,
-      "arrival": 1.445
+      "lastDate": "2026-10-20",
+      "days": 8,
+      "metaClicks": 550,
+      "metaCpc": 256.7,
+      "arrival": 1.329
     },
     "mosaicCase": {
-      "clicks": 15,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 16,
       "orders": 1,
       "commission": 414,
       "spend": 9228,
-      "conversionRate": 6.67,
-      "epc": 27.6,
+      "conversionRate": 6.25,
+      "epc": 25.8,
       "roas": 0.04,
       "trusted": false,
       "verdict": "loser",
       "firstDate": "2026-10-16",
-      "lastDate": "2026-10-16",
-      "days": 1,
+      "lastDate": "2026-10-19",
+      "days": 2,
       "metaClicks": 16,
       "metaCpc": 576.8,
       "arrival": null
     },
     "narutoCaseIphone": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 19,
       "orders": 0,
       "commission": 0,
@@ -1727,6 +2029,8 @@
       "arrival": null
     },
     "needoh": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 1,
       "orders": 0,
       "commission": 0,
@@ -1744,6 +2048,8 @@
       "arrival": null
     },
     "oootokohlmcu26092601": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 1,
       "orders": 0,
       "commission": 0,
@@ -1761,6 +2067,8 @@
       "arrival": null
     },
     "parfumAhmed": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 1,
       "orders": 0,
       "commission": 0,
@@ -1778,23 +2086,27 @@
       "arrival": null
     },
     "pengeringModelGantung": {
-      "clicks": 2,
+      "niche": "rumah",
+      "nicheSource": "keyword",
+      "clicks": 92,
       "orders": 0,
       "commission": 0,
-      "spend": 0,
+      "spend": 40124,
       "conversionRate": 0.0,
       "epc": 0.0,
-      "roas": null,
-      "trusted": false,
-      "verdict": "no-spend",
+      "roas": 0.0,
+      "trusted": true,
+      "verdict": "zero-converter",
       "firstDate": "2026-10-18",
-      "lastDate": "2026-10-18",
-      "days": 1,
-      "metaClicks": 0,
-      "metaCpc": null,
-      "arrival": null
+      "lastDate": "2026-10-20",
+      "days": 3,
+      "metaClicks": 445,
+      "metaCpc": 90.2,
+      "arrival": 0.202
     },
     "polkaCrying": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 4,
       "orders": 0,
       "commission": 0,
@@ -1812,6 +2124,8 @@
       "arrival": null
     },
     "polkaNew": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 295,
       "orders": 24,
       "commission": 67850,
@@ -1829,6 +2143,8 @@
       "arrival": 1.463
     },
     "polkaPink": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 523,
       "orders": 23,
       "commission": 51022,
@@ -1846,6 +2162,8 @@
       "arrival": 1.948
     },
     "polkadotBieber": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 15,
       "orders": 0,
       "commission": 0,
@@ -1863,24 +2181,28 @@
       "arrival": null
     },
     "polkadotIphone": {
-      "clicks": 20899,
-      "orders": 1368,
-      "commission": 4146127,
-      "spend": 1737474,
-      "conversionRate": 6.11,
-      "epc": 182.1,
-      "roas": 2.39,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 22142,
+      "orders": 1450,
+      "commission": 4337575,
+      "spend": 1841633,
+      "conversionRate": 6.13,
+      "epc": 180.5,
+      "roas": 2.36,
       "trusted": true,
       "verdict": "winner",
       "firstDate": "2026-09-09",
-      "lastDate": "2026-10-18",
-      "days": 40,
-      "metaClicks": 11219,
-      "metaCpc": 146.5,
-      "arrival": 1.947
+      "lastDate": "2026-10-20",
+      "days": 42,
+      "metaClicks": 11873,
+      "metaCpc": 147.2,
+      "arrival": 1.945
     },
     "polkadotLagi": {
-      "clicks": 16,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 19,
       "orders": 0,
       "commission": 0,
       "spend": 3332,
@@ -1890,13 +2212,15 @@
       "trusted": false,
       "verdict": "loser",
       "firstDate": "2026-09-16",
-      "lastDate": "2026-10-11",
-      "days": 8,
+      "lastDate": "2026-10-20",
+      "days": 10,
       "metaClicks": 5,
       "metaCpc": 666.4,
       "arrival": null
     },
     "polkadotLagi2": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 19,
       "orders": 0,
       "commission": 0,
@@ -1914,6 +2238,8 @@
       "arrival": null
     },
     "polkadotRenda": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 47,
       "orders": 3,
       "commission": 1716,
@@ -1931,40 +2257,46 @@
       "arrival": 1.278
     },
     "putarBumbuAsik": {
-      "clicks": 2,
-      "orders": 0,
-      "commission": 0,
-      "spend": 0,
-      "conversionRate": 0.0,
-      "epc": 0.0,
-      "roas": null,
-      "trusted": false,
-      "verdict": "no-spend",
+      "niche": "rumah",
+      "nicheSource": "keyword",
+      "clicks": 235,
+      "orders": 8,
+      "commission": 18287,
+      "spend": 43723,
+      "conversionRate": 3.4,
+      "epc": 77.8,
+      "roas": 0.42,
+      "trusted": true,
+      "verdict": "loser",
       "firstDate": "2026-10-18",
-      "lastDate": "2026-10-18",
-      "days": 1,
-      "metaClicks": 0,
-      "metaCpc": null,
-      "arrival": null
+      "lastDate": "2026-10-20",
+      "days": 3,
+      "metaClicks": 385,
+      "metaCpc": 113.6,
+      "arrival": 0.605
     },
     "rackPiringLucu": {
-      "clicks": 2178,
-      "orders": 60,
-      "commission": 163331,
-      "spend": 194295,
-      "conversionRate": 2.75,
-      "epc": 75.0,
-      "roas": 0.84,
+      "niche": "rumah",
+      "nicheSource": "keyword",
+      "clicks": 2628,
+      "orders": 73,
+      "commission": 207265,
+      "spend": 235048,
+      "conversionRate": 2.78,
+      "epc": 78.9,
+      "roas": 0.88,
       "trusted": true,
       "verdict": "thin",
       "firstDate": "2026-10-08",
-      "lastDate": "2026-10-18",
-      "days": 11,
-      "metaClicks": 1588,
-      "metaCpc": 122.4,
-      "arrival": 1.372
+      "lastDate": "2026-10-20",
+      "days": 13,
+      "metaClicks": 1937,
+      "metaCpc": 121.3,
+      "arrival": 1.357
     },
     "rakKelinci": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 11,
       "orders": 0,
       "commission": 0,
@@ -1982,23 +2314,27 @@
       "arrival": null
     },
     "redchefTumbler": {
-      "clicks": 1487,
-      "orders": 32,
-      "commission": 53449,
-      "spend": 99604,
-      "conversionRate": 2.15,
-      "epc": 35.9,
-      "roas": 0.54,
+      "niche": "rumah",
+      "nicheSource": "keyword",
+      "clicks": 2076,
+      "orders": 47,
+      "commission": 91847,
+      "spend": 139254,
+      "conversionRate": 2.26,
+      "epc": 44.2,
+      "roas": 0.66,
       "trusted": true,
       "verdict": "thin",
       "firstDate": "2026-10-13",
-      "lastDate": "2026-10-18",
-      "days": 6,
-      "metaClicks": 927,
-      "metaCpc": 107.4,
-      "arrival": 1.602
+      "lastDate": "2026-10-20",
+      "days": 8,
+      "metaClicks": 1310,
+      "metaCpc": 106.3,
+      "arrival": 1.583
     },
     "reeddifuser": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 16,
       "orders": 0,
       "commission": 0,
@@ -2016,6 +2352,8 @@
       "arrival": null
     },
     "riceCooker": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 131,
       "orders": 1,
       "commission": 0,
@@ -2033,6 +2371,8 @@
       "arrival": 0.929
     },
     "samsungRibbon": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 14,
       "orders": 0,
       "commission": 0,
@@ -2050,40 +2390,46 @@
       "arrival": null
     },
     "selfieRing": {
-      "clicks": 175,
-      "orders": 6,
-      "commission": 25706,
-      "spend": 27256,
-      "conversionRate": 3.43,
-      "epc": 146.9,
-      "roas": 0.94,
+      "niche": "hp",
+      "nicheSource": "keyword",
+      "clicks": 478,
+      "orders": 16,
+      "commission": 52114,
+      "spend": 67399,
+      "conversionRate": 3.35,
+      "epc": 109.0,
+      "roas": 0.77,
       "trusted": true,
       "verdict": "thin",
       "firstDate": "2026-10-17",
-      "lastDate": "2026-10-18",
-      "days": 2,
-      "metaClicks": 132,
-      "metaCpc": 206.5,
-      "arrival": 1.326
+      "lastDate": "2026-10-20",
+      "days": 4,
+      "metaClicks": 385,
+      "metaCpc": 175.1,
+      "arrival": 1.242
     },
     "selusalo2xcu26092605": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 2,
-      "orders": 0,
-      "commission": 0,
+      "orders": 2,
+      "commission": 12032,
       "spend": 3359,
-      "conversionRate": 0.0,
-      "epc": 0.0,
-      "roas": 0.0,
+      "conversionRate": 100.0,
+      "epc": 6015.9,
+      "roas": 3.58,
       "trusted": false,
-      "verdict": "loser",
+      "verdict": "winner",
       "firstDate": "2026-09-26",
-      "lastDate": "2026-10-17",
-      "days": 3,
+      "lastDate": "2026-10-19",
+      "days": 4,
       "metaClicks": 0,
       "metaCpc": null,
       "arrival": null
     },
     "shellaSaukia": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 1259,
       "orders": 21,
       "commission": 39494,
@@ -2101,40 +2447,46 @@
       "arrival": 1.125
     },
     "sikatAjaib": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 108,
-      "orders": 3,
-      "commission": 2549,
+      "orders": 4,
+      "commission": 3779,
       "spend": 48312,
-      "conversionRate": 2.78,
-      "epc": 23.6,
-      "roas": 0.05,
+      "conversionRate": 3.7,
+      "epc": 35.0,
+      "roas": 0.08,
       "trusted": true,
       "verdict": "loser",
       "firstDate": "2026-10-15",
-      "lastDate": "2026-10-18",
-      "days": 4,
+      "lastDate": "2026-10-19",
+      "days": 5,
       "metaClicks": 251,
       "metaCpc": 192.5,
       "arrival": 0.422
     },
     "sikatDorong": {
-      "clicks": 1,
-      "orders": 0,
-      "commission": 0,
-      "spend": 0,
-      "conversionRate": 0.0,
-      "epc": 0.0,
-      "roas": null,
-      "trusted": false,
-      "verdict": "no-spend",
+      "niche": "rumah",
+      "nicheSource": "keyword",
+      "clicks": 242,
+      "orders": 4,
+      "commission": 6532,
+      "spend": 40031,
+      "conversionRate": 1.65,
+      "epc": 27.0,
+      "roas": 0.16,
+      "trusted": true,
+      "verdict": "loser",
       "firstDate": "2026-10-18",
-      "lastDate": "2026-10-18",
-      "days": 1,
-      "metaClicks": 0,
-      "metaCpc": null,
-      "arrival": null
+      "lastDate": "2026-10-20",
+      "days": 3,
+      "metaClicks": 329,
+      "metaCpc": 121.7,
+      "arrival": 0.733
     },
     "softSiliconCase": {
+      "niche": "hp",
+      "nicheSource": "keyword",
       "clicks": 9,
       "orders": 0,
       "commission": 0,
@@ -2152,23 +2504,27 @@
       "arrival": 0.207
     },
     "spiceRack": {
-      "clicks": 30,
-      "orders": 3,
-      "commission": 84532,
-      "spend": 9545,
-      "conversionRate": 10.0,
-      "epc": 2817.7,
-      "roas": 8.86,
+      "niche": "rumah",
+      "nicheSource": "keyword",
+      "clicks": 58,
+      "orders": 4,
+      "commission": 85257,
+      "spend": 18899,
+      "conversionRate": 6.9,
+      "epc": 1469.9,
+      "roas": 4.51,
       "trusted": true,
       "verdict": "winner",
       "firstDate": "2026-10-12",
-      "lastDate": "2026-10-18",
-      "days": 5,
-      "metaClicks": 23,
-      "metaCpc": 415.0,
-      "arrival": null
+      "lastDate": "2026-10-19",
+      "days": 6,
+      "metaClicks": 47,
+      "metaCpc": 402.1,
+      "arrival": 1.213
     },
     "stvCompartment": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 9,
       "orders": 0,
       "commission": 0,
@@ -2186,6 +2542,8 @@
       "arrival": null
     },
     "taliBintangAwan": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 15,
       "orders": 0,
       "commission": 0,
@@ -2203,6 +2561,8 @@
       "arrival": null
     },
     "tamumuRack": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 14,
       "orders": 0,
       "commission": 0,
@@ -2220,6 +2580,8 @@
       "arrival": null
     },
     "taplakMeja": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 33,
       "orders": 1,
       "commission": 173,
@@ -2237,6 +2599,8 @@
       "arrival": null
     },
     "tasCapy": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 9,
       "orders": 0,
       "commission": 0,
@@ -2254,6 +2618,8 @@
       "arrival": null
     },
     "tasLucu": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 3,
       "orders": 0,
       "commission": 0,
@@ -2271,23 +2637,27 @@
       "arrival": null
     },
     "tongsangcong": {
-      "clicks": 102,
+      "niche": "lainnya",
+      "nicheSource": "default",
+      "clicks": 103,
       "orders": 1,
       "commission": 5663,
       "spend": 59901,
-      "conversionRate": 0.98,
-      "epc": 55.5,
+      "conversionRate": 0.97,
+      "epc": 55.0,
       "roas": 0.09,
       "trusted": true,
       "verdict": "loser",
       "firstDate": "2026-09-09",
-      "lastDate": "2026-10-05",
-      "days": 8,
+      "lastDate": "2026-10-20",
+      "days": 9,
       "metaClicks": 500,
       "metaCpc": 119.8,
       "arrival": 0.196
     },
     "tumblerBulat": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 6,
       "orders": 0,
       "commission": 0,
@@ -2305,6 +2675,8 @@
       "arrival": null
     },
     "tumblerKupu": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 42,
       "orders": 0,
       "commission": 0,
@@ -2322,6 +2694,8 @@
       "arrival": 1.29
     },
     "tumblerModofo": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 2,
       "orders": 0,
       "commission": 0,
@@ -2339,6 +2713,8 @@
       "arrival": null
     },
     "tumblerMurah": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 71,
       "orders": 1,
       "commission": 539,
@@ -2356,23 +2732,27 @@
       "arrival": 1.523
     },
     "ugreenRobot": {
-      "clicks": 117,
-      "orders": 1,
-      "commission": 1275,
-      "spend": 24057,
-      "conversionRate": 0.85,
-      "epc": 10.9,
-      "roas": 0.05,
+      "niche": "lainnya",
+      "nicheSource": "default",
+      "clicks": 357,
+      "orders": 17,
+      "commission": 49556,
+      "spend": 65522,
+      "conversionRate": 4.76,
+      "epc": 138.8,
+      "roas": 0.76,
       "trusted": true,
-      "verdict": "loser",
+      "verdict": "thin",
       "firstDate": "2026-10-17",
-      "lastDate": "2026-10-18",
-      "days": 2,
-      "metaClicks": 95,
-      "metaCpc": 253.2,
-      "arrival": 1.232
+      "lastDate": "2026-10-20",
+      "days": 4,
+      "metaClicks": 306,
+      "metaCpc": 214.1,
+      "arrival": 1.167
     },
     "undersinkRack": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 86,
       "orders": 0,
       "commission": 0,
@@ -2390,6 +2770,8 @@
       "arrival": 0.586
     },
     "wadahKulkas": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 19,
       "orders": 0,
       "commission": 0,
@@ -2407,6 +2789,8 @@
       "arrival": null
     },
     "waffleMaker": {
+      "niche": "rumah",
+      "nicheSource": "keyword",
       "clicks": 180,
       "orders": 4,
       "commission": 5899,
@@ -2424,6 +2808,8 @@
       "arrival": 0.31
     },
     "woyLucuBaju": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 2,
       "orders": 0,
       "commission": 0,
@@ -2441,6 +2827,8 @@
       "arrival": null
     },
     "youtubeshort": {
+      "niche": "lainnya",
+      "nicheSource": "default",
       "clicks": 7,
       "orders": 0,
       "commission": 0,

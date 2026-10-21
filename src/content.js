@@ -669,10 +669,18 @@
           const m = (window.RMPerf && RMPerf.matchTag)
             ? RMPerf.matchTag(product.name, cfg.__perf) : null;
           if (m && m.tag) product.suggestedTag = m.tag;
+          // v0.9.26: niche from the breadcrumb (fallback: name keywords) so a
+          // new product is shrunk toward its own family, not the global mean.
+          const nc = window.RMNiche
+            ? RMNiche.classify({ name: product.name, categoryL1: d.categoryL1 }) : null;
+          product.niche = nc ? nc.niche : null;
+          product.nicheSource = nc ? nc.source : null;
+          product.categoryL1 = d.categoryL1 || null;
           // Cost per click, not the product's earnings ceiling — see the matching
           // note in analytics.js.
           epcPred = RMEpc.predict(model, {
             tag: (m && m.tag) ? m.tag : null,        // .tag — matchTag returns an object
+            niche: product.niche,
             breakEvenCpc: (cfg && cfg.breakEvenCPC) || 0
           });
           epcPred.scored = RMEpc.score(epcPred);
@@ -711,7 +719,7 @@
           name: d.name, price, rating: d.rating, totalReviews: d.totalReviews,
           starBreakdown: d.starBreakdown, historicalSold: d.historicalSold,
           likedCount: d.likedCount, inStock: d.inStock,
-          shopid: d.shopid, itemid: d.itemid
+          shopid: d.shopid, itemid: d.itemid, categoryL1: d.categoryL1 || null
         }, product, cfg, { source: "detail", auto: true })
           .then((r) => console.log("RM: dataset auto-capture (detail) — total", r.total))
           .catch((e) => console.log("RM: auto-capture gagal:", e && e.message));

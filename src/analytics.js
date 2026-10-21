@@ -86,11 +86,18 @@
           // (commission x conversion), so scoring EPC against it would compare
           // earnings with earnings and land every product near neutral. The
           // decision is earnings per click versus what a click actually costs.
-          const pred = global.RMEpc.predict(epcModel, { tag, breakEvenCpc: breakEven });
+          const niche = global.RMNiche ? global.RMNiche.classify({ name: p.name }).niche : null;
+          const pred = global.RMEpc.predict(epcModel, { tag, niche, breakEvenCpc: breakEven });
           const sc = global.RMEpc.score(pred);
           pred.score = sc.score;
           pred.action = sc.action;
           pred.matchedTag = tag;
+          // v0.9.26: ROAS posterior (tag -> niche -> global arrival/CPC) for the
+          // Thompson test plan. null-safe: older snapshots without Meta fields
+          // simply leave roas null and the product is skipped by the plan.
+          const ec = global.RMEpc.roasPrior ? global.RMEpc.roasPrior(pred, snap, cfg) : null;
+          pred.roas = ec ? ec.roas : null;
+          pred.roasSd = ec ? ec.roasSd : null;
           p.epcPred = pred;
         } else {
           p.epcPred = null;

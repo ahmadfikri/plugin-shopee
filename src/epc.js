@@ -31,6 +31,66 @@
   // Percentile helper for confidence band.
   function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
 
+  /* Niche priors (v0.9.26). For each niche in snapshot.niches:
+   *   epc   - niche EPC, shrunk toward global with the same K (barely moves:
+   *           a niche has thousands of clicks)
+   *   tau   - how far ONE product's EPC typically sits from its niche mean:
+   *           sqrt(click)-weighted SD of realized EPC over the niche's tags
+   *           with >= TAU_MIN_CLICKS clicks.
+   *           This, not the SE of the niche mean, is the honest spread for a
+   *           product we have never run. Falls back to the global tau when the
+   *           niche has < 3 trusted tags.
+   *   win*  - P(a new product in this niche pays back): Beta posterior on the
+   *           niche's test record (tested / paidBack), with the all-niche rate
+   *           as the prior mean and strength WIN_PRIOR_M (partial pooling).  */
+  const WIN_PRIOR_M = 4;
+  const TAU_MIN_CLICKS = 100;
+  function weightedSd(rows) {
+    const w = rows.reduce((a, r) => a + r.w, 0);
+    if (rows.length < 3 || w <= 0) return null;
+    const mu = rows.reduce((a, r) => a + r.w * r.x, 0) / w;
+    const v = rows.reduce((a, r) => a + r.w * (r.x - mu) * (r.x - mu), 0) / w;
+    return Math.sqrt(v);
+  }
+  function buildNiches(snapshot, globalEpc, K) {
+    const src = snapshot.niches || {};
+    const tags = snapshot.tags || {};
+    // Only tags with >= TAU_MIN_CLICKS clicks: below that a tag's own EPC is
+    // mostly sampling noise (spiceRack: Rp1.470/klik from 58 clicks = one big
+    // order), which would inflate the spread and make every new product look
+    // like a lottery ticket.
+    const rowsOf = (pred) => Object.values(tags)
+      .filter((t) => (Number(t.clicks) || 0) >= TAU_MIN_CLICKS && t.epc != null && pred(t))
+      .map((t) => ({ x: Number(t.epc), w: Math.sqrt(Number(t.clicks)) }));
+    // sqrt(clicks) weights: big tags count more, but one giant tag cannot
+    // define the whole spread by itself.
+    const tauGlobal = weightedSd(rowsOf(() => true)) || globalEpc / Math.sqrt(K);
+    let T = 0, W = 0;
+    for (const v of Object.values(src)) { T += Number(v.tested) || 0; W += Number(v.paidBack) || 0; }
+    const r0 = T > 0 ? W / T : 0.15;
+    const out = {};
+    for (const [name, v] of Object.entries(src)) {
+      const clicks = Number(v.clicks) || 0;
+      if (clicks <= 0 || v.epc == null) continue;
+      const tested = Number(v.tested) || 0, won = Number(v.paidBack) || 0;
+      const a = r0 * WIN_PRIOR_M + won, b = (1 - r0) * WIN_PRIOR_M + (tested - won);
+      const mean = a / (a + b);
+      const sd = Math.sqrt(a * b / ((a + b) * (a + b) * (a + b + 1)));
+      out[name] = {
+        epc: (clicks * Number(v.epc) + K * globalEpc) / (clicks + K),
+        tau: weightedSd(rowsOf((t) => t.niche === name)) || tauGlobal,
+        clicks, tested, paidBack: won,
+        winRate: mean,
+        winLow: clamp(mean - 1.28 * sd, 0, 1),
+        winHigh: clamp(mean + 1.28 * sd, 0, 1),
+        metaCpc: v.metaCpc != null ? Number(v.metaCpc) : null,
+        arrival: v.arrival != null ? Number(v.arrival) : null,
+        roas: v.roas != null ? Number(v.roas) : null
+      };
+    }
+    return out;
+  }
+
   /* Build the model from a performance snapshot (the object RMPerf.load()
    * returns — { global:{clicks,orders,commission,epc}, tags:{tag:{clicks,orders,commission,epc,roas,trusted}} }).
    * Returns a model object with per-tag posterior EPC + uncertainty. */
@@ -57,25 +117,31 @@
       globalEpc, globalConv, K,
       builtAt: new Date().toISOString(),
       tagCount: Object.keys(tags).length,
-      tags: {}
+      tags: {},
+      niches: buildNiches(snapshot, globalEpc, K)
     };
 
     for (const [tag, t] of Object.entries(tags)) {
       const clicks = Number(t.clicks) || 0;
       const comm = Number(t.commission) || 0;
+      // v0.9.26 hierarchical prior: a tag is shrunk toward ITS niche's EPC
+      // (itself shrunk toward global), not straight to the global mean.
+      const nicheNode = t.niche && model.niches[t.niche];
+      const prior = nicheNode ? nicheNode.epc : globalEpc;
       // Prefer the snapshot's own EPC: since 2026-10-19 the export computes it
       // from clean-click days only (commission AND clicks of the same days),
       // while `commission` also covers ANOMALY_DATES for ROAS. Dividing that
       // commission by clean clicks would overstate EPC.
       const realized = (t.epc != null && Number.isFinite(Number(t.epc)) && clicks > 0)
-        ? Number(t.epc) : (clicks > 0 ? comm / clicks : globalEpc);
-      // posterior mean (shrinkage toward global prior)
-      const shrunk = (clicks * realized + K * globalEpc) / (clicks + K);
+        ? Number(t.epc) : (clicks > 0 ? comm / clicks : prior);
+      // posterior mean (shrinkage toward the niche / global prior)
+      const shrunk = (clicks * realized + K * prior) / (clicks + K);
       // uncertainty: standard error of a mean shrinks with sqrt(clicks + K).
-      // We approximate the EPC spread with global EPC as the scale.
-      const se = globalEpc / Math.sqrt(clicks + K);
+      // We approximate the EPC spread with the prior EPC as the scale.
+      const se = prior / Math.sqrt(clicks + K);
       model.tags[tag] = {
         clicks, orders: Number(t.orders) || 0,
+        niche: t.niche || null,
         realized_epc: realized,
         epc: shrunk,                 // <- the prediction
         epc_low: Math.max(0, shrunk - 1.28 * se),   // ~80% band
@@ -96,13 +162,23 @@
   function predict(model, opts) {
     const breakEven = (opts && opts.breakEvenCpc) || 0;
     const tag = opts && opts.tag;
+    const nicheName = (opts && opts.niche) || null;
+    const nicheNode = nicheName && model.niches ? model.niches[nicheName] : null;
     let basis = "global", node = null;
     if (tag && model.tags[tag]) { node = model.tags[tag]; basis = "tag"; }
+    else if (nicheNode) basis = "niche";
 
     let epc, low, high, se, clicks;
     if (node) {
       epc = node.epc; low = node.epc_low; high = node.epc_high;
       se = node.se; clicks = node.clicks;
+    } else if (nicheNode) {
+      // new product, known family: niche prior, spread = between-product tau
+      epc = nicheNode.epc;
+      se = nicheNode.tau;
+      low = Math.max(0, epc - 1.28 * se);
+      high = epc + 1.28 * se;
+      clicks = 0;
     } else {
       // new product, no history: prior mean, wide band (K effective observations)
       epc = model.globalEpc;
@@ -123,11 +199,18 @@
     // confidence label from effective evidence
     const conf = node
       ? (clicks >= 3 * model.K ? "tinggi" : clicks >= model.K ? "sedang" : "rendah")
-      : "sangat rendah";
+      : nicheNode ? "rendah" : "sangat rendah";
 
     return {
       epc, epc_low: low, epc_high: high, se,
-      basis,                       // 'tag' | 'global'
+      basis,                       // 'tag' | 'niche' | 'global'
+      tag: node ? tag : null,
+      niche: node ? (node.niche || nicheName) : nicheName,
+      nicheWin: (() => {
+        const nn = model.niches && model.niches[node ? (node.niche || nicheName) : nicheName];
+        return nn ? { winRate: nn.winRate, winLow: nn.winLow, winHigh: nn.winHigh,
+                      tested: nn.tested, paidBack: nn.paidBack } : null;
+      })(),
       clicks,
       kEff: model.K,               // shrinkage strength used by score()
       confidence: conf,
@@ -191,5 +274,50 @@
     return { score: s, action };
   }
 
-  global.RMEpc = { build, predict, score, normCdf };
+  /* ROAS of a prediction (v0.9.26, shared by the product page and the
+   * Thompson-sampling test plan so both use the same numbers):
+   *   value per Meta click = EPC x arrival ;  ROAS = value / Meta CPC
+   * arrival and CPC come from the tag (when well observed), else the niche,
+   * else global, else the configured target CPC.                            */
+  const MIN_TAG_META_CLICKS = 100;   // below this a tag's own CPC is noise
+  function num(v) {
+    if (v == null || v === "") return null;
+    const x = Number(v);
+    return Number.isFinite(x) ? x : null;
+  }
+  function roasPrior(pred, snapshot, cfg) {
+    if (!pred || !snapshot || !snapshot.global) return null;
+    const g = snapshot.global;
+    const t = pred.basis === "tag" && pred.tag && snapshot.tags ? snapshot.tags[pred.tag] : null;
+    const nz = pred.niche && snapshot.niches ? snapshot.niches[pred.niche] : null;
+    let arrival = null, arrivalSrc = "global";
+    if (t && num(t.arrival) != null) { arrival = num(t.arrival); arrivalSrc = "tag"; }
+    else if (nz && num(nz.arrival) != null) { arrival = num(nz.arrival); arrivalSrc = "niche"; }
+    else if (num(g.arrival) != null) arrival = num(g.arrival);
+    if (arrival == null) { arrival = 1; arrivalSrc = "asumsi 1:1"; }
+    let cpc = null, cpcSrc = "";
+    if (t && num(t.metaCpc) != null && num(t.metaClicks) >= MIN_TAG_META_CLICKS) {
+      cpc = num(t.metaCpc); cpcSrc = "CPC tag ini";
+    } else if (nz && num(nz.metaCpc) != null && num(nz.metaClicks) >= MIN_TAG_META_CLICKS) {
+      cpc = num(nz.metaCpc); cpcSrc = "CPC rata-rata niche";
+    } else if (num(g.metaCpc) != null) {
+      cpc = num(g.metaCpc); cpcSrc = "CPC rata-rata kamu";
+    } else if (cfg && num(cfg.breakEvenCPC) > 0) {
+      cpc = num(cfg.breakEvenCPC); cpcSrc = "target di Admin Panel";
+    }
+    const value = pred.epc * arrival;
+    const valueLow = Math.max(0, pred.epc_low * arrival);
+    const valueHigh = pred.epc_high * arrival;
+    const sd = (pred.se || 0) * arrival;
+    return {
+      arrival, arrivalSrc, cpc, cpcSrc, value, valueLow, valueHigh, valueSd: sd,
+      roas: cpc ? value / cpc : null,
+      roasLow: cpc ? valueLow / cpc : null,
+      roasHigh: cpc ? valueHigh / cpc : null,
+      roasSd: cpc ? sd / cpc : null,
+      pProfit: (cpc && sd > 0) ? normCdf((value - cpc) / sd) : null
+    };
+  }
+
+  global.RMEpc = { build, predict, score, normCdf, roasPrior, MIN_TAG_META_CLICKS };
 })(typeof window !== "undefined" ? window : this);

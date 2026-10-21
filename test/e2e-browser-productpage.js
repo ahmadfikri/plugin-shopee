@@ -111,6 +111,30 @@ function loadPlaywright() {
     await page.click(".rm-pp-root .rm-modal-x");
     await page.waitForFunction(() => !document.querySelector(".rm-pp-root"), { timeout: 5000 });
 
+    // ---- 4) v0.9.26: NEW product (no tag) with a Shopee breadcrumb -> niche prior ----
+    const NEW_URL = "https://shopee.co.id/product/123/789";
+    const NEW_HTML = FIXTURE
+      .replace(/COD Taplak Meja Motif Mandala PVC Anti Air Murah/, "Casing Samsung A55 Motif Bunga Glossy")
+      .replace("<main>", '<main><div class="page-product__breadcrumb"><a href="/">Shopee</a> ' +
+        '<a href="/Handphone-Aksesoris-cat.11044458">Handphone &amp; Aksesoris</a> ' +
+        '<a href="/Handphone-Aksesoris-cat.11044458.11044476">Casing &amp; Covers</a></div>');
+    await ctx.route(NEW_URL, (route) =>
+      route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: NEW_HTML }));
+    await page.goto(NEW_URL, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector(".rm-pp-root .rm-pp-svg", { timeout: 20000 });
+    const a4 = (await page.textContent(".rm-pp-action")).trim();
+    if (process.env.RM_SHOT2) {
+      await page.setViewportSize({ width: 1100, height: 1500 });
+      await (await page.$(".rm-pp-root")).screenshot({ path: process.env.RM_SHOT2 });
+    }
+    const b4 = (await page.textContent(".rm-pp-root .rm-modal-body")) || "";
+    assert.strictEqual(a4, "UJI KECIL", "produk baru niche hp harus UJI KECIL, dapat: " + a4);
+    assert(/kategori Shopee: Handphone & Aksesoris/.test(b4), "niche tidak diambil dari breadcrumb");
+    assert(/Casing & aksesoris HP/.test(b4) && /Peluang balik modal/.test(b4), "info niche hilang");
+    assert(/CPC rata-rata niche/.test(b4), "CPC tidak dari niche");
+    assert(!/\bNaN\b|undefined|\bnull\b/.test(b4), "ada NaN/undefined/null di panel niche: " +
+      (b4.match(/.{0,40}(NaN|undefined|null).{0,40}/) || [""])[0]);
+
     assert.deepStrictEqual(errors, [], "page error: " + errors.join("; "));
     console.log(`BROWSER E2E PRODUCT PAGE OK — vonis ${action}, chart + patokan + riwayat tampil, 0 error`);
   } catch (e) { failed = e; }
