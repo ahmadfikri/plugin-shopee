@@ -77,6 +77,17 @@
           epcBasis: ep ? ep.basis : null,
           epcTag: ep ? (ep.matchedTag || null) : null,
           epcZero: ep ? !!ep.zeroConverter : false,
+          // ---- v0.9.26: niche + ROAS posterior for the Thompson test plan ----
+          niche: ep && ep.niche ? ep.niche : null,
+          roas: ep && Number.isFinite(ep.roas) ? Math.round(ep.roas * 1000) / 1000 : null,
+          roasSd: ep && Number.isFinite(ep.roasSd) ? Math.round(ep.roasSd * 1000) / 1000 : null,
+          // ---- v0.9.27: verdict from the shared decision engine ----
+          verdict: p.decision ? p.decision.action : null,
+          verdictCls: p.decision ? p.decision.cls : null,
+          roasLow: p.decision && Number.isFinite(p.decision.roasLow) ? Math.round(p.decision.roasLow * 100) / 100 : null,
+          roasHigh: p.decision && Number.isFinite(p.decision.roasHigh) ? Math.round(p.decision.roasHigh * 100) / 100 : null,
+          maxCpcMeta: p.decision && Number.isFinite(p.decision.maxCpc) ? Math.round(p.decision.maxCpc) : null,
+          cpcMeta: p.decision && Number.isFinite(p.decision.cpc) ? Math.round(p.decision.cpc) : null,
           keyword: keyword || "",
           href: p.href || "",
           at: now,
@@ -151,8 +162,11 @@
    * metric that actually predicts profit (P(untung)); PRO score is the fallback
    * for entries scanned before a snapshot was imported. Zero-converters sink. */
   function ranked(items, limit) {
+    // v0.9.27: predicted ROAS (shared decision engine) ranks first; entries
+    // scanned before v0.9.27 fall back to the EPC score, then the PRO score.
     const key = (x) => {
       if (x.epcZero) return -1;                       // proven loser: bottom
+      if (typeof x.roas === "number" && Number.isFinite(x.roas) && x.verdict) return 2000 + x.roas * 100;
       if (x.epcScore != null) return 1000 + x.epcScore; // predicted: always above
       return x.pro || 0;                              // no prediction: old PRO score
     };
@@ -160,22 +174,28 @@
     return (limit && limit > 0) ? sorted.slice(0, limit) : sorted;
   }
 
+  // Verdict buckets. New entries use the decision-engine verdict; older ones map
+  // their PRO action so the counts stay meaningful during the transition.
+  const BUCKET = {
+    "IKLANKAN": "iklankan", "LAYAK COBA": "coba", "UJI KECIL": "uji",
+    "HATI-HATI": "hati", "LEWATI": "skip",
+    "SKIP": "skip", "LEMAH": "skip"
+  };
   function stats(items) {
     const n = (items || []).length;
-    const count = (act) => (items || []).filter((x) => x.action === act).length;
+    const c = { iklankan: 0, coba: 0, uji: 0, hati: 0, skip: 0 };
+    for (const x of items || []) {
+      const b = BUCKET[x.verdict || x.action];
+      if (b) c[b]++;
+    }
     const best = ranked(items, 1)[0] || null;
-    return {
-      total: n,
-      iklankan: count("IKLANKAN"),
-      coba: count("LAYAK COBA"),
-      skip: count("SKIP") + count("LEMAH"),
-      best
-    };
+    return Object.assign({ total: n, best }, c);
   }
 
   function toCsv(items) {
     const head = ["epcScore", "epcAction", "epc", "epcLow", "epcHigh",
-                  "epcConfidence", "epcBasis", "epcTag", "epcZero",
+                  "epcConfidence", "epcBasis", "epcTag", "epcZero", "niche", "roas", "roasSd",
+                  "verdict", "roasLow", "roasHigh", "maxCpcMeta", "cpcMeta",
                   "pro", "action", "name", "price", "commissionPct", "maxCPC",
                   "basis", "rating", "unitsPerMonth", "keyword", "href"];
     const esc = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';

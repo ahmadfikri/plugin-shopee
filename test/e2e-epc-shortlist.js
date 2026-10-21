@@ -52,7 +52,15 @@ function prod(id, name, proScore, epcScore, epc, conf, tag, zero) {
       score: epcScore, action: epcScore >= 65 ? "IKLANKAN" : "HATI-HATI",
       epc, epc_low: Math.round(epc * 0.8), epc_high: Math.round(epc * 1.2),
       confidence: conf, basis: tag ? "tag" : "global",
-      matchedTag: tag || null, zeroConverter: !!zero
+      matchedTag: tag || null, zeroConverter: !!zero,
+      roas: epc / 100, roasSd: 0.2
+    },
+    // v0.9.27: the shared decision engine's verdict (analytics.js -> decide())
+    decision: epcScore == null ? null : {
+      action: zero ? "LEWATI" : epc >= 100 ? "LAYAK COBA" : "HATI-HATI",
+      cls: zero ? "rm-red" : epc >= 100 ? "rm-green" : "rm-yellow",
+      roas: epc / 100, roasLow: epc / 125, roasHigh: epc / 83,
+      maxCpc: epc, cpc: 100
     }
   };
 }
@@ -79,16 +87,16 @@ function prod(id, name, proScore, epcScore, epc, conf, tag, zero) {
   // --- ranking must use EPC score, not PRO ---
   const r = RMShortlist.ranked(items, 0);
   console.log("  urutan:", r.map((x) => `${x.name.slice(0,20)}(epc${x.epcScore}/pro${x.pro})`).join(" > "));
-  chk("peringkat 1 = EPC tertinggi (bukan PRO tertinggi)",
+  chk("peringkat 1 = prediksi ROAS tertinggi (bukan PRO tertinggi)",
       r[0].id === "1.1", `r[0]=${r[0].name}`);
   chk("zero-converter tenggelam ke dasar",
       r[r.length - 1].id === "4.4", `terakhir=${r[r.length-1].name}`);
 
   // --- table renders the EPC column ---
   const html = RMPanel.shortlistSection(meta, true);
-  chk("tabel shortlist punya kolom EPC sortable", /<th[^>]*>EPC\s+<button[^>]*rm-sort/.test(html));
+  chk("tabel shortlist punya kolom Prediksi ROAS sortable", /<th[^>]*>Prediksi ROAS\s+<button[^>]*rm-sort/.test(html));
   chk("tabel menampilkan Rp/klik", /Rp[\d.]+\/klik/.test(html));
-  chk("skor EPC muncul di baris", html.includes(">100<"));
+  chk("ROAS + vonis muncul di baris", html.includes(">1.45x<") && html.includes(">LAYAK COBA<"));
 
   // --- CSV includes EPC columns ---
   const csv = RMShortlist.toCsv(items);

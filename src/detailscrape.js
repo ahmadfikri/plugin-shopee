@@ -49,6 +49,38 @@
            /i\.\d+\.\d+/.test(location.pathname);
   }
 
+  /* Shopee category path of the product (v0.9.26, feeds RMNiche).
+   * 1) JSON-LD BreadcrumbList when the page ships one;
+   * 2) breadcrumb links: Shopee category URLs end in "-cat.<id>" (or
+   *    "/...-cat.<id>.<sub>"), and the breadcrumb is the first such run in
+   *    DOM order. Returns [] when neither exists — the caller then falls back
+   *    to keywords in the product name. */
+  function categoryPath() {
+    const skip = /^(shopee|beranda|home)$/i;
+    try {
+      for (const s of document.querySelectorAll('script[type="application/ld+json"]')) {
+        let j; try { j = JSON.parse(s.textContent || ""); } catch (_) { continue; }
+        const list = [].concat(j || []).concat(j && j["@graph"] ? j["@graph"] : [])
+          .find((x) => x && x["@type"] === "BreadcrumbList");
+        if (list && Array.isArray(list.itemListElement)) {
+          const names = list.itemListElement.slice()
+            .sort((a, b) => (a.position || 0) - (b.position || 0))
+            .map((e) => String((e && (e.name || (e.item && e.item.name))) || "").trim())
+            .filter((x) => x && !skip.test(x));
+          if (names.length) return names;
+        }
+      }
+    } catch (_) { /* fall through to links */ }
+    const out = [];
+    for (const a of document.querySelectorAll('a[href*="-cat."]')) {
+      const t = (a.textContent || "").trim();
+      if (!t || skip.test(t) || t.length > 60) continue;
+      if (!out.includes(t)) out.push(t);
+      if (out.length >= 4) break;
+    }
+    return out;
+  }
+
   function scrapeDetail() {
     if (!isProductPage()) return null;
 
@@ -83,6 +115,7 @@
     const starsSum = gotStars ? stars.reduce((a, b) => a + b, 0) : null;
 
     const { shopid, itemid } = idsFromUrl();
+    const cats = categoryPath();
     const inStock = /IN STOCK|stok tersedia/i.test(bodyTxt) ? true
       : /OUT OF STOCK|stok habis|produk habis/i.test(bodyTxt) ? false : null;
     return {
@@ -94,9 +127,11 @@
       historicalSold: soldMatch ? num(soldMatch[1]) : null,
       likedCount: favMatch ? num(favMatch[1]) : null,
       inStock,
+      categoryL1: cats[0] || null,
+      categoryPath: cats,
       starBreakdown: gotStars ? stars : null
     };
   }
 
-  global.RMDetailScrape = { scrapeDetail, idsFromUrl, isProductPage };
+  global.RMDetailScrape = { scrapeDetail, idsFromUrl, isProductPage, categoryPath };
 })(typeof window !== "undefined" ? window : this);

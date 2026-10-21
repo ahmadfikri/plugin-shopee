@@ -359,16 +359,25 @@
           else alert("Produk ini dari scan halaman lain — buka lewat 🔗 untuk analisa mendalam.");
           return;
         }
-        // open modal immediately with a loading state, then fill with detail
+        // open modal immediately with a loading state, then fill with detail.
+        // v0.9.27: with a snapshot, the drill-down is the SAME decision panel
+        // as the product page (vonis, ROAS band, Max CPC Meta, niche, riwayat).
+        const usePP = !!(window.RMProductPage && p.epcPred && cfg && cfg.__perf);
+        const mk = (det) => usePP
+          ? RMProductPage.build(p, det, p.pro, p.epcPred, cfg)
+          : RMPanel.buildDetailModal(p, det, p.pro, p.epcPred);
         document.querySelectorAll(".rm-modal-bg").forEach((n) => n.remove());
-        let modal = RMPanel.buildDetailModal(p, { error: null }, p.pro, p.epcPred);
+        let modal = mk({ error: null, name: p.name, price: p.price });
         document.body.appendChild(modal);
         wireModal(modal, p);
         let detail = {};
         try { if (window.RMEnrich) detail = await RMEnrich.fetchDetail(p); } catch (err) { detail = { error: String(err) }; }
-        const fresh = RMPanel.buildDetailModal(p, detail, p.pro, p.epcPred);
+        if (!modal.isConnected) return;          // user closed it while loading
+        const fresh = mk(Object.assign({ name: p.name, price: p.price }, detail || {}));
         modal.replaceWith(fresh);
         wireModal(fresh, p);
+        if (usePP) RMProductPage.fillHistory(fresh, p, cfg.__perf)
+          .catch((e2) => console.log("RM: riwayat eksperimen gagal:", e2 && e2.message));
         return;
       }
 
@@ -669,10 +678,18 @@
           const m = (window.RMPerf && RMPerf.matchTag)
             ? RMPerf.matchTag(product.name, cfg.__perf) : null;
           if (m && m.tag) product.suggestedTag = m.tag;
+          // v0.9.26: niche from the breadcrumb (fallback: name keywords) so a
+          // new product is shrunk toward its own family, not the global mean.
+          const nc = window.RMNiche
+            ? RMNiche.classify({ name: product.name, categoryL1: d.categoryL1 }) : null;
+          product.niche = nc ? nc.niche : null;
+          product.nicheSource = nc ? nc.source : null;
+          product.categoryL1 = d.categoryL1 || null;
           // Cost per click, not the product's earnings ceiling — see the matching
           // note in analytics.js.
           epcPred = RMEpc.predict(model, {
             tag: (m && m.tag) ? m.tag : null,        // .tag — matchTag returns an object
+            niche: product.niche,
             breakEvenCpc: (cfg && cfg.breakEvenCPC) || 0
           });
           epcPred.scored = RMEpc.score(epcPred);
@@ -711,7 +728,7 @@
           name: d.name, price, rating: d.rating, totalReviews: d.totalReviews,
           starBreakdown: d.starBreakdown, historicalSold: d.historicalSold,
           likedCount: d.likedCount, inStock: d.inStock,
-          shopid: d.shopid, itemid: d.itemid
+          shopid: d.shopid, itemid: d.itemid, categoryL1: d.categoryL1 || null
         }, product, cfg, { source: "detail", auto: true })
           .then((r) => console.log("RM: dataset auto-capture (detail) — total", r.total))
           .catch((e) => console.log("RM: auto-capture gagal:", e && e.message));

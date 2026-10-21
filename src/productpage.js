@@ -45,6 +45,9 @@
   function rp(v) { return v == null ? "?" : "Rp" + fmt(v); }
   function x2(v) { return v == null ? "?" : v.toFixed(2) + "x"; }
   function pct(v) { return v == null ? "?" : Math.round(v * 100) + "%"; }
+  function nicheLabel(k) {
+    return (global.RMNiche && global.RMNiche.LABEL && global.RMNiche.LABEL[k]) || k || "?";
+  }
 
   function normCdf(z) {
     if (global.RMEpc && global.RMEpc.normCdf) return global.RMEpc.normCdf(z);
@@ -86,39 +89,24 @@
     }
     const g = snapshot.global;
     const t = (tag && snapshot.tags && snapshot.tags[tag]) || null;
-    const basis = pred.basis === "tag" && t ? "tag" : "global";
+    const basis = pred.basis === "tag" && t ? "tag" : pred.basis === "niche" ? "niche" : "global";
+    const nz = pred.niche && snapshot.niches ? snapshot.niches[pred.niche] : null;
+    const nzModel = pred.nicheWin || null;
 
-    // arrival: the tag's own when it has enough paired Meta clicks, else global
-    let arrival = null, arrivalSrc = "global";
-    if (basis === "tag" && n(t.arrival) != null) { arrival = t.arrival; arrivalSrc = "tag"; }
-    else if (n(g.arrival) != null) arrival = g.arrival;
-    if (arrival == null) { arrival = 1; arrivalSrc = "asumsi 1:1"; }
-
-    // CPC: the tag's real Meta CPC when well observed, else your global CPC,
-    // else the configured target.
-    let cpc = null, cpcSrc = "";
-    if (basis === "tag" && n(t.metaCpc) != null && n(t.metaClicks) >= MIN_TAG_META_CLICKS) {
-      cpc = t.metaCpc; cpcSrc = "CPC tag ini";
-    } else if (n(g.metaCpc) != null) {
-      cpc = g.metaCpc; cpcSrc = "CPC rata-rata kamu";
-    } else if (cfg && n(cfg.breakEvenCPC) > 0) {
-      cpc = cfg.breakEvenCPC; cpcSrc = "target di Admin Panel";
-    }
-
-    const value = pred.epc * arrival;
-    const valueLow = Math.max(0, pred.epc_low * arrival);
-    const valueHigh = pred.epc_high * arrival;
-    const sd = (pred.se || 0) * arrival;
+    // arrival + CPC + ROAS: one shared function (epc.js) so the product page and
+    // the Thompson test plan can never disagree. Order: tag -> niche -> global.
+    const ec = global.RMEpc.roasPrior(
+      Object.assign({}, pred, { basis, tag: basis === "tag" ? tag : null }), snapshot, cfg);
+    const { arrival, arrivalSrc, cpc, cpcSrc, value, valueLow, valueHigh } = ec;
     Object.assign(out, {
       ready: true, basis, tag: basis === "tag" ? tag : null, tagStats: t,
+      niche: pred.niche || null, nicheStats: nz, nicheWin: nzModel,
       arrival, arrivalSrc, cpc, cpcSrc,
       epc: pred.epc, value, valueLow, valueHigh,
       maxCpc: value,                       // break-even Meta CPC
       confidence: pred.confidence, zeroConverter: !!pred.zeroConverter,
-      roas: cpc ? value / cpc : null,
-      roasLow: cpc ? valueLow / cpc : null,
-      roasHigh: cpc ? valueHigh / cpc : null,
-      pProfit: (cpc && sd > 0) ? normCdf((value - cpc) / sd) : null,
+      roas: ec.roas, roasLow: ec.roasLow, roasHigh: ec.roasHigh,
+      pProfit: ec.pProfit,
       base: baseRate(snapshot),
       winners: topWinners(snapshot, 3),
       testBudget: TEST_BUDGET
@@ -136,11 +124,23 @@
     if (out.zeroConverter) {
       out.action = "LEWATI"; out.cls = "rm-red";
       out.reasons.push(`Tag mirip "${tag}" sudah dapat klik tapi 0 order.`);
-    } else if (basis === "global") {
+    } else if (basis === "niche" && out.nicheWin && out.nicheWin.tested >= 5 && out.nicheWin.winRate < 0.10) {
+      // A whole family that has (almost) never paid back is evidence, not noise.
+      out.action = "HATI-HATI"; out.cls = "rm-yellow";
+      out.reasons.push(`Belum ada riwayat iklan untuk produk ini, dan niche "${nicheLabel(out.niche)}" ` +
+        `baru ${out.nicheWin.paidBack} dari ${out.nicheWin.tested} produk yang balik modal.`);
+      out.reasons.push("Kalau tetap mau coba, pakai budget uji kecil.");
+    } else if (basis === "niche" || basis === "global") {
       out.action = "UJI KECIL"; out.cls = "rm-yellow";
-      out.reasons.push("Belum ada riwayat iklan untuk produk ini. Angkanya rata-rata semua campaign kamu, bukan prediksi untuk produk ini.");
-      if (out.base) out.reasons.push(
-        `Dari ${out.base.tested} produk yang pernah diiklankan, ${out.base.paidBack} (${pct(out.base.rate)}) balik modal.`);
+      if (basis === "niche" && out.nicheWin) {
+        out.reasons.push(`Belum ada riwayat iklan untuk produk ini. Angkanya rata-rata niche "${nicheLabel(out.niche)}", bukan prediksi khusus produk ini.`);
+        out.reasons.push(`Peluang balik modal produk baru di niche ini: ~${pct(out.nicheWin.winRate)} ` +
+          `(${out.nicheWin.paidBack} dari ${out.nicheWin.tested} yang pernah diuji).`);
+      } else {
+        out.reasons.push("Belum ada riwayat iklan untuk produk ini. Angkanya rata-rata semua campaign kamu, bukan prediksi untuk produk ini.");
+        if (out.base) out.reasons.push(
+          `Dari ${out.base.tested} produk yang pernah diiklankan, ${out.base.paidBack} (${pct(out.base.rate)}) balik modal.`);
+      }
     } else if (out.roasLow != null && out.roasLow >= 1) {
       out.action = "IKLANKAN"; out.cls = "rm-green";
       out.reasons.push("Batas bawah prediksi ROAS di atas 1x.");
@@ -246,6 +246,7 @@
     const t = d.tagStats;
     const evidence = !d.ready ? "" : (d.basis === "tag"
       ? kv("Tag acuan", esc(d.tag)) +
+        (d.niche ? kv("Niche", esc(nicheLabel(d.niche))) : "") +
         kv("Hari ada data", `${fmt(n(t.days))} (${esc(t.firstDate || "?")} → ${esc(t.lastDate || "?")})`) +
         kv("Klik Shopee", fmt(n(t.clicks))) + kv("Order", fmt(n(t.orders))) +
         kv("Konversi", t.conversionRate != null ? t.conversionRate + "%" : "?") +
@@ -254,11 +255,22 @@
         kv("Arrival", `${d.arrival.toFixed(2)} (${esc(d.arrivalSrc)})`, "Klik Shopee per klik Meta") +
         kv("CPC Meta", `${rp(d.cpc)} (${esc(d.cpcSrc)})`) +
         kv("ROAS nyata", x2(n(t.roas))) + kv("Net tag", rp(n(t.commission) - n(t.spend)))
-      : kv("Dasar", "rata-rata semua campaign (produk baru)") +
+      : (d.basis === "niche"
+          ? kv("Dasar", `rata-rata niche "${esc(nicheLabel(d.niche))}" (produk baru)`) +
+            kv("Niche dari", p.nicheSource === "kategori" ? `kategori Shopee: ${esc(p.categoryL1 || "?")}`
+              : p.nicheSource === "nama" ? "kata di nama produk" : "tidak dikenali → Lainnya") +
+            kv("EPC niche", rp(d.epc)) +
+            kv("Arrival", `${d.arrival.toFixed(2)} (${esc(d.arrivalSrc)})`, "Klik Shopee per klik Meta") +
+            kv("CPC Meta", `${rp(d.cpc)} (${esc(d.cpcSrc)})`) +
+            (d.nicheWin ? kv("Peluang balik modal niche",
+              `~${pct(d.nicheWin.winRate)} (${d.nicheWin.paidBack}/${d.nicheWin.tested} diuji)`,
+              `Rentang 80%: ${pct(d.nicheWin.winLow)}–${pct(d.nicheWin.winHigh)}. Hanya tag dengan spend ≥ Rp10rb yang dihitung sebagai uji.`) : "") +
+            (d.nicheStats && n(d.nicheStats.roas) != null ? kv("ROAS niche (semua tag)", x2(n(d.nicheStats.roas))) : "")
+          : kv("Dasar", "rata-rata semua campaign (produk baru)") +
         kv("EPC global", rp(d.epc)) +
         kv("Arrival global", `${d.arrival.toFixed(2)}`, "Klik Shopee per klik Meta") +
         kv("CPC rata-rata", `${rp(d.cpc)} (${esc(d.cpcSrc)})`) +
-        (d.base ? kv("Peluang dasar balik modal", `${pct(d.base.rate)} (${d.base.paidBack}/${d.base.tested} produk)`) : ""));
+        (d.base ? kv("Peluang dasar balik modal", `${pct(d.base.rate)} (${d.base.paidBack}/${d.base.tested} produk)`) : "")));
 
     const headline = !d.ready ? "" :
       `<div class="rm-pp-nums">` +

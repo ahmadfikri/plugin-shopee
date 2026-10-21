@@ -313,3 +313,9 @@ Prompt caption bawaan sekarang SEO-first (kata kunci utama di kalimat pertama, l
 
 ## v0.9.25 (2026-10-19) Panel halaman produk dirombak + snapshot diperbaiki
 Panel halaman produk baru (`src/productpage.js`): keputusan dulu, baru bukti. Snapshot sekarang tanpa aviva/(none), EPC dari hari klik bersih, plus metaCpc/arrival/days per tag. `epc.js` memakai EPC dari snapshot. Test baru #36 dan #37. Detail: documentation/2026-10-19-product-page-v0.9.25.md
+
+## v0.9.26 (2026-10-21) Prior per niche + rencana uji Thompson sampling
+Produk baru sekarang ditarik ke rata-rata NICHE-nya (hp / rumah / lainnya), bukan rata-rata global. Niche diambil dari breadcrumb Shopee (`detailscrape.categoryPath`), fallback kata di nama (`src/niche.js`, tabel keyword harus sama dengan `NICHE_KEYWORDS` di `analisis/export_perf_snapshot.py`, dicek test #38). Snapshot punya blok `niches` (tested/paidBack/EPC/CPC/arrival). Shortlist dapat blok "🎲 Uji 3 produk ini dulu" (`src/bandit.js`, Thompson sampling, seed dari id produk). Test baru #38-#40. Detail: documentation/2026-10-21-niche-thompson-v0.9.26.md
+
+## v0.9.27 (2026-10-21) Halaman listing / Product Offer dirombak
+Listing, shortlist, drill-down dan halaman produk sekarang memakai SATU mesin keputusan (`RMProductPage.decide`, dipanggil dari `analytics.js` → `p.decision`). Panel atas: vonis per kategori, kartu Thompson/ROAS/Max CPC Meta/niche, forest plot ROAS, rencana uji halaman. Tabel: Niche, Prediksi ROAS, Max CPC Meta, Vonis (kolom PRO & EPC skor lama dibuang dari tabel, tetap di CSV). Test baru #41. Detail: documentation/2026-10-21-listing-v0.9.27.md
