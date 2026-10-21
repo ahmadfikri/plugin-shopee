@@ -98,7 +98,7 @@ const big = Array.from({ length: 500 }, (_, i) => it("p" + i, 0.5 + (i % 37) / 2
 const t0 = Date.now();
 const rb = RMBandit.plan(big, { k: 3 });
 const ms = Date.now() - t0;
-chk("500 produk (dipangkas 200) < 400ms", ms < 400 && rb.eligible === 200, `${ms}ms, eligible ${rb.eligible}`);
+chk("500 produk (dipangkas 100) < 400ms", ms < 400 && rb.eligible === 100, `${ms}ms, eligible ${rb.eligible}`);
 const t1 = Date.now(); RMBandit.plan(big, { k: 3 });
 chk("render ulang input sama = memo (<5ms)", Date.now() - t1 < 5);
 

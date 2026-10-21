@@ -32,10 +32,10 @@ async function crawl(page) {
   await page.waitForTimeout(1500);
 }
 const readPlan = (page) => page.evaluate(() => {
-  const el = document.querySelector(".rm-plan");
+  const el = document.querySelector(".rm-sl .rm-plan");
   return {
     present: !!el, text: el ? el.textContent : "",
-    rows: Array.from(document.querySelectorAll(".rm-plan-table tbody tr")).map((tr) =>
+    rows: Array.from(document.querySelectorAll(".rm-sl .rm-plan-table tbody tr")).map((tr) =>
       Array.from(tr.querySelectorAll("td")).map((td) => td.textContent.trim())),
     slRows: document.querySelectorAll(".rm-sl-table tbody tr").length
   };
@@ -89,8 +89,46 @@ const readPlan = (page) => page.evaluate(() => {
     const p2 = await readPlan(page);
     assert.deepStrictEqual(p2.rows.map((r) => r[1]), p1.rows.map((r) => r[1]), "rencana uji berubah setelah render ulang");
 
+    // ---- v0.9.27: listing summary from the decision engine ----
+    const top = await page.evaluate(() => {
+      const panel = document.querySelector(".rm-panel");
+      return { text: panel ? (panel.querySelector(".rm-body") || panel).textContent : "",
+               forest: !!document.querySelector(".rm-panel .rm-forest"),
+               pagePlan: !!document.querySelector(".rm-panel .rm-charts-v2 .rm-plan") };
+    });
+    assert(/Uji dulu \(Thompson\)/.test(top.text) && /Prediksi ROAS terbaik/.test(top.text) &&
+      /Max CPC Meta terbaik/.test(top.text) && /Niche di halaman ini/.test(top.text), "kartu ringkasan baru hilang");
+    assert(top.forest, "forest plot ROAS tidak muncul");
+    assert(top.pagePlan, "rencana uji halaman tidak muncul");
+    assert(!/Top produk — PRO SCORE/.test(top.text), "chart PRO lama masih tampil");
+    assert(/Prediksi ROAS/.test(top.text) && /Vonis/.test(top.text), "kolom tabel baru hilang");
+    assert(!/\bNaN\b|undefined/.test(top.text), "NaN/undefined di panel listing");
+
+    // drill-down from the table opens the decision panel (same as product page)
+    await page.click(".rm-panel .rm-sl-table tbody tr .rm-drill");
+    await page.waitForTimeout(1500);
+    const drill = await page.evaluate(() => {
+      const m = document.querySelector(".rm-modal-bg.rm-pp-root");
+      return { pp: !!m, action: m ? (m.querySelector(".rm-pp-action") || {}).textContent : "",
+               body: m ? m.textContent : "", opened: document.querySelectorAll(".rm-modal-bg").length };
+    });
+    // a row from the CURRENT page opens the modal; a row from another page opens
+    // Shopee in a new tab instead (pre-existing behaviour) — accept either.
+    if (drill.opened) {
+      assert(drill.pp, "drill-down bukan panel keputusan");
+      assert(/IKLANKAN|LAYAK COBA|UJI KECIL|HATI-HATI|LEWATI/.test(drill.action), "vonis drill-down kosong: " + drill.action);
+      assert(!/\bNaN\b|undefined/.test(drill.body), "NaN/undefined di drill-down");
+      await page.click(".rm-modal-bg", { position: { x: 5, y: 5 } });
+      await page.waitForTimeout(300);
+      assert.strictEqual(await page.$$eval(".rm-modal-bg", (x) => x.length), 0, "drill-down tidak tertutup via backdrop");
+    }
+
+    if (process.env.RM_SHOT) {
+      await page.setViewportSize({ width: 1400, height: 1600 });
+      await (await page.$(".rm-panel")).screenshot({ path: process.env.RM_SHOT });
+    }
     assert.deepStrictEqual(errors, [], "page error: " + errors.join("; "));
-    console.log("BROWSER E2E TESTPLAN LULUS");
+    console.log("BROWSER E2E TESTPLAN LULUS" + (drill.opened ? " (drill-down: " + drill.action.trim() + ")" : " (drill-down: buka Shopee)"));
     p1.rows.forEach((r) => console.log("   ", r.slice(1).join(" | ")));
   } catch (e) { failed = e; }
   await ctx.close();

@@ -90,9 +90,34 @@ function loadPlaywright() {
     const leftover = await page.$$eval(".rm-modal-bg", (n) => n.length);
     assert.strictEqual(leftover, 0, "ada modal tersisa menumpuk: " + leftover);
 
+    // ---- v0.9.27: WITH the real snapshot the drill-down is the decision panel ----
+    let sw = ctx.serviceWorkers()[0];
+    if (!sw) sw = await ctx.waitForEvent("serviceworker", { timeout: 10000 });
+    const SNAP = JSON.parse(require("fs").readFileSync(require("path").join(EXT, "export", "performance-snapshot.json"), "utf8"));
+    await sw.evaluate((x) => new Promise((r) => chrome.storage.local.set({ rm_perf: x }, r)), SNAP);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForSelector(".rm-panel .rm-table .rm-drill", { timeout: 20000 });
+    await page.waitForTimeout(800);
+    await page.click(".rm-panel .rm-table tbody tr .rm-drill");
+    await page.waitForSelector(".rm-modal-bg.rm-pp-root .rm-pp-action", { timeout: 10000 });
+    await page.waitForTimeout(1200);   // let the enriched detail replace the loading panel
+    const pp = await page.evaluate(() => {
+      const m = document.querySelector(".rm-modal-bg.rm-pp-root");
+      return { n: document.querySelectorAll(".rm-modal-bg").length,
+               action: (m.querySelector(".rm-pp-action") || {}).textContent || "",
+               body: m.textContent, svg: !!m.querySelector(".rm-pp-svg") };
+    });
+    assert.strictEqual(pp.n, 1, "drill-down menumpuk: " + pp.n);
+    assert(/IKLANKAN|LAYAK COBA|UJI KECIL|HATI-HATI|LEWATI/.test(pp.action), "vonis kosong: " + pp.action);
+    assert(pp.svg && /Prediksi ROAS/.test(pp.body) && /Max CPC Meta/.test(pp.body), "panel keputusan tidak lengkap");
+    assert(!/\bNaN\b|undefined/.test(pp.body), "NaN/undefined di drill-down");
+    await page.click(".rm-modal-bg", { position: { x: 5, y: 5 } });
+    await page.waitForFunction(() => !document.querySelector(".rm-modal-bg"), { timeout: 10000 });
+    assert(await page.$(".rm-panel"), "panel hilang setelah menutup drill-down");
+
     assert.strictEqual(errors.length, 0, "error JS: " + errors.join(" | "));
 
-    console.log("BROWSER E2E MODAL LULUS");
+    console.log("BROWSER E2E MODAL LULUS (dengan snapshot: " + pp.action.trim() + ")");
     console.log("  modal terbuka dari baris tabel: OK");
     console.log("  judul + harga produk terbaca: OK");
     console.log("  panel bertahan saat modal terbuka: OK");

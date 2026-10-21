@@ -29,7 +29,9 @@
   "use strict";
 
   const DRAWS = 2000;
-  const MAX_CANDIDATES = 200;   // bound the cost on a huge shortlist
+  // Bound the cost: the panel re-plans on every bulk-scan page. Below the top
+  // 100 by mean, a product's chance of landing in the top 3 is negligible.
+  const MAX_CANDIDATES = 100;
 
   function mulberry32(seed) {
     let a = seed >>> 0;

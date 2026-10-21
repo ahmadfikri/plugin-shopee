@@ -129,7 +129,7 @@ function loadPlaywright() {
     const rows = await page.$$eval(".rm-sl-table tbody tr", (trs) =>
       trs.map((tr) => ({
         name: (tr.children[1] && tr.children[1].textContent || "").trim(),
-        kw: (tr.children[8] && tr.children[8].textContent || "").trim()
+        kw: ((tr.querySelector(".rm-sl-kw") || {}).textContent || "").trim()
       })));
     assert(rows.length > 0, "batch terakhir tidak menghasilkan baris apa pun");
     assert(rows.every((r) => /casing iphone/i.test(r.name)),
@@ -167,7 +167,7 @@ function loadPlaywright() {
     //    its storage. Going through the UI is also what the user actually sees.
     const labels = await page.$$eval(".rm-sl-table tbody tr", (trs) =>
       [...new Set(trs.map((tr) =>
-        (tr.children[8] && tr.children[8].textContent || "").trim()))]);
+        ((tr.querySelector(".rm-sl-kw") || {}).textContent || "").trim()))]);
     assert(labels.some((l) => /^tumbler/.test(l)),
       "batch keyword pertama hilang dari shortlist, label yang ada: " + JSON.stringify(labels));
     assert(labels.some((l) => /^casing iph/.test(l)),

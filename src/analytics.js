@@ -86,7 +86,8 @@
           // (commission x conversion), so scoring EPC against it would compare
           // earnings with earnings and land every product near neutral. The
           // decision is earnings per click versus what a click actually costs.
-          const niche = global.RMNiche ? global.RMNiche.classify({ name: p.name }).niche : null;
+          const nc = global.RMNiche ? global.RMNiche.classify({ name: p.name }) : null;
+          const niche = nc ? nc.niche : null;
           const pred = global.RMEpc.predict(epcModel, { tag, niche, breakEvenCpc: breakEven });
           const sc = global.RMEpc.score(pred);
           pred.score = sc.score;
@@ -99,8 +100,26 @@
           pred.roas = ec ? ec.roas : null;
           pred.roasSd = ec ? ec.roasSd : null;
           p.epcPred = pred;
+          // v0.9.27: the SAME decision engine as the product page, so the
+          // listing, the shortlist and the product page can never disagree.
+          p.suggestedTag = tag;
+          p.niche = niche;
+          p.nicheSource = nc ? nc.source : null;
+          p.decision = null;
+          if (global.RMProductPage && global.RMProductPage.decide) {
+            try {
+              const d = global.RMProductPage.decide(pred, snap, tag, cfg);
+              p.decision = d && d.ready ? {
+                action: d.action, cls: d.cls, basis: d.basis, niche: d.niche,
+                roas: d.roas, roasLow: d.roasLow, roasHigh: d.roasHigh,
+                maxCpc: d.maxCpc, cpc: d.cpc, cpcSrc: d.cpcSrc, pProfit: d.pProfit,
+                reason: (d.reasons || [])[0] || ""
+              } : null;
+            } catch (_) { p.decision = null; }   // never let one product break the page
+          }
         } else {
           p.epcPred = null;
+          p.decision = null;
         }
       }
     }

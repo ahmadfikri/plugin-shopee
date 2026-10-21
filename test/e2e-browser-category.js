@@ -76,7 +76,7 @@ function loadPlaywright() {
     await page.click(".rm-sl-toggle").catch(() => {});   // show all rows
     await page.waitForTimeout(400);
     const labels = await page.$$eval(".rm-sl-table tbody tr", (trs) =>
-      [...new Set(trs.map((tr) => (tr.children[8] && tr.children[8].textContent || "").trim()))]);
+      [...new Set(trs.map((tr) => ((tr.querySelector(".rm-sl-kw") || {}).textContent || "").trim()))]);
 
     for (const cat of ["All", "Mobile", "Home", "Beauty"]) {
       assert(labels.some((l) => l === cat),

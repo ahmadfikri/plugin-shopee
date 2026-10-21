@@ -30,11 +30,14 @@ ctx.window.document = ctx.document;
 ctx.self = ctx.window;
 vm.createContext(ctx);
 loadInto(ctx, "epc.js");
+loadInto(ctx, "niche.js");
+loadInto(ctx, "bandit.js");
 loadInto(ctx, "perf.js");
 loadInto(ctx, "proscore.js");
 loadInto(ctx, "charts.js");
 loadInto(ctx, "shortlist.js");
 loadInto(ctx, "analytics.js");
+loadInto(ctx, "productpage.js");   // v0.9.27: decide() feeds the table
 loadInto(ctx, "panel.js");
 const { RMEpc, RMAnalytics, RMPanel, RMShortlist } = ctx.window;
 
@@ -82,7 +85,7 @@ const chk = (n, c, d) => { console.log(`${c ? "PASS" : "FAIL"}  ${n}${d ? "  " +
   await RMShortlist.add(withSnap.products, "cari: test");
   const meta = await RMShortlist.getMeta();
   const html = RMPanel.shortlistSection(meta, true);
-  chk("tabel tunggal punya header EPC", html.includes(">EPC ") || /EPC<\/th>|EPC </.test(html) || html.includes("EPC"));
+  chk("tabel punya kolom Prediksi ROAS + Max CPC Meta + Vonis (v0.9.27)", /Prediksi ROAS/.test(html) && /Max CPC Meta/.test(html) && /Vonis/.test(html));
   chk("tabel menampilkan Rp/klik per baris", /Rp[\d.]+\/klik/.test(html));
   chk("tabel punya kolom Rating (dari product-table lama)", html.includes("Rating"));
 
@@ -106,7 +109,7 @@ const chk = (n, c, d) => { console.log(`${c ? "PASS" : "FAIL"}  ${n}${d ? "  " +
     epcScore: null, keyword: "cari: x", href: "#", at: Date.now()
   }], scans: 1, keywords: [] };
   const html2 = RMPanel.shortlistSection(bareMeta, true);
-  chk("tanpa snapshot tabel tetap punya kolom EPC", html2.includes("EPC"));
+  chk("tanpa snapshot tabel tetap punya kolom Prediksi ROAS", html2.includes("Prediksi ROAS"));
   chk("tanpa snapshot ada hint 'scan ulang'", html2.includes("scan ulang"));
 
   console.log(ok ? "\nEPC TABLE OK — skor EPC tampil di tabel tunggal (opsi B)"

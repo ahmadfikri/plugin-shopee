@@ -183,6 +183,9 @@ node test/e2e-bandit.js || fail=1
 echo "=== 40. Browser E2E: rencana uji muncul setelah bulk scan (snapshot asli) ==="
 node test/e2e-browser-testplan.js || fail=1
 
+echo "=== 41. Test: ringkasan halaman listing pakai mesin keputusan yang sama (v0.9.27) ==="
+node test/e2e-listing.js || fail=1
+
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else

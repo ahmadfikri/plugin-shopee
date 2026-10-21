@@ -359,16 +359,25 @@
           else alert("Produk ini dari scan halaman lain — buka lewat 🔗 untuk analisa mendalam.");
           return;
         }
-        // open modal immediately with a loading state, then fill with detail
+        // open modal immediately with a loading state, then fill with detail.
+        // v0.9.27: with a snapshot, the drill-down is the SAME decision panel
+        // as the product page (vonis, ROAS band, Max CPC Meta, niche, riwayat).
+        const usePP = !!(window.RMProductPage && p.epcPred && cfg && cfg.__perf);
+        const mk = (det) => usePP
+          ? RMProductPage.build(p, det, p.pro, p.epcPred, cfg)
+          : RMPanel.buildDetailModal(p, det, p.pro, p.epcPred);
         document.querySelectorAll(".rm-modal-bg").forEach((n) => n.remove());
-        let modal = RMPanel.buildDetailModal(p, { error: null }, p.pro, p.epcPred);
+        let modal = mk({ error: null, name: p.name, price: p.price });
         document.body.appendChild(modal);
         wireModal(modal, p);
         let detail = {};
         try { if (window.RMEnrich) detail = await RMEnrich.fetchDetail(p); } catch (err) { detail = { error: String(err) }; }
-        const fresh = RMPanel.buildDetailModal(p, detail, p.pro, p.epcPred);
+        if (!modal.isConnected) return;          // user closed it while loading
+        const fresh = mk(Object.assign({ name: p.name, price: p.price }, detail || {}));
         modal.replaceWith(fresh);
         wireModal(fresh, p);
+        if (usePP) RMProductPage.fillHistory(fresh, p, cfg.__perf)
+          .catch((e2) => console.log("RM: riwayat eksperimen gagal:", e2 && e2.message));
         return;
       }
 
