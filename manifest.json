@@ -1,12 +1,16 @@
 {
   "manifest_version": 3,
   "name": "syabab-affiliathor",
-  "version": "0.9.27",
+  "version": "0.9.29",
   "description": "Riset pasar & kelayakan iklan langsung di halaman pencarian Shopee. Self-contained, tanpa backend.",
   "permissions": [
     "storage",
     "activeTab",
-    "downloads"
+    "downloads",
+    "contextMenus",
+    "declarativeNetRequestWithHostAccess",
+    "notifications",
+    "offscreen"
   ],
   "background": {
     "service_worker": "src/background.js"
@@ -15,7 +19,16 @@
     "https://shopee.co.id/*",
     "https://*.shopee.co.id/*",
     "https://affiliate.shopee.co.id/*",
-    "https://api.deepseek.com/*"
+    "https://api.deepseek.com/*",
+    "https://*.tiktok.com/*",
+    "https://*.tiktokcdn.com/*",
+    "https://*.tiktokcdn-us.com/*",
+    "https://*.tiktokv.com/*",
+    "https://*.byteoversea.com/*",
+    "https://*.ibytedtos.com/*",
+    "https://*.muscdn.com/*",
+    "https://www.facebook.com/ads/library/*",
+    "https://*.fbcdn.net/*"
   ],
   "action": {
     "default_title": "Riset Market",
@@ -58,6 +71,29 @@
       ],
       "css": [
         "src/panel.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.facebook.com/ads/library*"
+      ],
+      "js": [
+        "src/fbadlib-hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://www.facebook.com/ads/library*"
+      ],
+      "js": [
+        "src/fbadlib.js",
+        "src/fbadlib-content.js"
+      ],
+      "css": [
+        "src/fbadlib.css"
       ],
       "run_at": "document_idle"
     }

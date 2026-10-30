@@ -17,6 +17,7 @@
     ai: {
       enabled: false,
       apiKey: "",
+      affiliateId: "",
       model: "deepseek-chat",
       baseUrl: "https://api.deepseek.com/v1/chat/completions",
       captionPrompt: "",

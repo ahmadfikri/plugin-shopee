@@ -186,6 +186,18 @@ node test/e2e-browser-testplan.js || fail=1
 echo "=== 41. Test: ringkasan halaman listing pakai mesin keputusan yang sama (v0.9.27) ==="
 node test/e2e-listing.js || fail=1
 
+echo "=== 42. Test: TikTok downloader (parse + kualitas max, tanpa watermark) ==="
+node test/e2e-tiktok.js || fail=1
+
+echo "=== 43. Test: FB Ad Library parser (payload asli inline + GraphQL) ==="
+node test/e2e-fbadlib.js || fail=1
+
+echo "=== 44. Browser E2E: TikTok downloader (TikTok live, file 1080p tersimpan) ==="
+node test/e2e-browser-tiktok.js || fail=1
+
+echo "=== 45. Browser E2E: FB Ad Library (tombol per iklan, download HD, scroll GraphQL) ==="
+node test/e2e-browser-fbadlib.js || fail=1
+
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else
