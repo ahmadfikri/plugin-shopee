@@ -48,6 +48,17 @@ function loadPlaywright() {
     const bar = await page.locator(".rm-fb-count").innerText();
     console.log("cards with button:", nBtn, "| <video> on page:", nVid, "| bar:", bar);
     if (nBtn < 1 || nBtn < nVid) throw new Error("button missing on some video cards (" + nBtn + " vs " + nVid + ")");
+    // v0.9.30 winner signal badge + Top panel
+    const sigs = await page.locator(".rm-fb-sig").allInnerTexts();
+    console.log("badges:", sigs.length, sigs.slice(0, 3).join(" | "));
+    if (sigs.length < nBtn || !sigs.every((t) => /\d+ hari/.test(t))) throw new Error("signal badge missing/invalid");
+    await page.locator(".rm-fb-topbtn").click();
+    const rows = await page.locator(".rm-fb-top tr").count();
+    const head = await page.locator(".rm-fb-top-h").innerText();
+    const shop = await page.locator(".rm-fb-top a[href*='shopee']").count();
+    console.log("top panel rows:", rows - 1, "| shopee links:", shop, "|", head.slice(0, 60));
+    if (rows - 1 < nBtn || shop < 1) throw new Error("top panel incomplete");
+    await page.locator(".rm-fb-top .rm-fb-x").click();
 
     // 2) one card
     await page.locator(".rm-fb-dl").first().click();

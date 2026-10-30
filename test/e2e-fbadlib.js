@@ -52,4 +52,19 @@ assert.ok(!/[\s/\\:*?"<>|]/.test(A.slug("Toko Ku: \"Best\"/Shop")), "slug is fil
 const raw = JSON.parse(fx("fbadlib-inline.json"));
 assert.strictEqual(A.extractAds({ a: raw, b: raw }).length, 6, "same ad twice -> counted once");
 
+// --- winner signal (v0.9.30): days running from start_date..end_date, variants
+const first = inl.find((a) => a.id === "1791682218708346"); // start 16 Okt, last seen 30 Okt
+assert.strictEqual(first.days, 15, "16..30 Okt inclusive = 15 hari");
+assert.strictEqual(A.signal(first).tier, "TERBUKTI");
+const old = gq.find((a) => a.days > 300);
+assert.ok(old, "graphql has a long-running ad (start Okt 2025)");
+const multi = gq.find((a) => a.variants === 6);
+assert.ok(multi && A.signal(multi).scaling, "6 variasi -> SCALING");
+assert.strictEqual(A.signal({ days: 3, variants: 1 }).tier, "BARU");
+assert.strictEqual(A.signal({ days: 9, variants: 1 }).tier, "MENJANJIKAN");
+assert.ok(A.signal({ days: 10, variants: 5 }).score > A.signal({ days: 10, variants: 1 }).score, "variasi menaikkan skor");
+const ranked = A.rank(gq);
+assert.ok(ranked.every((a, i) => i === 0 || A.signal(ranked[i - 1]).score >= A.signal(a).score), "rank sorted desc");
+assert.strictEqual(ranked[0].id, old.id, "ad running >300 days ranks first");
+
 console.log("FBADLIB UNIT OK — " + inl.length + " inline ads, " + gq.length + " graphql ads, HD-first plan");

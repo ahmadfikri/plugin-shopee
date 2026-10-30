@@ -198,6 +198,9 @@ node test/e2e-browser-tiktok.js || fail=1
 echo "=== 45. Browser E2E: FB Ad Library (tombol per iklan, download HD, scroll GraphQL) ==="
 node test/e2e-browser-fbadlib.js || fail=1
 
+echo "=== 46. Test: affiliate ID default 11300901968 (config lama ikut, nilai user aman) ==="
+node test/e2e-affid-default.js || fail=1
+
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else

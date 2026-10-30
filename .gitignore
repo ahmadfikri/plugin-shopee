@@ -2,3 +2,4 @@
 Icon
 node_modules/
 .e2e-profiles/
+*.bak-*

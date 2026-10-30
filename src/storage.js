@@ -17,7 +17,7 @@
     ai: {
       enabled: false,
       apiKey: "",
-      affiliateId: "",
+      affiliateId: "11300901968", // Fikri's Shopee affiliate ID (verified via an_11300901968 in a live short-link, 30 Okt 2026)
       model: "deepseek-chat",
       baseUrl: "https://api.deepseek.com/v1/chat/completions",
       captionPrompt: "",
@@ -45,6 +45,11 @@
   ];
 
   function migrate(cfg) {
+    // A config saved before v0.9.30 stores affiliateId "" which would shadow the
+    // default. Empty = never set -> use the default. A non-empty value is kept.
+    if (cfg && cfg.ai && !String(cfg.ai.affiliateId || "").trim()) {
+      cfg.ai.affiliateId = DEFAULT_CONFIG.ai.affiliateId;
+    }
     if (cfg && cfg.ai && typeof cfg.ai.captionPrompt === "string") {
       const p = cfg.ai.captionPrompt;
       if (p && LEGACY_PROMPT_MARKERS.some((re) => re.test(p))) {

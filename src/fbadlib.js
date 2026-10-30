@@ -68,7 +68,13 @@
         if (!seen.has(id)) {
           seen.add(id);
           const s = o.snapshot;
+          // end_date = last day the ad was seen running (today for active ads).
+          const endTs = o.end_date || (o.is_active !== false ? Date.now() / 1000 : 0);
+          const days = o.start_date && endTs ? Math.max(1, Math.round((endTs - o.start_date) / 86400) + 1) : 0;
           ads.push({
+            days,
+            variants: Math.max(1, Number(o.collation_count) || 1),
+            platforms: o.publisher_platform || [],
             id,
             pageId: String(o.page_id || s.page_id || ""),
             pageName: s.page_name || o.page_name || "",
@@ -115,10 +121,28 @@
     }));
   }
 
+  /* Winner signal (v0.9.30). Nobody pays for a losing ad for weeks, so days
+   * running is the strongest public proxy for profit. Many variations of the
+   * same creative (collation_count) means the advertiser is scaling it.
+   * Thresholds: >=14 days TERBUKTI, 7-13 MENJANJIKAN, <7 BARU. */
+  function signal(ad) {
+    const d = ad.days || 0, v = ad.variants || 1;
+    const tier = d >= 14 ? "TERBUKTI" : d >= 7 ? "MENJANJIKAN" : "BARU";
+    const scaling = v >= 3;
+    const score = Math.round(d * (1 + Math.min(v - 1, 9) * 0.25));
+    const label = (tier === "TERBUKTI" ? "🏆 " : tier === "MENJANJIKAN" ? "📈 " : "🆕 ") +
+      d + " hari" + (v > 1 ? " · " + v + " variasi" : "") + (scaling ? " · SCALING" : "");
+    return { tier, scaling, score, label };
+  }
+
+  function rank(list) {
+    return list.slice().sort((a, b) => signal(b).score - signal(a).score || b.days - a.days);
+  }
+
   function cardIdFromText(t) { const m = CARD_ID_RE.exec(String(t || "")); return m ? m[1] : null; }
   function countCardIds(t) { const m = String(t || "").match(new RegExp(CARD_ID_RE.source, "gi")); return m ? m.length : 0; }
 
   global.RMFbAdLib = { isLibraryUrl, parseDocs, extractAds, extractFromText, filename, downloadsFor,
-    cardIdFromText, countCardIds, slug, CARD_ID_RE };
+    signal, rank, cardIdFromText, countCardIds, slug, CARD_ID_RE };
   if (typeof module !== "undefined" && module.exports) module.exports = global.RMFbAdLib;
 })(typeof self !== "undefined" ? self : this);
