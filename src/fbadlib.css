@@ -1,0 +1,35 @@
+/* fbadlib.css — Ad Library download buttons (v0.9.29) */
+.rm-fb-dl {
+  display: block; margin: 6px 0; padding: 6px 10px; border: 0; border-radius: 6px;
+  background: #ee4d2d; color: #fff; font: 600 12px/1.2 system-ui, sans-serif; cursor: pointer;
+}
+.rm-fb-dl:disabled { opacity: .7; cursor: wait; }
+.rm-fb-bar {
+  position: fixed; right: 16px; bottom: 16px; z-index: 2147483000;
+  display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 10px;
+  background: #fff; color: #222; box-shadow: 0 4px 18px rgba(0,0,0,.25);
+  font: 12px/1.2 system-ui, sans-serif;
+}
+.rm-fb-bar b { color: #ee4d2d; }
+.rm-fb-bar button {
+  padding: 6px 10px; border: 0; border-radius: 6px; cursor: pointer;
+  background: #ee4d2d; color: #fff; font: 600 12px/1.2 system-ui, sans-serif;
+}
+.rm-fb-bar .rm-fb-json { background: #eee; color: #333; }
+.rm-fb-bar button:disabled { opacity: .7; cursor: wait; }
+/* v0.9.30 winner signal */
+.rm-fb-sig { display: inline-block; margin: 6px 0 0; padding: 3px 8px; border-radius: 6px;
+  font: 600 12px/1.3 system-ui, sans-serif; background: #eee; color: #333; }
+.rm-fb-sig.rm-fb-terbukti { background: #1b5e20; color: #fff; }
+.rm-fb-sig.rm-fb-menjanjikan { background: #fff3cd; color: #6d4c00; }
+.rm-fb-top { position: fixed; right: 16px; bottom: 64px; z-index: 2147483000; width: min(820px, 92vw);
+  max-height: 70vh; overflow: auto; background: #fff; color: #222; border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.3); font: 12px/1.35 system-ui, sans-serif; padding: 10px; }
+.rm-fb-top-h { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.rm-fb-top-h b { color: #ee4d2d; }
+.rm-fb-top .rm-fb-x { margin-left: auto; border: 0; background: #eee; border-radius: 6px; cursor: pointer; padding: 4px 8px; }
+.rm-fb-top table { width: 100%; border-collapse: collapse; }
+.rm-fb-top th, .rm-fb-top td { text-align: left; padding: 4px 6px; border-bottom: 1px solid #eee; vertical-align: top; }
+.rm-fb-top tr.rm-fb-terbukti td:nth-child(2) { color: #1b5e20; font-weight: 700; }
+.rm-fb-top td button { border: 0; background: #ee4d2d; color: #fff; border-radius: 5px; cursor: pointer; padding: 3px 8px; }
+.rm-fb-top a { color: #ee4d2d; }

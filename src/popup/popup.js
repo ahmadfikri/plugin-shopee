@@ -29,3 +29,30 @@ document.getElementById("shopee").addEventListener("click", () => {
     });
   });
 })();
+
+// TikTok downloader — the real work runs in background.js so it survives the
+// popup closing; this only forwards the pasted link and shows the result.
+(function () {
+  const inp = document.getElementById("ttlink");
+  const btn = document.getElementById("ttdl");
+  const info = document.getElementById("ttinfo");
+  if (!inp || !btn) return;
+  // prefill from clipboard when it holds a TikTok link
+  if (navigator.clipboard && navigator.clipboard.readText) {
+    navigator.clipboard.readText().then((t) => { if (/tiktok\.com\//i.test(t || "") && !inp.value) inp.value = t.trim(); }).catch(() => {});
+  }
+  const go = () => {
+    const text = inp.value.trim();
+    if (!text) { info.textContent = "Paste link TikTok dulu."; return; }
+    btn.disabled = true; info.textContent = "⏳ Mengambil kualitas tertinggi…";
+    chrome.runtime.sendMessage({ type: "tiktok-download", text }, (r) => {
+      btn.disabled = false;
+      if (chrome.runtime.lastError || !r) { info.textContent = "❌ " + ((chrome.runtime.lastError || {}).message || "tidak ada respon"); return; }
+      info.textContent = r.ok
+        ? "✅ " + r.filename + " (" + Math.min(r.width, r.height) + "p " + r.codec + ")" + (r.fallback ? " — cadangan" : "")
+        : "❌ " + r.error;
+    });
+  };
+  btn.addEventListener("click", go);
+  inp.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+})();

@@ -283,22 +283,59 @@
   async function call(cfg, prompt, temperature) {
     if (!cfg.ai || !cfg.ai.enabled) throw new Error("AI dimatikan di Admin Panel.");
     if (!cfg.ai.apiKey) throw new Error("DeepSeek API key belum diisi di Admin Panel.");
-    const res = await fetch(cfg.ai.baseUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + cfg.ai.apiKey
-      },
-      body: JSON.stringify({
-        model: cfg.ai.model || "deepseek-chat",
-        messages: [{ role: "user", content: prompt }],
-        temperature: temperature == null ? 0.8 : temperature
-      })
-    });
-    if (!res.ok) throw new Error("DeepSeek error " + res.status);
-    const data = await res.json();
-    return (data.choices && data.choices[0] && data.choices[0].message.content || "").trim();
+    // Auto-retry transient failures (timeout / 429 / 5xx / network blip) so the
+    // user doesn't have to click "Caption" several times. 3 attempts, backoff.
+    const MAX = 3;
+    let lastErr = null;
+    for (let attempt = 1; attempt <= MAX; attempt++) {
+      // guard: test sandboxes (node vm) have no AbortController; Chrome always does
+      const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = ctrl && typeof setTimeout === "function" ? setTimeout(() => ctrl.abort(), 45000) : 0; // 45s per attempt
+      const clearTimeout = (t) => { if (t && typeof globalThis.clearTimeout === "function") globalThis.clearTimeout(t); };
+      try {
+        const res = await fetch(cfg.ai.baseUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + cfg.ai.apiKey
+          },
+          body: JSON.stringify({
+            model: cfg.ai.model || "deepseek-chat",
+            messages: [{ role: "user", content: prompt }],
+            temperature: temperature == null ? 0.8 : temperature
+          }),
+          signal: ctrl ? ctrl.signal : undefined
+        });
+        clearTimeout(timer);
+        if (!res.ok) {
+          // 429 / 5xx are transient -> retry; 4xx (auth/bad request) -> fail fast
+          const body = await res.text().catch(() => "");
+          if (res.status === 429 || res.status >= 500) {
+            lastErr = new Error("DeepSeek " + res.status + " (sibuk/limit)" + (body ? ": " + body.slice(0, 120) : ""));
+            if (attempt < MAX) { await sleep(800 * attempt); continue; }
+            throw lastErr;
+          }
+          throw new Error("DeepSeek error " + res.status + (body ? ": " + body.slice(0, 160) : ""));
+        }
+        const data = await res.json();
+        const out = (data.choices && data.choices[0] && data.choices[0].message.content || "").trim();
+        if (!out) {
+          lastErr = new Error("DeepSeek balas kosong");
+          if (attempt < MAX) { await sleep(800 * attempt); continue; }
+          throw lastErr;
+        }
+        return out;
+      } catch (err) {
+        clearTimeout(timer);
+        const transient = err.name === "AbortError" || /network|fetch|timeout|kosong|sibuk|limit/i.test(err.message || "");
+        lastErr = err.name === "AbortError" ? new Error("DeepSeek timeout (>45s)") : err;
+        if (transient && attempt < MAX) { await sleep(800 * attempt); continue; }
+        throw lastErr;
+      }
+    }
+    throw lastErr || new Error("DeepSeek gagal");
   }
+  function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
   // Per-NICHE Indonesian hashtags (replaces the expired 10.10 campaign tags,
   // Fikri 2026-10-11). The 10.10 BrandsFestival / ShopeeMall campaign is OVER;
@@ -615,11 +652,69 @@
       .replace(/{{NICHE_TAGS}}/g, nicheTags(product.name).join(" "))
       .replace(/{{name}}/g, product.name || "")
       .replace(/{{price}}/g, ""), 0.75);
-    return ensureHashtags(raw, product);
+    return appendShortLink(ensureHashtags(raw, product), cfg, product);
+  }
+
+  // Build an official Shopee affiliate short link per Shopee's doc
+  // (help.shopee.co.id article 184879). Format:
+  //   https://s.shopee.co.id/an_redir?origin_link=<ENCODED_PRODUCT_URL>?&affiliate_id=<id>&sub_id=<tag>----
+  // sub_id slot 1 = our tag (= utm_content Shopee records, used by campaign_to_tag).
+  // Returns null when we lack affiliate_id or a resolvable product URL.
+  function buildShortLink(cfg, product) {
+    const aff = cfg && cfg.ai && (cfg.ai.affiliateId || "").trim();
+    if (!aff) return null;
+    // resolve the product URL: prefer href, else rebuild from shopid/itemid
+    let url = product.href || product.url || null;
+    if (!url && product.shopid && product.itemid)
+      url = `https://shopee.co.id/product/${product.shopid}/${product.itemid}`;
+    if (!url) return null;
+    // keep the camelCase tag as-is (naming convention); just strip unsafe chars
+    const tag = (product.suggestedTag || toCamelTag(product.name || "") || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 20);
+    const enc = encodeURIComponent(url);
+    const subId = `${tag}----`;   // slot1=tag, slots 2-5 reserved (network/source/custom)
+    return `https://s.shopee.co.id/an_redir?origin_link=${enc}?&affiliate_id=${aff}&sub_id=${subId}`;
+  }
+
+  // Append the ready-to-copy short link under the caption. When affiliate_id is
+  // missing, append a clear NOTICE instead of silently dropping the link.
+  function appendShortLink(caption, cfg, product) {
+    const aff = cfg && cfg.ai && (cfg.ai.affiliateId || "").trim();
+    if (!aff) {
+      return caption.replace(/\s*$/, "") +
+        "\n\n⚠️ Affiliate ID belum diisi di Admin Panel — short-link tidak dibuat. Isi dulu untuk link otomatis.";
+    }
+    const link = buildShortLink(cfg, product);
+    if (!link) {
+      return caption.replace(/\s*$/, "") +
+        "\n\n⚠️ Short-link gagal dibuat: URL produk tidak terbaca (buka dari halaman produk Shopee).";
+    }
+    return caption.replace(/\s*$/, "") + "\n\n🔗 " + link;
   }
   async function generateTag(cfg, product) {
-    const raw = await call(cfg, fill(cfg.ai.tagPrompt, product), 0.2);
-    return raw.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 20);
+    // Naming convention (dari XLSX harian Fikri): camelCase deskriptif, ringkas
+    // dari nama produk — mis. "Coach Phone Case" -> coachPhone, "Red Chef Tumbler"
+    // -> redchefTumbler. Harus UNIK & nyambung ke produk (bukan acak).
+    try {
+      const raw = await call(cfg, fill(cfg.ai.tagPrompt, product), 0.2);
+      const t = toCamelTag(raw);
+      if (t) return t;
+    } catch (_) { /* fall back to local derivation below */ }
+    return toCamelTag(product.name || "") || localTag(product);
+  }
+
+  // Convert any string to camelCase tag: words joined, first lower, rest Capped,
+  // alnum only, max 20 chars. "Red Chef Tumbler" -> "redChefTumbler".
+  function toCamelTag(s) {
+    const words = String(s).replace(/[^a-zA-Z0-9 ]/g, " ").trim().split(/\s+/).filter(Boolean).slice(0, 4);
+    if (!words.length) return "";
+    const camel = words.map((w, i) => i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("");
+    return camel.slice(0, 20);
+  }
+  // Deterministic last-resort tag so two different products never collide.
+  function localTag(product) {
+    const base = toCamelTag(product.name || "produk") || "produk";
+    const sig = String(product.itemid || product.id || Date.now()).slice(-4);
+    return (base.slice(0, 14) + sig).slice(0, 20);
   }
 
   // Lean context. Fikri's rules: NO price (2026-10-02) and, since 2026-10-09,
@@ -691,5 +786,5 @@
 
   global.RMAi = { generateCaption, generateTag, generateVideoPrompt, productContext,
                   isPhoneAccessory, isHandheld, isPhoneCase, productSize, videoMode,
-                  ensureHashtags, stripPrice, stripRating, RATING_BAN, NICHE_TAGS, nicheTags, ensureNicheTags, ensureDisclaimer, CAPTION_DISCLAIMER, DEFAULT_CAPTION_PROMPT };
+                  ensureHashtags, stripPrice, stripRating, RATING_BAN, NICHE_TAGS, nicheTags, ensureNicheTags, ensureDisclaimer, CAPTION_DISCLAIMER, DEFAULT_CAPTION_PROMPT, buildShortLink, appendShortLink, generateTag, toCamelTag };
 })(typeof window !== "undefined" ? window : this);

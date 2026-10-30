@@ -14,6 +14,7 @@
       $("showCharts").checked = !!cfg.showCharts;
       $("aiEnabled").checked = !!cfg.ai.enabled;
       $("aiApiKey").value = cfg.ai.apiKey || "";
+      $("affiliateId").value = cfg.ai.affiliateId || "";
       $("aiModel").value = cfg.ai.model || "";
       $("aiBaseUrl").value = cfg.ai.baseUrl || "";
       $("captionPrompt").value = cfg.ai.captionPrompt || "";
@@ -29,6 +30,7 @@
       cfg.showCharts = $("showCharts").checked;
       cfg.ai.enabled = $("aiEnabled").checked;
       cfg.ai.apiKey = $("aiApiKey").value.trim();
+      cfg.ai.affiliateId = $("affiliateId").value.trim();
       cfg.ai.model = $("aiModel").value.trim();
       cfg.ai.baseUrl = $("aiBaseUrl").value.trim();
       cfg.ai.captionPrompt = $("captionPrompt").value;
