@@ -139,10 +139,85 @@
     return list.slice().sort((a, b) => signal(b).score - signal(a).score || b.days - a.days);
   }
 
+  /* ---- competitor tracker (v0.9.31) ----------------------------------
+   * prev = stored {adId: {firstSeen, lastSeen, days, page, body, link}} for ONE
+   * advertiser page. cur = ads captured now. Returns the updated store plus
+   * what changed since the last visit. An ad that is no longer shown on an
+   * "active only" page is NOT proof it died (the user may not have scrolled to
+   * the end), so it is "hilang" until the user confirms by scrolling fully. */
+  function trackDiff(prev, cur, todayIso) {
+    const store = Object.assign({}, prev || {});
+    const seenNow = new Set();
+    const baru = [], lanjut = [];
+    for (const ad of cur) {
+      seenNow.add(ad.id);
+      const old = store[ad.id];
+      if (!old) baru.push(ad.id); else lanjut.push(ad.id);
+      store[ad.id] = { firstSeen: old ? old.firstSeen : todayIso, lastSeen: todayIso, days: ad.days,
+        page: ad.pageName, body: String(ad.body || "").slice(0, 160), link: shopeeLink(ad), gone: false };
+    }
+    const hilang = [];
+    for (const id of Object.keys(store)) {
+      if (seenNow.has(id)) continue;
+      if (!store[id].gone) { store[id] = Object.assign({}, store[id], { gone: true, goneSince: todayIso }); }
+      hilang.push(id);
+    }
+    return { store, baru, lanjut, hilang, firstVisit: !prev || !Object.keys(prev).length };
+  }
+
+  function shopeeLink(ad) {
+    const m = (String(ad.linkUrl || "") + " " + String(ad.body || ""))
+      .match(/https?:\/\/(?:s\.shopee\.co\.id|shopee\.co\.id)\/[^\s"'<>]+/i);
+    return m ? m[0].replace(/[),.]+$/, "") : "";
+  }
+
+  /* ---- creative brief (v0.9.31) ---------------------------------------
+   * Fikri's rules: never mention price; original creative (study the angle,
+   * do not copy sentences or re-use the video); ~10 s video; one click CTA. */
+  function sanitizeBody(t) {
+    return String(t || "")
+      .replace(/https?:\/\/\S+/g, "[link]")
+      .replace(/#[\p{L}\p{N}_]+/gu, "")   // competitor hashtags (e.g. #PromoHariIni) add no angle
+      .replace(/Rp\s?[\d.,]+(?:\s?(rb|ribu|k|jt|juta))?/gi, "")
+      .replace(/\b\d{1,3}(?:[.,]\d{3})+\b/g, "")
+      .replace(/\b(harga|murah|termurah|diskon|promo|potongan|hemat|cashback|gratis ongkir|terjangkau)\b/gi, "")
+      .replace(/[ \t]{2,}/g, " ").trim().slice(0, 1200);
+  }
+
+  function briefPrompt(ad) {
+    const sg = signal(ad);
+    return [
+      "Kamu creative strategist iklan Meta untuk affiliate Shopee Indonesia.",
+      `Di bawah ini teks iklan KOMPETITOR yang sudah tayang ${ad.days} hari` +
+        (ad.variants > 1 ? ` dengan ${ad.variants} variasi` : "") + ` (sinyal: ${sg.tier}). Iklan yang jalan selama ini kemungkinan besar untung.`,
+      "",
+      "TEKS IKLAN KOMPETITOR:",
+      '"""', sanitizeBody(ad.body) || "(tanpa teks)", '"""',
+      "",
+      "Tugas: buat BRIEF KREATIF ORIGINAL untuk produk yang sama. Pelajari ANGLE-nya, jangan salin kalimatnya.",
+      "Format jawaban (Bahasa Indonesia, ringkas, tanpa markdown tebal):",
+      "1. ANGLE: kenapa iklan ini kemungkinan berhasil (masalah yang dipukul, emosi, bukti), maks 3 poin.",
+      "2. HOOK: 3 pilihan kalimat pembuka 0-2 detik, masing-masing beda pendekatan (masalah / kejutan visual / pertanyaan).",
+      "3. NASKAH 10 DETIK: voice-over + teks layar per detik (0-2, 2-5, 5-8, 8-10). Bisa dibaca tanpa suara.",
+      "4. SHOT LIST: 4-5 shot, gaya UGC asli (tangan/HP), bukan render mewah.",
+      "5. CTA: satu ajakan klik ke link (contoh: \"cek link di bawah\").",
+      "",
+      "LARANGAN (wajib): JANGAN sebut harga, Rp, diskon, promo, murah, terjangkau, atau perbandingan harga di bagian mana pun.",
+      "JANGAN klaim palsu (nomor 1, dijamin, original kalau tidak tertulis). Jangan pakai ulang video kompetitor.",
+    ].join("\n");
+  }
+
+  // Safety net on the model output: drop any line that still talks price.
+  function cleanBrief(text) {
+    return String(text || "").split("\n")
+      .filter((l) => !/Rp\s?\d|\bharga\b|\bmurah\b|\bdiskon\b|\bpromo\b|\bterjangkau\b/i.test(l))
+      .join("\n").replace(/\*\*/g, "").trim();
+  }
+
   function cardIdFromText(t) { const m = CARD_ID_RE.exec(String(t || "")); return m ? m[1] : null; }
   function countCardIds(t) { const m = String(t || "").match(new RegExp(CARD_ID_RE.source, "gi")); return m ? m.length : 0; }
 
   global.RMFbAdLib = { isLibraryUrl, parseDocs, extractAds, extractFromText, filename, downloadsFor,
-    signal, rank, cardIdFromText, countCardIds, slug, CARD_ID_RE };
+    signal, rank, trackDiff, shopeeLink, sanitizeBody, briefPrompt, cleanBrief, cardIdFromText, countCardIds, slug, CARD_ID_RE };
   if (typeof module !== "undefined" && module.exports) module.exports = global.RMFbAdLib;
 })(typeof self !== "undefined" ? self : this);

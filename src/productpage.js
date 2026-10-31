@@ -58,11 +58,13 @@
   }
 
   /* Base rate: of every tag that actually got ad spend, how many paid back? */
-  function baseRate(snapshot) {
+  function baseRate(snapshot, be) {
     const tags = Object.values((snapshot && snapshot.tags) || {})
       .filter((t) => n(t.spend) > 0 && n(t.roas) != null);
     if (!tags.length) return null;
-    const win = tags.filter((t) => t.roas >= 1).length;
+    // snapshot ROAS is GROSS (commission/spend): paid back = above the
+    // after-tax break-even (1.14 by default), not above 1.0 (v0.9.31)
+    const win = tags.filter((t) => t.roas >= (be || 1)).length;
     return { tested: tags.length, paidBack: win, rate: win / tags.length };
   }
 
@@ -103,11 +105,12 @@
       niche: pred.niche || null, nicheStats: nz, nicheWin: nzModel,
       arrival, arrivalSrc, cpc, cpcSrc,
       epc: pred.epc, value, valueLow, valueHigh,
-      maxCpc: value,                       // break-even Meta CPC
+      maxCpc: ec.maxCpc,                   // break-even Meta CPC AFTER tax (v0.9.31)
+      breakEvenGross: ec.breakEvenGross,   // gross tag ROAS needed to break even
       confidence: pred.confidence, zeroConverter: !!pred.zeroConverter,
       roas: ec.roas, roasLow: ec.roasLow, roasHigh: ec.roasHigh,
       pProfit: ec.pProfit,
-      base: baseRate(snapshot),
+      base: baseRate(snapshot, ec.breakEvenGross),
       winners: topWinners(snapshot, 3),
       testBudget: TEST_BUDGET
     });
@@ -161,8 +164,9 @@
         out.risks.push(`Arrival tag ini ${t.arrival.toFixed(2)} (klik Shopee < klik Meta). Cek link/tag.`);
       if (t.verdict === "zero-converter")
         out.risks.push(`Tag "${tag}" dapat klik tapi 0 order.`);
-      else if (n(t.roas) != null && t.roas < 1)
-        out.risks.push(`Riwayat tag "${tag}" rugi: ROAS nyata ${x2(n(t.roas))}, net ${rp(n(t.commission) - n(t.spend))}.`);
+      else if (n(t.roas) != null && t.roas < (out.breakEvenGross || 1))
+        out.risks.push(`Riwayat tag "${tag}" rugi setelah pajak: ROAS kotor ${x2(n(t.roas))} (impas ${x2(out.breakEvenGross || 1)}), ` +
+          `net bersih ${rp(n(t.commission) * (1 - (ec.wht || 0)) - n(t.spend) * (1 + (ec.vat || 0)))}.`);
       if (n(t.clicks) < 3 * (pred.kEff || 30))
         out.risks.push("Riwayat tag masih tipis, prediksi ditarik ke rata-rata global.");
     }
@@ -274,9 +278,9 @@
 
     const headline = !d.ready ? "" :
       `<div class="rm-pp-nums">` +
-      `<div><span>Prediksi ROAS</span><b>${x2(d.roas)}</b><i>${x2(d.roasLow)} – ${x2(d.roasHigh)}</i></div>` +
+      `<div><span>Prediksi ROAS bersih</span><b>${x2(d.roas)}</b><i>${x2(d.roasLow)} – ${x2(d.roasHigh)} · setelah PPN &amp; WHT</i></div>` +
       `<div><span>P(untung)</span><b>${d.pProfit == null ? "?" : d.pProfit >= 0.99 ? "≥99%" : d.pProfit <= 0.01 ? "≤1%" : pct(d.pProfit)}</b><i>keyakinan ${esc(d.confidence)}</i></div>` +
-      `<div><span>Max CPC Meta</span><b>${rp(d.maxCpc)}</b><i>di atas ini rugi</i></div>` +
+      `<div><span>Max CPC Meta</span><b>${rp(d.maxCpc)}</b><i>di atas ini rugi (sudah hitung pajak)</i></div>` +
       `<div><span>Budget uji</span><b>maks ${rp(d.testBudget)}</b><i>net −30rb = wajib matikan</i></div>` +
       `</div>`;
 

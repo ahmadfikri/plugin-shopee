@@ -67,4 +67,28 @@ const ranked = A.rank(gq);
 assert.ok(ranked.every((a, i) => i === 0 || A.signal(ranked[i - 1]).score >= A.signal(a).score), "rank sorted desc");
 assert.strictEqual(ranked[0].id, old.id, "ad running >300 days ranks first");
 
+// --- v0.9.31 competitor tracker
+const t1 = A.trackDiff({}, inl.slice(0, 4), "2026-10-30");
+assert.ok(t1.firstVisit && t1.baru.length === 4 && t1.hilang.length === 0);
+const t2 = A.trackDiff(t1.store, inl.slice(2, 6), "2026-10-31");
+assert.ok(!t2.firstVisit);
+assert.deepStrictEqual(t2.baru.sort(), [inl[4].id, inl[5].id].sort(), "2 new ads");
+assert.deepStrictEqual(t2.hilang.sort(), [inl[0].id, inl[1].id].sort(), "2 gone ads");
+assert.strictEqual(t2.store[inl[2].id].firstSeen, "2026-10-30", "firstSeen kept");
+assert.strictEqual(t2.store[inl[0].id].goneSince, "2026-10-31");
+assert.match(t2.store[inl[0].id].link, /s\.shopee\.co\.id/, "gone ad keeps its Shopee link");
+const t3 = A.trackDiff(t2.store, inl.slice(0, 6), "2026-11-01");
+assert.strictEqual(t3.store[inl[0].id].gone, false, "ad seen again is no longer gone");
+
+// --- v0.9.31 creative brief: no price ever reaches the model or the output
+const priced = Object.assign({}, inl[0], { body: "Cuma Rp49.900! Harga termurah, diskon 50% promo hari ini. Tas cantik muat banyak https://s.shopee.co.id/abc" });
+const bp = A.briefPrompt(priced);
+const quoted = bp.split('"""')[1];
+assert.ok(!/Rp|49\.900|termurah|diskon|promo|https/i.test(quoted), "ad text sanitized: " + quoted);
+assert.match(quoted, /Tas cantik muat banyak/);
+assert.match(bp, /JANGAN sebut harga/);
+assert.match(bp, /10 DETIK/);
+const cb = A.cleanBrief("1. ANGLE: **muat banyak**\nHook: harga cuma Rp50rb\n2. HOOK: Tas ini muat laptop?");
+assert.ok(!/harga|Rp/i.test(cb) && /muat banyak/.test(cb) && !/\*\*/.test(cb), "price line dropped: " + cb);
+
 console.log("FBADLIB UNIT OK — " + inl.length + " inline ads, " + gq.length + " graphql ads, HD-first plan");

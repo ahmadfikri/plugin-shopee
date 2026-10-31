@@ -15,7 +15,7 @@ for (const f of ["epc.js", "niche.js", "productpage.js"]) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "src", f), "utf8"), ctx);
 }
 const { RMEpc, RMNiche, RMProductPage } = ctx.window;
-const snap = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "export", "performance-snapshot.json"), "utf8"));
+const snap = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "test", "fixtures", "performance-snapshot-2026-10-21.json"), "utf8"));
 const now = new Date(Date.parse(snap.generatedAt) + 3600e3);
 
 let ok = true;

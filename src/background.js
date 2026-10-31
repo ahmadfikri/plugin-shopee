@@ -201,8 +201,77 @@ async function fbDownload(items) {
     error: saved ? undefined : (failed[0] && failed[0].error) || "gagal" };
 }
 
+/* ---------------- Ad Library -> product analysis (v0.9.31) ----------------
+ * Opens each competitor's Shopee link in a BACKGROUND tab, one at a time, waits
+ * for the plugin's own product-page panel to report its verdict ("pp-verdict"),
+ * then closes the tab. Same pages Fikri would open by hand, at a human pace —
+ * no Shopee API calls. */
+const PP_WAIT = new Map(); // tabId -> resolve
+const AN_MAX = 12, AN_GAP_MS = 2500, AN_TIMEOUT_MS = 35000;
+
+function openAndWait(url) {
+  return new Promise((resolve) => {
+    chrome.tabs.create({ url, active: false }, (tab) => {
+      if (chrome.runtime.lastError || !tab) return resolve({ ok: false, error: "tab gagal dibuka" });
+      const done = (r) => { clearTimeout(to); PP_WAIT.delete(tab.id); chrome.tabs.remove(tab.id, () => void chrome.runtime.lastError); resolve(r); };
+      const to = setTimeout(() => done({ ok: false, error: "timeout (halaman tidak memuat panel)" }), AN_TIMEOUT_MS);
+      PP_WAIT.set(tab.id, (v) => done({ ok: true, verdict: v.verdict, finalUrl: v.url }));
+    });
+  });
+}
+
+async function analyzeLinks(items, progress) {
+  const out = [];
+  for (const it of items.slice(0, AN_MAX)) {
+    const r = await openAndWait(it.link);
+    out.push(Object.assign({ adId: it.adId, page: it.page, days: it.days, link: it.link }, r));
+    if (progress) progress(out.length, Math.min(items.length, AN_MAX));
+    await new Promise((ok) => setTimeout(ok, AN_GAP_MS));
+  }
+  return out;
+}
+
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg && msg.target === "offscreen") return false; // meant for offscreen.js
+  if (msg && msg.type === "pp-verdict") {
+    const w = _sender && _sender.tab && PP_WAIT.get(_sender.tab.id);
+    if (w) w(msg);
+    return false;
+  }
+  if (msg && msg.type === "fbadlib-brief") {
+    (async () => {
+      const o = await chrome.storage.local.get("rm_config");
+      const ai = ((o.rm_config || {}).ai) || {};
+      if (!ai.enabled || !ai.apiKey) return reply({ ok: false, error: "AI belum aktif / API key DeepSeek belum diisi di Admin Panel" });
+      let last = "";
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 60000);
+        try {
+          const r = await fetch(ai.baseUrl || "https://api.deepseek.com/v1/chat/completions", {
+            method: "POST", signal: ctrl.signal,
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + ai.apiKey },
+            body: JSON.stringify({ model: ai.model || "deepseek-chat", temperature: 0.8,
+              messages: [{ role: "user", content: msg.prompt }] }) });
+          clearTimeout(t);
+          if (r.status === 429 || r.status >= 500) { last = "DeepSeek " + r.status; await new Promise((ok) => setTimeout(ok, 1000 * attempt)); continue; }
+          if (!r.ok) return reply({ ok: false, error: "DeepSeek error " + r.status });
+          const j = await r.json();
+          const text = ((j.choices || [])[0] || {}).message ? j.choices[0].message.content : "";
+          if (text && text.trim()) return reply({ ok: true, text });
+          last = "DeepSeek balas kosong";
+        } catch (e) { clearTimeout(t); last = e.name === "AbortError" ? "DeepSeek timeout (>60s)" : e.message; }
+      }
+      reply({ ok: false, error: last || "DeepSeek gagal" });
+    })();
+    return true;
+  }
+  if (msg && msg.type === "fbadlib-analyze") {
+    const tabId = _sender && _sender.tab && _sender.tab.id;
+    analyzeLinks(msg.items || [], (i, n) => {
+      if (tabId != null) chrome.tabs.sendMessage(tabId, { type: "fbadlib-analyze-progress", i, n }, () => void chrome.runtime.lastError);
+    }).then((results) => reply({ ok: true, results }));
+    return true;
+  }
   if (msg && msg.type === "tiktok-download") { ttRun(msg.text).then(reply); return true; }
   if (msg && msg.type === "fbadlib-download") { fbDownload(msg.items).then(reply); return true; }
   if (msg && msg.type === "fbadlib-json") {

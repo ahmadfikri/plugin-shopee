@@ -31,7 +31,7 @@ for (const f of ["epc.js", "niche.js", "bandit.js", "perf.js", "proscore.js", "c
   vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "src", f), "utf8"), ctx);
 }
 const { RMAnalytics, RMPanel, RMProductPage, RMEpc } = ctx.window;
-const SNAP = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "export", "performance-snapshot.json"), "utf8"));
+const SNAP = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "test", "fixtures", "performance-snapshot-2026-10-21.json"), "utf8"));
 
 let ok = true;
 const chk = (n, c, d) => { console.log(`  ${c ? "OK  " : "FAIL"} ${n}${d ? " — " + d : ""}`); if (!c) ok = false; };

@@ -5,7 +5,7 @@
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[c]);
   const $ = (id) => document.getElementById(id);
-  const FIELDS = ["commissionPct", "breakEvenCPC", "conversionRate",
+  const FIELDS = ["commissionPct", "breakEvenCPC", "conversionRate", "metaVatPct", "shopeeWhtPct",
     "momentumMaxAgeMonths", "momentumMinPerMonth"];
 
   function load() {
