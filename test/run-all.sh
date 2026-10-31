@@ -210,6 +210,9 @@ node test/e2e-payout.js || fail=1
 echo "=== 49. Browser E2E: Ad Library analisa TERBUKTI + pelacak + brief (live) ==="
 node test/e2e-browser-fbadlib2.js || fail=1
 
+echo "=== 50. Browser E2E: 🚀 Launch pack (campaign = sub_id, checklist, #rm-launch) ==="
+node test/e2e-browser-launch.js || fail=1
+
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else

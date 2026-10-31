@@ -56,3 +56,19 @@ document.getElementById("shopee").addEventListener("click", () => {
   btn.addEventListener("click", go);
   inp.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
 })();
+
+// v0.9.32: competitor pages remembered by the Ad Library tracker
+(function () {
+  const btn = document.getElementById("fbtracked");
+  const info = document.getElementById("fbtrackinfo");
+  if (!btn) return;
+  chrome.storage.local.get("rm_fbadlib_track", (o) => {
+    const all = o.rm_fbadlib_track || {};
+    const n = Object.keys(all).length;
+    if (info) info.textContent = n ? n + " page kompetitor dilacak" : "Belum ada. Buka halaman satu pengiklan di Galeri Iklan dulu.";
+    if (!n) btn.disabled = true;
+  });
+  btn.addEventListener("click", () => chrome.runtime.sendMessage({ type: "fbadlib-open-tracked" }, (r) => {
+    if (info && r) info.textContent = r.opened + " dari " + r.total + " page dibuka";
+  }));
+})();

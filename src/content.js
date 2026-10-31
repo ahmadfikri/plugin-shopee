@@ -625,6 +625,60 @@
       } catch (err) { alert("Video: " + err.message); }
       vid.textContent = "⬇ Video";
     });
+    // v0.9.32 🚀 Launch pack: everything needed to create the Meta campaign in
+    // one paste-able block. Uses the SAME experiment for caption + video so the
+    // campaign name, Shopee tag and concept all match.
+    const lp = modal.querySelector(".rm-launch");
+    if (lp) lp.addEventListener("click", async () => {
+      if (captionBusy[p.id]) { lp.textContent = "⏳ masih membuat…"; return; }
+      captionBusy[p.id] = true;
+      lp.disabled = true;
+      const cfg = await loadCfg();   // with __perf, so the checklist has the verdict + Max CPC
+      const t0 = Date.now();
+      try {
+        lp.textContent = "⏳ 1/2 caption…";
+        const cap = await RMAi.generateCaption(cfg, p);
+        lp.textContent = "⏳ 2/2 prompt video…";
+        const vid = await RMAi.generateVideoPrompt(cfg, p);
+        const exp = await autoLog(p);
+        showExperiment(livePanel(modal), exp);
+        const link = (cap.match(/https:\/\/s\.shopee\.co\.id\/an_redir\S+/) || [""])[0];
+        // Campaign name MUST equal the short-link sub_id, or campaign_to_tag can't
+        // join Meta spend to Shopee commission. Take it from the link itself.
+        const subId = decodeURIComponent((link.match(/[?&]sub_id=([^&-]+)/) || [])[1] || "");
+        const camp = subId || p.suggestedTag || (RMAi.toCamelTag ? RMAi.toCamelTag(p.name || "") : "");
+        const dv = (window.RMProductPage && p.epcPred && cfg.__perf)
+          ? RMProductPage.decide(p.epcPred, cfg.__perf, p.suggestedTag || null, cfg) : null;
+        const rp = (v) => v == null ? "–" : "Rp" + Math.round(v).toLocaleString("id-ID");
+        const pack = [
+          "=== 1. NAMA CAMPAIGN META (sama persis dengan tag di short-link) ===", camp,
+          (exp && exp.campaignTag ? "(ID eksperimen internal plugin: " + exp.campaignTag + ")" : ""), "",
+          "=== 2. SHORT-LINK (taruh di baris pertama caption Facebook) ===", link || "⚠ short-link tidak terbentuk (cek Affiliate ID di Admin Panel)", "",
+          "=== 3. CAPTION ===", cap.replace(/\n*🔗 https:\/\/s\.shopee\S+\s*$/, "").trim(), "",
+          "=== 4. PROMPT VIDEO (Veo/Gemini, drag gambar produk sebagai referensi) ===", vid, "",
+          "=== 5. CHECKLIST ===",
+          "- Vonis plugin: " + (dv ? dv.action + (dv.roas != null ? " · ROAS bersih " + dv.roas.toFixed(2) + "x" : "") : "–"),
+          "- Max CPC Meta (setelah pajak): " + rp(dv && dv.maxCpc) + " · CPC > Rp200 hampir selalu gagal (sumber: Zaki)",
+          "- Budget uji: kecil dulu. Vonis setelah iklan run 2x24 jam; CPR Meta > Rp200 sehari = matikan",
+          "- Scale +20% kalau ROAS window 2x24 jam >= 1,4",
+          "- Jangan sebut harga di video/caption/teks layar",
+        ].join("\n");
+        await showOutput(modal, "🚀 Launch pack", pack,
+          "Satu blok: copy nama campaign ke Meta, short-link + caption ke iklan, prompt video ke Veo/Gemini.");
+        L("launch-pack", { ms: Date.now() - t0, tag: camp, link: !!link });
+      } catch (err) {
+        L("launch-pack-fail", { msg: String(err && err.message) });
+        await showOutput(modal, "Launch pack gagal", "❌ " + err.message + "\n\nKlik 🚀 Launch pack lagi.", "");
+      } finally { captionBusy[p.id] = false; }
+      const live = livePanel(modal).querySelector(".rm-launch") || lp;
+      live.disabled = false; live.textContent = "🚀 Launch pack";
+    });
+    // opened from the Ad Library "🚀" link: build the pack automatically, once
+    if (lp && /rm-launch/.test(location.hash) && !window.__rmAutoLaunch) {
+      window.__rmAutoLaunch = true;
+      setTimeout(() => { const b = livePanel(modal).querySelector(".rm-launch"); if (b) b.click(); }, 300);
+    }
+
     const gp = modal.querySelector(".rm-gahwa");
     if (gp) gp.addEventListener("click", async () => {
       gp.disabled = true;

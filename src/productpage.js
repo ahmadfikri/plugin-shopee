@@ -314,6 +314,7 @@
       `<div class="rm-exp"><b>Campaign Meta = Tag Shopee</b><span>Generate caption/video untuk membuat ID otomatis.</span></div>` +
       `<div class="rm-foot rm-pp-foot">` +
       `<div class="rm-pp-group"><span>Bikin konten</span>` +
+      `<button class="rm-launch" data-id="${esc(p.id)}" title="Nama campaign + short-link + caption + prompt video + checklist, sekaligus">🚀 Launch pack</button>` +
       `<button class="rm-ai2" data-id="${esc(p.id)}">✨ Caption</button>` +
       `<button class="rm-vprompt" data-id="${esc(p.id)}">🎬 Prompt Video</button>` +
       (global.RMGahwa ? `<button class="rm-gahwa" data-id="${esc(p.id)}" title="Unduh semua gambar, video & teks produk ini untuk engine Gahwa">🎞 Gahwa Pack</button>` : "") +

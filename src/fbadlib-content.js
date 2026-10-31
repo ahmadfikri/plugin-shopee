@@ -129,7 +129,7 @@
     const r = await send({ type: "fbadlib-analyze", items });
     analyzing = false; anProgress = "";
     for (const x of (r && r.results) || []) {
-      verdicts.set(x.adId, x.ok ? Object.assign({}, x.verdict) : { error: x.error });
+      verdicts.set(x.adId, x.ok ? Object.assign({ finalUrl: x.finalUrl }, x.verdict) : { error: x.error });
     }
     renderTop();
   }
@@ -185,9 +185,13 @@
       const v = verdicts.get(ad.id);
       if (!v) return "–";
       if (v.error) return "<span class='rm-fb-v bad' title='" + esc(v.error) + "'>gagal</span>";
+      // v0.9.32: winners get a 🚀 link that opens the product page and builds the Launch pack
+      const go = /IKLANKAN|LAYAK COBA/.test(v.action) && v.finalUrl
+        ? " <a class='rm-fb-launch' href='" + esc(v.finalUrl.split("#")[0] + "#rm-launch") +
+          "' target='_blank' rel='noopener' title='Buka produk & buat Launch pack otomatis'>🚀</a>" : "";
       return "<span class='rm-fb-v " + (VERDICT_CLS[v.action] || "mid") + "' title='" + esc((v.reasons || []).join(" ")) + "'>" +
         esc(v.action) + (v.roas != null ? " · " + v.roas.toFixed(2) + "x" : "") +
-        (v.maxCpc != null ? " · maks Rp" + v.maxCpc : "") + "</span>";
+        (v.maxCpc != null ? " · maks Rp" + v.maxCpc : "") + "</span>" + go;
     };
     const rows = A.rank([...ads.values()]).slice(0, 60).map((ad, i) => {
       const sg = A.signal(ad), link = shopeeOf(ad);
@@ -263,8 +267,15 @@
       bar.innerHTML = '<b>🎬 syabab</b> <span class="rm-fb-count"></span>' +
         '<button type="button" class="rm-fb-all"></button>' +
         '<button type="button" class="rm-fb-topbtn">🏆 Top iklan</button>' +
+        '<button type="button" class="rm-fb-opentracked" title="Buka lagi semua halaman pengiklan yang pernah kamu lihat (maks 15), urut dari yang paling lama tidak dicek">📒 Cek semua kompetitor</button>' +
         '<button type="button" class="rm-fb-json">⬇ Data iklan (JSON)</button>';
       document.body.appendChild(bar);
+      bar.querySelector(".rm-fb-opentracked").addEventListener("click", async (e) => {
+        const b = e.currentTarget;
+        const r = await send({ type: "fbadlib-open-tracked" });
+        b.textContent = r && r.opened ? "📒 " + r.opened + " page dibuka" : "📒 belum ada page dilacak";
+        setTimeout(() => { b.textContent = "📒 Cek semua kompetitor"; }, 5000);
+      });
       bar.querySelector(".rm-fb-topbtn").addEventListener("click", () => {
         if (top && top.style.display !== "none") top.style.display = "none"; else renderTop();
       });

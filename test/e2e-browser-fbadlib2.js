@@ -74,6 +74,18 @@ function loadPlaywright() {
     assert.ok(st.ads["999000111"].gone && Object.keys(st.ads).length === 7, "store updated: gone ad + 6 current");
     console.log("PASS  3 pelacak: 6 baru, 1 hilang, tersimpan");
 
+    // v0.9.32: "📒 Cek semua kompetitor" reopens every tracked page
+    const nBefore = ctx.pages().length;
+    const opened = ctx.waitForEvent("page", { timeout: 15000 });
+    await page.click(".rm-fb-opentracked");
+    const np = await opened;
+    await np.waitForLoadState("domcontentloaded").catch(() => {});
+    assert.match(np.url(), /view_all_page_id=1352652887927310/);
+    assert.match(await page.textContent(".rm-fb-opentracked"), /1 page dibuka/);
+    await np.close();
+    assert.strictEqual(ctx.pages().length, nBefore);
+    console.log("PASS  4b cek semua kompetitor: page yang dilacak dibuka ulang");
+
     // 2) analysis of TERBUKTI links
     const tabsBefore = ctx.pages().length;
     await page.click(".rm-fb-analyze");

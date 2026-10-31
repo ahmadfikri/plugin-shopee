@@ -265,6 +265,18 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     })();
     return true;
   }
+  if (msg && msg.type === "fbadlib-open-tracked") {
+    // v0.9.32: one click to re-check every competitor page the tracker knows
+    chrome.storage.local.get("rm_fbadlib_track", (o) => {
+      const all = o.rm_fbadlib_track || {};
+      const ids = Object.keys(all).sort((a, b) => String(all[a].lastVisit || "").localeCompare(String(all[b].lastVisit || ""))).slice(0, 15);
+      ids.forEach((pid, i) => chrome.tabs.create({ active: i === 0,
+        url: "https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ID&is_targeted_country=false" +
+             "&media_type=all&search_type=page&view_all_page_id=" + pid }));
+      reply({ ok: true, opened: ids.length, total: Object.keys(all).length });
+    });
+    return true;
+  }
   if (msg && msg.type === "fbadlib-analyze") {
     const tabId = _sender && _sender.tab && _sender.tab.id;
     analyzeLinks(msg.items || [], (i, n) => {
