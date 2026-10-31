@@ -14,7 +14,7 @@ for (const f of ["epc.js", "productpage.js"]) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "src", f), "utf8"), ctx);
 }
 const { RMEpc, RMProductPage } = ctx.window;
-const snap = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "export", "performance-snapshot.json"), "utf8"));
+const snap = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "test", "fixtures", "performance-snapshot-2026-10-21.json"), "utf8"));
 const model = RMEpc.build(snap);
 const now = new Date(Date.parse(snap.generatedAt) + 3600e3);
 
@@ -65,8 +65,16 @@ const fresh = decideTag(null);
 chk("produk baru → UJI KECIL basis global", fresh.action === "UJI KECIL" && fresh.basis === "global");
 chk("produk baru: peluang dasar disebut", fresh.base && fresh.reasons.some((r) => /balik modal/.test(r)),
     fresh.base ? `${fresh.base.paidBack}/${fresh.base.tested}` : "");
-chk("produk baru: ROAS global ≈ ROAS snapshot", Math.abs(fresh.roas - snap.global.roas) / snap.global.roas < 0.12,
-    `${fresh.roas.toFixed(2)} vs ${snap.global.roas}`);
+// v0.9.31: panel ROAS is AFTER tax = gross snapshot ROAS / 1.14 (PPN 11%, WHT 2.5%)
+const BE = RMEpc.breakEvenRoas({});
+chk("break-even setelah pajak = 1,11/0,975", Math.abs(BE - 1.11 / 0.975) < 1e-9, BE.toFixed(3));
+chk("produk baru: ROAS bersih ≈ ROAS snapshot / 1,14", Math.abs(fresh.roas - snap.global.roas / BE) / (snap.global.roas / BE) < 0.12,
+    `${fresh.roas.toFixed(2)} vs ${(snap.global.roas / BE).toFixed(2)}`);
+chk("Max CPC = nilai klik x 0,975 / 1,11", Math.abs(fresh.maxCpc - fresh.value * 0.975 / 1.11) < 1e-6,
+    `${Math.round(fresh.maxCpc)} dari nilai ${Math.round(fresh.value)}`);
+const tax0 = RMEpc.roasPrior({ epc: 200, epc_low: 150, epc_high: 250, se: 20 }, { global: { arrival: 1, metaCpc: 100 } },
+  { metaVatPct: 0, shopeeWhtPct: 0 });
+chk("pajak 0% di Admin Panel = ROAS kotor", Math.abs(tax0.roas - 2) < 1e-9, tax0.roas);
 
 const none = RMProductPage.decide(null, null, null, {}, now);
 chk("tanpa snapshot → IMPOR DATA, tidak crash", none.action === "IMPOR DATA" && !none.ready);

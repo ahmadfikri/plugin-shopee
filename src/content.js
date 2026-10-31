@@ -9,7 +9,11 @@
 
   function isSearchPage() {
     // Marketplace search OR any affiliate.shopee page (product/search surfaces there).
-    if (location.hostname.startsWith("affiliate.")) return true;
+    // v0.9.31: except pages that never list products (payout, reports,
+    // dashboard, account) — the red "0 produk ke-parse" banner showed there.
+    if (location.hostname.startsWith("affiliate.")) {
+      return !/^\/(payment|report|dashboard|account|setting|notification|help|login|my_)/i.test(location.pathname);
+    }
     return /\/search/.test(location.pathname) && /keyword=/.test(location.search);
   }
 
@@ -433,7 +437,15 @@
 
   // Render generated text into the modal's shared output area, copy-ready.
   // Used by BOTH Caption and Prompt Video — no popups, always paste-able.
+  // If the panel was rebuilt while a request was in flight, write into the
+  // panel that is on screen NOW, never into a detached node.
+  function livePanel(modal) {
+    if (modal && modal.isConnected) return modal;
+    return document.querySelector(".rm-pp-root") || document.querySelector(".rm-modal-bg") || modal;
+  }
+
   async function showOutput(modal, title, text, hint) {
+    modal = livePanel(modal);
     const out = modal.querySelector(".rm-out");
     if (!out) { alert(text); return; }
     try { await navigator.clipboard.writeText(text); } catch (_) {}
@@ -509,6 +521,55 @@
     }
   }
 
+  const captionBusy = {}; // product id -> request in flight
+
+  function downloadText(name, text, type) {
+    const url = URL.createObjectURL(new Blob([text], { type: type || "text/plain" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  // Payout page panel: save this payout (if the page shows one), then show the
+  // running total of everything recorded so far + export buttons.
+  async function renderPayout() {
+    const rec = RMPayout.parseDetail(document.body.innerText || "");
+    if (rec) await RMPayout.save(rec);
+    const s = RMPayout.summary(await RMPayout.getAll());
+    document.querySelectorAll(".rm-panel.rm-payout").forEach((n) => n.remove());
+    const fmt = (v) => v == null ? "–" : "Rp" + Math.round(v).toLocaleString("id-ID");
+    const box = document.createElement("div");
+    box.className = "rm-panel rm-payout";
+    box.innerHTML =
+      `<div class="rm-head"><span class="rm-logo">💰 syabab · payout tercatat</span>` +
+      `<span class="rm-kw">${s.count} payout</span></div><div class="rm-body"></div>`;
+    const body = box.querySelector(".rm-body");
+    const line = (html) => { const d = document.createElement("div"); d.innerHTML = html; body.appendChild(d); };
+    if (rec) {
+      line(`✅ Payout <b>${rec.payoutId}</b> (${rec.created || "?"}) disimpan: cair <b>${fmt(rec.payout)}</b>, ` +
+        `pendapatan ${fmt(rec.eligible)}, WHT ${fmt(rec.wht)} (${rec.whtRate != null ? (rec.whtRate * 100).toFixed(2) + "%" : "–"}), ` +
+        `${rec.days.length} hari komisi selesai.` + (rec.consistent ? "" : ` <span class="rm-red">⚠ angka tidak saling cocok, cek halaman</span>`));
+    } else {
+      line("Buka <b>detail</b> tiap payout (Payout Record → klik satu payout) supaya tercatat. Halaman ini tidak berisi detail payout.");
+    }
+    if (s.count) {
+      line(`Total semua payout tercatat: cair <b>${fmt(s.payout)}</b> dari pendapatan ${fmt(s.eligible)}, ` +
+        `WHT ${fmt(s.wht)}${s.whtRate != null ? " (" + (s.whtRate * 100).toFixed(2) + "%)" : ""}. ` +
+        `Komisi selesai ${s.firstDay || "?"} s/d ${s.lastDay || "?"}.`);
+    }
+    const btns = document.createElement("div");
+    btns.innerHTML = `<button class="rm-pay-csv">⬇ CSV per hari</button> <button class="rm-pay-json">⬇ JSON</button>`;
+    body.appendChild(btns);
+    btns.querySelector(".rm-pay-csv").addEventListener("click", async () =>
+      downloadText("payout-shopee-" + new Date().toISOString().slice(0, 10) + ".csv", RMPayout.toCsv(await RMPayout.getAll()), "text/csv"));
+    btns.querySelector(".rm-pay-json").addEventListener("click", async () =>
+      downloadText("payout-shopee-" + new Date().toISOString().slice(0, 10) + ".json",
+        JSON.stringify(RMPayout.summary(await RMPayout.getAll()), null, 1), "application/json"));
+    (document.querySelector("main") || document.body).prepend(box);
+    L("payout-page", { saved: !!rec, id: rec && rec.payoutId, total: s.count });
+  }
+
   function wireModal(modal, p) {
     const cfgP = RMStore.getConfig();
     modal.querySelector(".rm-modal-x") && modal.querySelector(".rm-modal-x").addEventListener("click", () => modal.remove());
@@ -529,15 +590,26 @@
     });
     const ai = modal.querySelector(".rm-ai2");
     if (ai) ai.addEventListener("click", async () => {
-      const cfg = await cfgP; ai.textContent = "membuat…";
+      // one request at a time per product, even across panel rebuilds
+      if (captionBusy[p.id]) { ai.textContent = "⏳ masih membuat…"; return; }
+      captionBusy[p.id] = true;
+      const cfg = await cfgP; ai.disabled = true; ai.textContent = "⏳ membuat caption…";
+      const t0 = Date.now();
       try {
         const cap = await RMAi.generateCaption(cfg, p);
         const exp = await autoLog(p);
-        showExperiment(modal, exp);
+        showExperiment(livePanel(modal), exp);
         await showOutput(modal, "Caption Iklan", cap,
           "Tempel ke caption Facebook/Instagram. Ingat: untuk Facebook, taruh link affiliate di BARIS PERTAMA (di atas fold 'See more').");
-      } catch (err) { alert("AI: " + err.message); }
-      ai.textContent = "✨ Caption";
+        L("caption-ok", { ms: Date.now() - t0, rebuilt: !modal.isConnected });
+      } catch (err) {
+        L("caption-fail", { ms: Date.now() - t0, msg: String(err && err.message) });
+        await showOutput(modal, "Caption gagal", "❌ " + err.message +
+          "\n\nKlik ✨ Caption lagi. Kalau terus gagal: cek API key / saldo DeepSeek di Admin Panel.", "");
+      } finally { captionBusy[p.id] = false; }
+      const live = livePanel(modal).querySelector(".rm-ai2") || ai;
+      live.disabled = false;
+      live.textContent = "✨ Caption";
     });
     const vid = modal.querySelector(".rm-video");
     if (vid) vid.addEventListener("click", async () => {
@@ -720,6 +792,19 @@
           .catch((e) => console.log("RM: riwayat eksperimen gagal:", e && e.message));
       }
       lastAnalysis = { products: [product] };
+      // v0.9.31: report the verdict to background.js. It only uses it when the
+      // tab was opened by "Analisa produk TERBUKTI" from the Ad Library panel.
+      try {
+        const dv = (window.RMProductPage && epcPred && cfg.__perf)
+          ? RMProductPage.decide(epcPred, cfg.__perf, product.suggestedTag || null, cfg) : null;
+        chrome.runtime.sendMessage({ type: "pp-verdict", url: location.href, verdict: {
+          name: d.name, action: dv ? dv.action : (cfg.__perf ? "?" : "IMPOR DATA"),
+          roas: dv && dv.roas != null ? +dv.roas.toFixed(2) : null,
+          maxCpc: dv && dv.maxCpc != null ? Math.round(dv.maxCpc) : null,
+          niche: product.niche || null, basis: dv ? dv.basis : null,
+          rating: d.rating || null, sold: d.historicalSold || null,
+          reasons: dv ? dv.reasons.slice(0, 2) : [] } }, () => void chrome.runtime.lastError);
+      } catch (_) {}
       // AUTO-CAPTURE (Fikri: "biarkan data collector jalan tanpa pencet save").
       // Detail pages yield the RICHEST rows — rating, reviews, stars, sold, video.
       // Fire-and-forget: never let a storage hiccup break the panel.
@@ -733,6 +818,12 @@
           .then((r) => console.log("RM: dataset auto-capture (detail) — total", r.total))
           .catch((e) => console.log("RM: auto-capture gagal:", e && e.message));
       }
+      return;
+    }
+
+    // ---- MODE P: affiliate payout page — record what was REALLY paid (v0.9.31) ----
+    if (window.RMPayout && RMPayout.isPayoutPage()) {
+      await renderPayout();
       return;
     }
 
@@ -850,6 +941,18 @@
   let shortlistRunView = null;     // set by a finished category crawl
 
   function currentSignature() {
+    // v0.9.31 caption fix: on a PRODUCT page the "produk serupa" carousel keeps
+    // lazy-loading ItemCards. Counting cards made every new card look like a new
+    // page, so run() rebuilt the panel and a caption still in flight landed in
+    // the removed panel (Fikri: "dipencet beberapa kali baru nongol"). A product
+    // page only needs a re-render when the PRODUCT changes.
+    if (window.RMDetailScrape && RMDetailScrape.isProductPage()) {
+      return "pp|" + location.pathname + "|" + (document.querySelector(".rm-pp-root") ? 1 : 0);
+    }
+    if (window.RMPayout && RMPayout.isPayoutPage()) {
+      const m = /Payout\s*id\s*:?\s*(\d{6,})/i.exec(document.body.innerText || "");
+      return "pay|" + location.pathname + "|" + (m ? m[1] : "-");
+    }
     const cards = RMScraper.findCards();
     if (!cards.length) return "0";
     const first = (cards[0].textContent || "").slice(0, 40);
@@ -889,6 +992,11 @@
     runInFlight = true;
     try {
       await run();
+      // v0.9.31: on a product page the signature includes "panel present". Record
+      // the post-render signature, otherwise the very next unrelated mutation
+      // sees "|1" vs the pre-render "|0" and rebuilds the panel once more,
+      // wiping a caption / Gahwa status that was just shown.
+      if (window.RMDetailScrape && RMDetailScrape.isProductPage()) lastSig = currentSignature();
     } catch (e) {
       L("run-crash", { msg: String(e && e.message || e), stack: e && String(e.stack || "").slice(0, 800) });
       console.log("RM: run gagal:", e && e.message);
@@ -949,7 +1057,10 @@
     const retry = setInterval(() => {
       tries++;
       if (tries > 6) { clearInterval(retry); return; }
-      if (!document.querySelector(".rm-panel, .rm-diag")) {
+      // v0.9.31: the product-page panel (.rm-pp-root, since v0.9.25) was not in
+      // this selector, so for 15 s after load the panel was REBUILT every 2.5 s
+      // and wiped any caption/prompt that had just been shown.
+      if (!document.querySelector(".rm-panel, .rm-diag, .rm-pp-root")) {
         lastSig = "";
         scheduleRun("retry");
       } else {

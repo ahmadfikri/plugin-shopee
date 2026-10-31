@@ -22,7 +22,7 @@ const path = require("path");
 const EXT = path.resolve(__dirname, "..");
 const FIXTURE = fs.readFileSync(__dirname + "/fixtures/shopee-product.html", "utf8");
 const URL = "https://shopee.co.id/product/123/456";
-const SNAP = JSON.parse(fs.readFileSync(path.join(EXT, "export", "performance-snapshot.json"), "utf8"));
+const SNAP = JSON.parse(fs.readFileSync(path.join(__dirname, "fixtures", "performance-snapshot-2026-10-21.json"), "utf8"));
 
 function loadPlaywright() {
   const c = ["playwright", "playwright-core",

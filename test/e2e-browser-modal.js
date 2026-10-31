@@ -93,7 +93,7 @@ function loadPlaywright() {
     // ---- v0.9.27: WITH the real snapshot the drill-down is the decision panel ----
     let sw = ctx.serviceWorkers()[0];
     if (!sw) sw = await ctx.waitForEvent("serviceworker", { timeout: 10000 });
-    const SNAP = JSON.parse(require("fs").readFileSync(require("path").join(EXT, "export", "performance-snapshot.json"), "utf8"));
+    const SNAP = JSON.parse(require("fs").readFileSync(require("path").join(EXT, "test", "fixtures", "performance-snapshot-2026-10-21.json"), "utf8"));
     await sw.evaluate((x) => new Promise((r) => chrome.storage.local.set({ rm_perf: x }, r)), SNAP);
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForSelector(".rm-panel .rm-table .rm-drill", { timeout: 20000 });

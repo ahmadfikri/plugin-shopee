@@ -8,6 +8,9 @@
     commissionPct: 3.5,        // Shopee affiliate commission % assumption
     breakEvenCPC: 100,         // Rp per click break-even target (Zaki-informed)
     conversionRate: 4.0,       // click -> order %, for value-per-click estimate
+    // --- taxes (verified from receipts 31 Okt 2026) ---
+    metaVatPct: 11,            // Meta PPN 12% x DPP 11/12, billed ON TOP of Amount spent
+    shopeeWhtPct: 2.5,         // Shopee payout withholding (PPh 5% x 50%)
     // --- demand timing (display aid, not a winner/kill decision) ---
     momentumMaxAgeMonths: 3,
     momentumMinPerMonth: 100,  // ... but selling >= this/month => "momentum"

@@ -33,3 +33,20 @@
 .rm-fb-top tr.rm-fb-terbukti td:nth-child(2) { color: #1b5e20; font-weight: 700; }
 .rm-fb-top td button { border: 0; background: #ee4d2d; color: #fff; border-radius: 5px; cursor: pointer; padding: 3px 8px; }
 .rm-fb-top a { color: #ee4d2d; }
+/* v0.9.31 analysis verdicts, tracker, brief */
+.rm-fb-top .rm-fb-analyze { border: 0; background: #1b5e20; color: #fff; border-radius: 6px; cursor: pointer; padding: 4px 10px; font-weight: 600; }
+.rm-fb-top-h button:disabled { border: 0; border-radius: 6px; padding: 4px 10px; background: #ddd; color: #333; }
+.rm-fb-v { display: inline-block; padding: 2px 6px; border-radius: 5px; font-weight: 600; white-space: nowrap; }
+.rm-fb-v.ok { background: #c6efce; color: #006100; }
+.rm-fb-v.mid { background: #ffeb9c; color: #6d4c00; }
+.rm-fb-v.bad { background: #ffc7ce; color: #9c0006; }
+.rm-fb-new { background: #1565c0; color: #fff; border-radius: 4px; padding: 1px 5px; font-size: 10px; }
+.rm-fb-track { background: #f3f6fb; border-radius: 8px; padding: 6px 8px; margin-bottom: 8px; }
+.rm-fb-track ul { margin: 4px 0 0 18px; padding: 0; }
+.rm-fb-brief { position: fixed; left: 16px; bottom: 16px; z-index: 2147483001; width: min(560px, 92vw);
+  background: #fff; color: #222; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.3);
+  font: 12px/1.4 system-ui, sans-serif; padding: 10px; }
+.rm-fb-brief textarea { width: 100%; box-sizing: border-box; font: 12px/1.45 system-ui, sans-serif; border: 1px solid #ddd; border-radius: 6px; padding: 6px; }
+.rm-fb-brief .rm-fb-x, .rm-fb-brief .rm-fb-copy { border: 0; background: #eee; border-radius: 6px; cursor: pointer; padding: 4px 8px; }
+.rm-fb-brief .rm-fb-copy { margin-left: auto; background: #ee4d2d; color: #fff; }
+.rm-fb-note { color: #666; margin: 2px 0 6px; }

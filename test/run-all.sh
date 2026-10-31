@@ -201,6 +201,15 @@ node test/e2e-browser-fbadlib.js || fail=1
 echo "=== 46. Test: affiliate ID default 11300901968 (config lama ikut, nilai user aman) ==="
 node test/e2e-affid-default.js || fail=1
 
+echo "=== 47. Browser E2E: caption 1 klik walau halaman lazy-load (regresi 'dipencet berkali-kali') ==="
+node test/e2e-browser-caption.js || fail=1
+
+echo "=== 48. Test + browser: payout Shopee tercatat, banner merah hilang ==="
+node test/e2e-payout.js || fail=1
+
+echo "=== 49. Browser E2E: Ad Library analisa TERBUKTI + pelacak + brief (live) ==="
+node test/e2e-browser-fbadlib2.js || fail=1
+
 if [ "$fail" -eq 0 ]; then
   echo "SEMUA VERIFIKASI LULUS — plugin siap di-load ke Chrome."
 else

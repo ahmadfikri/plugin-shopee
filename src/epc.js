@@ -305,19 +305,37 @@
     } else if (cfg && num(cfg.breakEvenCPC) > 0) {
       cpc = num(cfg.breakEvenCPC); cpcSrc = "target di Admin Panel";
     }
+    // v0.9.31 AFTER-TAX economics (Fikri's receipts, 31 Okt 2026): Meta adds
+    // PPN on top of "Amount spent" (effective 11%), Shopee withholds WHT at
+    // payout (effective 2.5%). So 1x ROAS here = break-even AFTER tax, and
+    // maxCpc is the highest Meta CPC (as Ads Manager shows it) that still pays.
+    const tx = taxes(cfg);
+    const net = 1 - tx.wht, gross = 1 + tx.vat;
     const value = pred.epc * arrival;
     const valueLow = Math.max(0, pred.epc_low * arrival);
     const valueHigh = pred.epc_high * arrival;
     const sd = (pred.se || 0) * arrival;
+    const cost = cpc ? cpc * gross : null;
     return {
       arrival, arrivalSrc, cpc, cpcSrc, value, valueLow, valueHigh, valueSd: sd,
-      roas: cpc ? value / cpc : null,
-      roasLow: cpc ? valueLow / cpc : null,
-      roasHigh: cpc ? valueHigh / cpc : null,
-      roasSd: cpc ? sd / cpc : null,
-      pProfit: (cpc && sd > 0) ? normCdf((value - cpc) / sd) : null
+      vat: tx.vat, wht: tx.wht, breakEvenGross: gross / net,
+      maxCpc: value * net / gross,
+      roas: cost ? value * net / cost : null,
+      roasLow: cost ? valueLow * net / cost : null,
+      roasHigh: cost ? valueHigh * net / cost : null,
+      roasSd: cost ? sd * net / cost : null,
+      pProfit: (cost && sd > 0) ? normCdf((value * net - cost) / (sd * net)) : null
     };
   }
 
-  global.RMEpc = { build, predict, score, normCdf, roasPrior, MIN_TAG_META_CLICKS };
+  // Tax rates from config (Admin Panel), defaults = verified receipts.
+  function taxes(cfg) {
+    const v = num(cfg && cfg.metaVatPct), w = num(cfg && cfg.shopeeWhtPct);
+    return { vat: (v != null && v >= 0 && v < 50 ? v : 11) / 100,
+             wht: (w != null && w >= 0 && w < 50 ? w : 2.5) / 100 };
+  }
+  // Gross (pre-tax) ROAS that is break-even after tax, e.g. 1.11/0.975 = 1.14.
+  function breakEvenRoas(cfg) { const t = taxes(cfg); return (1 + t.vat) / (1 - t.wht); }
+
+  global.RMEpc = { build, predict, score, normCdf, roasPrior, taxes, breakEvenRoas, MIN_TAG_META_CLICKS };
 })(typeof window !== "undefined" ? window : this);

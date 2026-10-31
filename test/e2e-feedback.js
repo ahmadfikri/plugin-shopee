@@ -11,7 +11,7 @@ const path = require("path");
 const vm = require("vm");
 
 const ROOT = path.join(__dirname, "..");
-const snapPath = path.join(ROOT, "export", "performance-snapshot.json");
+const snapPath = path.join(ROOT, "test", "fixtures", "performance-snapshot-2026-10-21.json");
 const snapshot = JSON.parse(fs.readFileSync(snapPath, "utf8"));
 
 // minimal chrome.storage shim
