@@ -1,7 +1,13 @@
-# syabab-affiliathor — STATUS (2026-09-21, v0.9.0)
+# syabab-affiliathor — STATUS (2026-11-07, v0.9.32)
 
-Chrome MV3 extension, 20 content scripts, self-contained (tanpa backend, tanpa
-dependency npm). Verifikasi: `bash test/run-all.sh` → harus `SEMUA VERIFIKASI LULUS`.
+Chrome MV3 extension, 29 content scripts + service worker, self-contained (tanpa
+backend, tanpa dependency npm). Verifikasi: `bash test/run-all.sh` (50 langkah) →
+harus `SEMUA VERIFIKASI LULUS`.
+
+**Status tes per 7 Nov 2026:** 49/50 hijau. Langkah 49 (`e2e-browser-fbadlib2.js`)
+merah karena halaman Ad Library live Beyond.shopcart sekarang menampilkan 5 iklan,
+sedangkan tes mengharapkan 6. Kode plugin tidak berubah; yang berubah data live.
+Detail: `documentation/2026-11-07-dokumentasi-v0.9.32.md`.
 
 👉 **Sesi/device baru: baca `HANDOFF.md` lebih dulu.**
 
@@ -58,6 +64,25 @@ rating <3,8. Aksi: ≥70 IKLANKAN · ≥55 LAYAK COBA · ≥40 HATI-HATI · <40 
     correct array 4–5★, dead saturation scoring dan dead Shopee API dihapus,
     detail price scan dipersempit.
 
+### v0.9.14 – v0.9.32 (ringkas; detail per file di `documentation/`)
+17. **Aturan konten**: video 10 detik (v0.9.14), **larangan harga** di caption &
+    prompt + `stripPrice` di output (v0.9.15/0.9.17), **tanpa rating** (v0.9.20),
+    hashtag per niche (v0.9.23), caption SEO-first + disclaimer (v0.9.24).
+18. **Experiment ID unik** nama+konsep+tanggal+sidik produk+acak (v0.9.16).
+19. **Log aktivitas** + hasil bulk scan per run terlihat (v0.9.18/0.9.19).
+20. **🎞 Gahwa Pack** — galeri + varian + video + job JSON (v0.9.21–0.9.23).
+21. **Panel halaman produk decision-first** + snapshot bersih (v0.9.25).
+22. **Prior per niche + 🎲 Thompson sampling** (v0.9.26).
+23. **Listing pakai satu mesin keputusan** + forest plot ROAS (v0.9.27).
+24. **TikTok downloader** 1080p + **FB Ad Library HD downloader** (v0.9.28/0.9.29).
+25. **Sinyal iklan untung** (🏆/📈/🆕/SCALING) + 🏆 Top iklan; affiliate ID default
+    `11300901968` (v0.9.30).
+26. **Fix caption "dipencet beberapa kali baru nongol"**, ekonomi **setelah pajak**
+    (PPN 11%, WHT 2,5%, impas ROAS kotor 1,14), 🔍 Analisa produk TERBUKTI, pelacak
+    kompetitor, ✍ brief kreatif, 💰 panel payout (v0.9.31).
+27. **🚀 Launch pack** (campaign = `sub_id`) + 🚀 dari Ad Library + 📒 Cek semua
+    kompetitor (v0.9.32).
+
 ## RIWAYAT PERBAIKAN PENTING (jangan diulang)
 - **Panel sering tidak muncul**: debounce di-reset tiap mutasi DOM (Shopee React SPA
   bermutasi terus) → ditambah **MAX_WAIT 2,5s** + jaring pengaman retry.
@@ -77,9 +102,15 @@ rating <3,8. Aksi: ≥70 IKLANKAN · ≥55 LAYAK COBA · ≥40 HATI-HATI · <40 
   yang dia buka manual.
 
 ## TES
-`test/run-all.sh` menjalankan: syntax semua JS · validasi manifest · cek semua file
-yang dirujuk manifest ada · `e2e.js` (pipeline) · `e2e-feedback.js` (kalibrasi) ·
-`e2e-shortlist.js` (bulk scan) · `e2e-scheduler.js` (determinisme).
+`test/run-all.sh` menjalankan 50 langkah: syntax semua JS · validasi manifest · cek
+semua file yang dirujuk manifest ada · tes Node (pipeline, kalibrasi, bulk scan,
+scheduler, aturan konten, EPC, niche, bandit, parser TikTok/Ad Library, affiliate ID)
+· tes Chromium asli (bulk scan, sort, CSV, modal, Gahwa, caption, TikTok, Ad Library,
+Launch pack). Tes yang memakai snapshot memakai salinan beku
+`test/fixtures/performance-snapshot-2026-10-21.json`.
+
+Tes yang bergantung pada halaman **live** (bisa merah tanpa ada bug): langkah 44
+(TikTok live) dan 45/49 (Ad Library Beyond.shopcart).
 
 ## RENCANA PENGERASAN (kerja otonom, mulai 23 Sep 2026)
 Perintah Fikri: "semua fitur dan functionality core harus consistent dan zero bug,
@@ -113,13 +144,18 @@ yang terhapus — tiga bug yang baru ditemukan begitu test browser pertama ada.
       test browser membuktikan kontrak plugin sendiri — bukan bahwa markup Shopee
       belum berubah. Minta Fikri satu dump HTML halaman Product Offer.
 
-Aturan rilis: tiap perubahan → `bash test/run-all.sh` harus hijau semua → bump
-`manifest.json` → commit → tag `vX.Y.Z` → push branch `integration` + tag.
-Branch `main` tidak bisa dipush oleh agen (policy), Fikri menjalankan sendiri:
-`git push origin main:main` setelah fast-forward dari `integration`.
+Aturan rilis (sejak v0.9.25): tiap perubahan → `bash test/run-all.sh` hijau → bump
+`manifest.json` → tulis `documentation/YYYY-MM-DD-*.md` → commit di branch
+`feat/vX.Y.Z-*` → push branch itu → **PR ke `main`** → merge. Setelah merge,
+`release/v0.9.0` di-fast-forward ke `main`. Agen tidak push langsung ke `main`
+(policy); masuk lewat PR. Branch `integration` dan tag `v0.9.x` berhenti di v0.9.13
+dan tidak dipakai lagi.
 
 ## BELUM SELESAI
 Lihat `HANDOFF.md` §10 — ringkasnya: selector bulk perlu dipantau jika Shopee
 mengubah DOM, sold/bulan belum dibawa ke MODE A, umur listing & lokasi toko masih
-"?", nama toko di parent element, ikon placeholder, DeepSeek belum diuji live,
-dan pembuatan custom link Shopee via Open API belum dibangun.
+"?", nama toko di parent element, ikon placeholder, dan pembuatan custom link
+Shopee via Open API belum dibangun. Tambahan sejak v0.9.31:
+- **Langkah 49 merah** karena data live Ad Library (5 iklan, tes minta 6). Perlu
+  dibuat tidak bergantung jumlah iklan live, atau pakai fixture.
+- Panel 💰 payout sudah terbukti jalan di halaman payout asli (1 Nov 2026).
