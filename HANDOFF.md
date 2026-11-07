@@ -319,3 +319,25 @@ Produk baru sekarang ditarik ke rata-rata NICHE-nya (hp / rumah / lainnya), buka
 
 ## v0.9.27 (2026-10-21) Halaman listing / Product Offer dirombak
 Listing, shortlist, drill-down dan halaman produk sekarang memakai SATU mesin keputusan (`RMProductPage.decide`, dipanggil dari `analytics.js` → `p.decision`). Panel atas: vonis per kategori, kartu Thompson/ROAS/Max CPC Meta/niche, forest plot ROAS, rencana uji halaman. Tabel: Niche, Prediksi ROAS, Max CPC Meta, Vonis (kolom PRO & EPC skor lama dibuang dari tabel, tetap di CSV). Test baru #41. Detail: documentation/2026-10-21-listing-v0.9.27.md
+
+## v0.9.28–v0.9.29 (2026-10-30) TikTok + FB Ad Library downloader
+TikTok 1080p tanpa watermark dan video HD dari Meta Ad Library (bukan SD 360p yang dipakai player). CDN TikTok menolak `chrome.downloads` langsung, jadi video di-fetch di offscreen document (`src/offscreen.html/js`) lalu diunduh sebagai blob. Iklan hasil scroll dibaca dari respons `/api/graphql` oleh `src/fbadlib-hook.js` (MAIN world, hanya membaca). Izin baru: `offscreen`, host `facebook.com/ads/library`, `*.fbcdn.net`. Detail: documentation/2026-10-30-downloader-fb-adlib-v0.9.29.md
+
+## v0.9.30 (2026-10-30) Sinyal iklan untung + affiliate ID default
+Badge 🏆 TERBUKTI (≥14 hari) / 📈 MENJANJIKAN (7-13) / 🆕 BARU (<7) / SCALING (≥3 variasi), panel 🏆 Top iklan. Ini proxy dari lama tayang, BUKAN data profit. Affiliate ID default `11300901968` lewat `migrate()`; nilai manual tidak ditimpa. Detail: documentation/2026-10-30-sinyal-iklan-untung-v0.9.30.md
+
+## v0.9.31 (2026-10-31) Fix caption + pajak + payout + Ad Library
+- Bug caption "dipencet beberapa kali baru nongol": panel halaman produk dibangun ulang saat carousel lazy-load dan karena retry mencari `.rm-panel` (padahal `.rm-pp-root`). Sekarang rebuild hanya kalau URL produk berganti. ⚠️ Jangan kembalikan deteksi "halaman berubah" berbasis jumlah kartu di halaman produk.
+- Ekonomi setelah pajak: Max CPC Meta = nilai klik × (1 − WHT) ÷ (1 + PPN); default PPN 11%, WHT 2,5%; impas ROAS kotor 1,14.
+- 🔍 Analisa produk TERBUKTI (tab latar, maks 12, jeda 2,5 detik, tanpa API Shopee), pelacak kompetitor (`rm_fbadlib_track`), ✍ brief kreatif (harga/link/hashtag kompetitor dibuang sebelum dikirim), 💰 panel payout (`rm_payouts`, rekening tidak disimpan).
+Detail: documentation/2026-10-31-batch-v0.9.31.md
+
+## v0.9.32 (2026-10-31) Launch pack
+🚀 satu blok: nama campaign Meta = `sub_id` dari short-link (syarat `campaign_to_tag()` di dashboard bisa memasangkan spend ke komisi), short-link, caption, prompt video, checklist. 🚀 dari Ad Library (`#rm-launch`) dan 📒 Cek semua kompetitor (maks 15 tab). Detail: documentation/2026-10-31-launch-pack-v0.9.32.md
+
+## Status repo & rilis (2026-11-07)
+- `main` = v0.9.32 (PR #1–#5 merge). `release/v0.9.0` di-fast-forward ke `main` 7 Nov (namanya lama, isinya v0.9.32).
+- Alur kerja: branch `feat/vX.Y.Z-*` → PR ke `main`. Agen tidak push langsung ke `main`.
+- `bash test/run-all.sh`: 49/50 hijau. Langkah 49 merah karena data live Ad Library (5 iklan, tes minta 6), bukan bug plugin. Kandidat kerja: buat langkah 49 tidak bergantung jumlah iklan live.
+- Repo di folder Google Drive: Drive bisa menaruh file `Icon\r` di `.git` → `git fetch` gagal `bad object refs/Icon?`. Pindahkan file itu keluar `.git`.
+Detail: documentation/2026-11-07-dokumentasi-v0.9.32.md
