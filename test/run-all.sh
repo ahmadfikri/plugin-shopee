@@ -155,6 +155,10 @@ echo "=== 29. Test: caption SEO-first + niche tag + disclaimer ==="
 node test/e2e-caption-seo.js || fail=1
 
 echo
+echo "=== 29b. Test: caption engagement tanpa engagement bait (v0.9.33) ==="
+node test/e2e-caption-engage.js || fail=1
+
+echo
 echo "=== 30. Test: larangan harga ditegakkan di OUTPUT caption & prompt video ==="
 node test/e2e-price-guard.js || fail=1
 

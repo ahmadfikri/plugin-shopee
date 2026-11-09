@@ -405,11 +405,32 @@
     "tetap enak dibaca seperti orang cerita.\n" +
     "4. Sebut manfaat konkret pakai kata yang dicari orang ('anti gores', 'muat banyak', " +
     "'gampang dibersihkan'), bukan kata sifat kosong.\n\n" +
+    // v0.9.33 (Fikri 2026-11-09): caption harus bikin orang like & share, tetap
+    // SEO. Like/share didapat dari ISI yang relatable & berguna, BUKAN dari
+    // minta like/share: Meta (FB/IG) menurunkan jangkauan dan skor kualitas
+    // iklan untuk engagement bait (react/share/tag/comment/vote baiting), yang
+    // ujungnya menaikkan CPC. stripEngagementBait() menjaga ini di output.
+    "ENGAGEMENT — bikin orang PENGEN like, simpan, dan kirim ke temannya karena ISINYA, " +
+    "bukan karena diminta:\n" +
+    "5. Setelah kalimat kata kunci, tulis SATU momen relatable yang spesifik — situasi " +
+    "sehari-hari yang bikin penonton mikir 'ini gue banget' atau langsung keinget " +
+    "seseorang (mis. 'yang HP-nya sering jatuh dari kasur', 'yang dapurnya sempit tapi " +
+    "barangnya banyak'). Momen ini yang bikin orang share sendiri.\n" +
+    "6. Kasih satu hal yang BERGUNA atau bikin penasaran dari produk itu (tip pakai, " +
+    "detail kecil yang jarang orang tahu, cara beda pakainya), supaya caption layak disimpan.\n" +
+    "7. Tutup dengan SATU pertanyaan terbuka yang gampang dijawab dari pengalaman " +
+    "penonton dan nyambung ke masalah tadi (mis. 'HP kamu paling sering jatuh di mana?'), " +
+    "lalu ajakan cek link.\n" +
+    "LARANGAN ENGAGEMENT BAIT (FB/IG menurunkan jangkauan): JANGAN minta like/love/react, " +
+    "JANGAN minta share/bagikan/kirim ke teman, JANGAN minta tag teman, JANGAN minta komen " +
+    "kata tertentu ('komen MAU', 'ketik 1'), JANGAN voting ('like kalau A, komen kalau B'). " +
+    "Biarkan orang melakukannya sendiri karena isinya relatable.\n\n" +
     "Gaya: bahasa Indonesia santai dan WAJAR seperti orang biasa cerita, " +
     "JANGAN alay/lebay, JANGAN hard-selling, JANGAN pakai huruf kapital berlebihan " +
     "atau emoji bertumpuk. Hook di kalimat pertama boleh menarik tapi tetap masuk akal " +
     "— tanpa hiperbola (hindari 'GILA', 'auto sultan', 'terbaik sedunia', 'wajib punya " +
-    "atau nyesel'). 3-5 baris saja, akhiri dengan ajakan cek link. " +
+    "atau nyesel'). 4-6 baris saja (kata kunci, momen relatable, manfaat + hal berguna, " +
+    "pertanyaan penutup), akhiri dengan ajakan cek link. " +
     "SEBUT NAMA PRODUK-nya — jangan ragu. " +
     "LARANGAN HARGA: JANGAN sebut, tulis, atau singgung HARGA dalam bentuk apa pun — tidak ada angka Rp, diskon, potongan, promo, persentase hemat, 'murah', 'terjangkau', 'harga miring', atau perbandingan harga. " +
     "LARANGAN RATING: " + RATING_BAN + "\n\n" +
@@ -425,7 +446,7 @@
     "DISCLAIMER WAJIB: setelah ajakan cek link, tulis satu baris PERSIS ini: " +
     CAPTION_DISCLAIMER + "\n\n" +
     "FORMAT OUTPUT — persis seperti ini, tanpa judul/penjelasan/nomor variasi:\n" +
-    "<isi caption 3-5 baris>\n" + CAPTION_DISCLAIMER + "\n\n<baris hashtag>\n\n" +
+    "<isi caption 4-6 baris>\n" + CAPTION_DISCLAIMER + "\n\n<baris hashtag>\n\n" +
     "DILARANG: kalimat pembuka seperti 'Berikut caption...', markdown apa pun " +
     "(**bold**, ###, >, -, `), tanda kutip pembungkus, label 'Caption:'/'Hashtag:', " +
     "dan lebih dari satu caption. Keluarkan TEKS BIASA saja yang siap langsung " +
@@ -517,8 +538,32 @@
       .trim();
   }
 
+  // OUTPUT-side engagement-bait guard (v0.9.33). The prompt forbids explicit
+  // like/share/tag/comment-word/vote asks because FB/IG demote them, but a
+  // model or a stale stored captionPrompt can still write one. Drop only the
+  // offending SENTENCE so the keyword line and "cek link" CTA survive.
+  const BAIT_PATTERNS = [
+    /\b(kasih|klik|tekan|tap|pencet)\s+(like|love|react)\b/i,
+    /\b(like|share|komen|comment)\s+(dan|&|\+|and|terus)\s+(share|like|komen|comment|follow|bagikan)\b/i,
+    /\b(like|love|react|double\s*tap)\s+(kalau|kalo|jika|untuk|buat)\b/i,
+    /\b(jangan\s+lupa|yuk|ayo)\s+(like|share|bagikan|komen|comment)\b/i,
+    /\b(share|bagikan|kirim(?:kan)?|teruskan)\b[^.!?\n]{0,25}\b(ke|buat|untuk)\s+(temen|teman|sahabat|pasangan|bestie|keluarga|grup|ayang|pacar)\w*\b/i,
+    /\b(share|bagikan)\s+(video|postingan|post|reels?|konten)\s+ini\b/i,
+    /\btag\s+(temen|teman|sahabat|pasangan|bestie|pacar|ayang|seseorang|orang|keluarga)\w*\b/i,
+    /\b(komen|comment|ketik|tulis)\s+["“'‘]?[A-Za-z0-9]{1,8}["”'’]?\s+(kalau|kalo|jika|di\s+kolom|di\s+komen|kalau\s+mau)\b/i
+  ];
+  function stripEngagementBait(text) {
+    const lines = String(text || "").split("\n").map((line) => {
+      if (/^\s*#/.test(line) || /https?:\/\//.test(line)) return line;   // tags & links untouched
+      if (!BAIT_PATTERNS.some((re) => re.test(line))) return line;
+      const parts = line.match(/[^.!?]+[.!?]*\s*/g) || [line];
+      return parts.filter((s) => !BAIT_PATTERNS.some((re) => re.test(s))).join("").trim();
+    });
+    return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+
   function ensureHashtags(text, product) {
-    let t = stripPrice(stripRating(text))
+    let t = stripEngagementBait(stripPrice(stripRating(text)))
       // 10.10 campaign is over (Fikri 2026-10-11): strip the dead tags if a
       // stale stored captionPrompt still produces them.
       .replace(/#1010(BrandsFestival|ShopeeMall)\b/gi, "")
@@ -786,5 +831,5 @@
 
   global.RMAi = { generateCaption, generateTag, generateVideoPrompt, productContext,
                   isPhoneAccessory, isHandheld, isPhoneCase, productSize, videoMode,
-                  ensureHashtags, stripPrice, stripRating, RATING_BAN, NICHE_TAGS, nicheTags, ensureNicheTags, ensureDisclaimer, CAPTION_DISCLAIMER, DEFAULT_CAPTION_PROMPT, buildShortLink, appendShortLink, generateTag, toCamelTag };
+                  ensureHashtags, stripPrice, stripRating, stripEngagementBait, BAIT_PATTERNS, RATING_BAN, NICHE_TAGS, nicheTags, ensureNicheTags, ensureDisclaimer, CAPTION_DISCLAIMER, DEFAULT_CAPTION_PROMPT, buildShortLink, appendShortLink, generateTag, toCamelTag };
 })(typeof window !== "undefined" ? window : this);
