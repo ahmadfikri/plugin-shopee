@@ -92,8 +92,20 @@ diisi supaya fitur lain jalan.
 |---|---|
 | `affiliate.shopee.co.id/offer/product_offer` | panel analisa, PRO SCORE, Max CPC, Bulk Scan, Shortlist |
 | halaman produk `shopee.co.id/...` | panel detail produk, ⬇ Video, 🎬 Prompt Video, ✍️ Caption, 🚀 Launch pack |
-| `facebook.com/ads/library` | bar 🎬 syabab (kanan bawah): filter niche, ⬇ Download video HD, 🧬 Analisa pola, 🏆 Top iklan → 🔍 Analisa produk TERBUKTI, 📒 pelacak kompetitor, ✍️ brief |
+| `facebook.com/ads/library` | bar 🎬 syabab (kanan bawah): filter niche, ⬇ Download video HD, 🧬 Analisa pola, ☑ checkbox + 🔬 Analisa dalam, 🏆 Top iklan → 🔍 Analisa produk TERBUKTI, 📒 pelacak kompetitor, ✍️ brief |
 | TikTok | downloader video |
+
+### 🔬 Analisa dalam (Ad Library)
+
+1. Centang **Pilih untuk 🔬 Analisa dalam** di kartu iklan yang mau dinilai (maks 12 link Shopee per jalan).
+2. Klik **🔬 Analisa dalam (N)** di bar.
+3. Plugin membuka tiap link Shopee di tab latar satu per satu (tab menutup sendiri), mengambil data
+   produk + vonis model kita, lalu DeepSeek menggabungkan sinyal kompetitor (lama tayang, variasi,
+   pengiklan lain), data produk, dan baseline champion kita jadi skor **0–100 + COBA / UJI KECIL / LEWATI**,
+   alasan, risiko, dan satu angle kreatif.
+
+Butuh **Aktifkan AI + API Key** (bagian 3b). Hasil terbaik kalau **Feedback Loop** (3c) sudah diimpor,
+karena prediksi ROAS bersih dan Max CPC ikut dipakai. Skor ini saringan sebelum tes, bukan jaminan.
 
 ## 5. Cek pemasangan
 

@@ -61,5 +61,29 @@ for (const r of real) {
   assert.ok(p.score >= 0 && p.score <= 100 && ["CHAMPION", "MIRIP", "LEMAH"].includes(p.tier));
 }
 
-console.log("OK   pola champion: niche classifier, skor sesuai baseline, bonus multi-pengiklan, tanpa hook rate (" +
-  real.length + " iklan asli dinilai)");
+// 7. v0.9.35 "Analisa dalam": prompt carries baseline + facts, parser is strict but tolerant
+{
+  const e = { ad: champLike, pola: s(champLike), nicheStats: { ads: 4, terbukti: 2 },
+    verdict: { name: "Case iPhone Anti Fall", price: 25000, rating: 4.9, reviews: 1200, sold: 8000, liked: 300,
+      inStock: true, categoryL1: "Handphone & Aksesoris", action: "LAYAK COBA", roas: 1.6, maxCpc: 160, epc: 210, pro: 78, reasons: ["EPC niche kuat"] } };
+  const bad = { ad: fashionOld, pola: s(fashionOld), nicheStats: null, verdict: { error: "timeout" } };
+  const P = A.deepPrompt([e, bad]);
+  for (const must of ["1,14", "8 dari 8 champion", "Hook rate TIDAK", "id=" + champLike.id, "Case iPhone Anti Fall",
+    "prediksi ROAS bersih 1.6", "Max CPC Rp160", "GAGAL dibuka (timeout)", "COBA / UJI KECIL / LEWATI", '"hasil"'])
+    assert.ok(P.includes(must), "deep prompt missing: " + must);
+  assert.ok(!/https?:\/\//.test(P.split("PRODUK:")[1].split("Untuk TIAP")[0].replace(/Rp\d+/g, "")), "links stripped from ad copy");
+
+  const out = A.parseDeep("Berikut hasilnya:\n```json\n" + JSON.stringify({ hasil: [
+    { id: champLike.id, skor: 82.6, vonis: "coba", alasan: ["niche champion", "14+ hari"], risiko: ["CPR naik"], angle: "HP jatuh dari kasur, harga Rp25.000 murah" },
+    { id: fashionOld.id, skor: 140, vonis: "skip aja", alasan: "komisi kecil" }], ringkasan: "Casing paling layak." }) + "\n```");
+  assert.ok(out && out.hasil.length === 2);
+  assert.strictEqual(out.hasil[0].skor, 83); assert.strictEqual(out.hasil[0].vonis, "COBA");
+  assert.ok(!/Rp|murah|harga/i.test(out.hasil[0].angle), "price stripped from angle: " + out.hasil[0].angle);
+  assert.strictEqual(out.hasil[1].skor, 100, "clamped"); assert.strictEqual(out.hasil[1].vonis, "UJI KECIL", "unknown verdict -> UJI KECIL");
+  assert.deepStrictEqual(out.hasil[1].alasan, ["komisi kecil"]);
+  assert.strictEqual(A.parseDeep("maaf, saya tidak bisa"), null);
+  assert.strictEqual(A.parseDeep('{"foo":1}'), null);
+}
+
+console.log("OK   pola champion: niche classifier, skor sesuai baseline, bonus multi-pengiklan, tanpa hook rate, " +
+  "prompt + parser analisa dalam (" + real.length + " iklan asli dinilai)");

@@ -79,6 +79,27 @@ function loadPlaywright() {
     await page.selectOption(".rm-fb-niche", "");
     await page.waitForTimeout(800);
     if (await page.locator(".rm-fb-dim").count()) throw new Error("filter reset failed");
+    // v0.9.35 checkbox + 🔬 Analisa dalam (no DeepSeek key in the test profile)
+    const nPick = await page.locator(".rm-fb-pick input").count();
+    if (nPick < nBtn) throw new Error("checkbox missing (" + nPick + ")");
+    if (!(await page.locator(".rm-fb-deepbtn").isDisabled())) throw new Error("deep button should be disabled with 0 ticked");
+    const firstWithLink = await page.evaluate(() => {
+      const cards = [...document.querySelectorAll(".rm-fb-pick")];
+      const i = cards.findIndex((l) => /shopee\.co\.id/.test((l.closest("div[class]") || document.body).parentElement.innerText || ""));
+      return i < 0 ? 0 : i;
+    });
+    await page.locator(".rm-fb-pick input").nth(firstWithLink).check();
+    const deepTxt = await page.locator(".rm-fb-deepbtn").innerText();
+    console.log("deep button after tick ->", deepTxt);
+    if (!/Analisa dalam \(1\)/.test(deepTxt)) throw new Error("deep count not updated");
+    await page.locator(".rm-fb-deepbtn").click();
+    await page.waitForFunction(() => { const b = document.querySelector(".rm-fb-deep"); return b && /AI belum aktif|❌|Layak/.test(b.innerText); },
+      null, { timeout: 90000 });
+    const deep = await page.locator(".rm-fb-deep").innerText();
+    console.log("deep box ->", deep.replace(/\s+/g, " ").slice(0, 160));
+    if (!/AI belum aktif|Layak/.test(deep)) throw new Error("deep flow did not reach DeepSeek step:\n" + deep);
+    await page.locator(".rm-fb-deep .rm-fb-x").click();
+    await page.locator(".rm-fb-pick input").nth(firstWithLink).uncheck();
     await page.locator(".rm-fb-topbtn").click();
     await page.locator(".rm-fb-top .rm-fb-x").click();
 

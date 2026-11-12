@@ -69,3 +69,19 @@
 .rm-fb-polabox table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
 .rm-fb-polabox td { padding: 3px 4px; border-bottom: 1px solid #eee; }
 .rm-fb-polabox td:last-child { text-align: right; white-space: nowrap; }
+/* v0.9.35 analisa dalam */
+.rm-fb-pick { display: flex; gap: 6px; align-items: center; margin: 4px 0 6px; font: 600 12px/1.2 system-ui, sans-serif; color: #333; cursor: pointer; }
+.rm-fb-pick input { width: 16px; height: 16px; accent-color: #ee4d2d; cursor: pointer; }
+.rm-fb-bar .rm-fb-deepbtn { background: #1b5e20; }
+.rm-fb-bar .rm-fb-deepbtn:disabled { background: #bbb; cursor: default; opacity: 1; }
+.rm-fb-deep { position: fixed; left: 16px; bottom: 16px; z-index: 2147483002; width: min(760px, 94vw);
+  max-height: 72vh; overflow: auto; background: #fff; color: #222; border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.3); font: 12px/1.4 system-ui, sans-serif; padding: 10px; }
+.rm-fb-deep .rm-fb-top-h b { color: #1b5e20; }
+.rm-fb-deep .rm-fb-x, .rm-fb-deep .rm-fb-copy { border: 0; background: #eee; border-radius: 6px; cursor: pointer; padding: 4px 8px; }
+.rm-fb-deep .rm-fb-copy { margin-left: auto; }
+.rm-fb-deep table { width: 100%; border-collapse: collapse; }
+.rm-fb-deep th, .rm-fb-deep td { text-align: left; padding: 5px 6px; border-bottom: 1px solid #eee; vertical-align: top; }
+.rm-fb-deep ul { margin: 0 0 4px 16px; padding: 0; }
+.rm-fb-deep a { color: #ee4d2d; }
+.rm-fb-deep pre { white-space: pre-wrap; }

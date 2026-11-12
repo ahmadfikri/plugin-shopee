@@ -281,8 +281,75 @@
     return { score, tier, niche, parts, warn, advertisers };
   }
 
+  /* ---- "🔬 Analisa dalam" (v0.9.35, Fikri 12 Nov 2026) ------------------
+   * For ads Fikri ticks: background opens each Shopee link (product-page panel
+   * verdict), then DeepSeek weighs competitor signals + product facts + our
+   * own baseline into one "how worth testing" score. entries =
+   * [{ad, pola, verdict, nicheStats}]. Output = strict JSON so the UI can
+   * render a table; parseDeep() tolerates code fences / stray text. */
+  function deepPrompt(entries) {
+    const rows = entries.map((e, i) => {
+      const a = e.ad, p = e.pola, v = e.verdict || {};
+      return [
+        `#${i + 1} id=${a.id}`,
+        `  Kompetitor: page "${a.pageName}", tayang ${a.days} hari, ${a.variants} variasi, link sama dipakai ${p.advertisers} pengiklan`,
+        `  Teks iklan: "${sanitizeBody(a.body).replace(/\s+/g, " ").slice(0, 300)}"`,
+        `  Skor pola (aturan): ${p.score}/100 ${p.tier}, niche ${p.niche.label}`,
+        `  Niche ini di halaman: ${e.nicheStats ? e.nicheStats.ads + " iklan, " + e.nicheStats.terbukti + " TERBUKTI" : "?"}`,
+        v.error ? `  Produk Shopee: GAGAL dibuka (${v.error})` :
+          `  Produk Shopee: "${v.name || "?"}", harga ${v.price != null ? "Rp" + v.price : "?"}, rating ${v.rating || "?"}, ` +
+          `${v.reviews != null ? v.reviews + " review" : "review ?"}, terjual ${v.sold || "?"}, favorit ${v.liked || "?"}, ` +
+          `stok ${v.inStock == null ? "?" : v.inStock ? "ada" : "HABIS"}, kategori ${v.categoryL1 || v.niche || "?"}`,
+        v.error ? "" : `  Model kita: vonis ${v.action || "?"}, prediksi ROAS bersih ${v.roas != null ? v.roas : "?"}, ` +
+          `Max CPC ${v.maxCpc != null ? "Rp" + v.maxCpc : "?"}, EPC ${v.epc != null ? "Rp" + v.epc : "?"}, PRO ${v.pro != null ? v.pro : "?"}` +
+          (v.reasons && v.reasons.length ? ` (${v.reasons.join("; ")})` : ""),
+      ].filter(Boolean).join("\n");
+    }).join("\n\n");
+    return [
+      "Kamu analis iklan Meta untuk affiliate Shopee Indonesia. Nilai seberapa LAYAK tiap produk di bawah untuk DITES dengan iklan kita sendiri.",
+      "",
+      "BASELINE DATA KITA SENDIRI (43 campaign, wajib dipakai, jangan diganti asumsi umum):",
+      "- Impas ROAS kotor 1,14 (PPN Meta 11% di atas spend, WHT Shopee 2,5%).",
+      "- 8 dari 8 champion (ROAS >= 1,4) adalah casing HP atau rumah/dapur. Fashion & kecantikan gagal: komisi per order kecil (~Rp1.350) atau CTR tinggi tapi jarang belanja.",
+      "- Champion: CPR median Rp132 (gagal Rp186), 7,5 order per 100 klik (gagal 4,5), komisi per order Rp3.098 (gagal Rp2.318).",
+      "- ~95% komisi datang dari barang LAIN yang dibeli setelah klik: produk yang menarik orang dalam mode belanja kebutuhan lebih penting dari produk itu sendiri laku.",
+      "- Hook rate TIDAK membedakan pemenang. Jangan dipakai sebagai alasan.",
+      "- Iklan kompetitor yang tayang >= 14 hari dan punya banyak variasi kemungkinan besar untung. Link sama dipakai banyak pengiklan = tervalidasi.",
+      "- Prediksi 'Model kita' berasal dari EPC nyata akun kita; beri bobot besar kalau ada.",
+      "",
+      "PRODUK:",
+      rows,
+      "",
+      "Untuk TIAP produk beri: skor 0-100 (seberapa layak dites), vonis salah satu dari COBA / UJI KECIL / LEWATI,",
+      "2-4 alasan singkat berbasis angka di atas, 1-2 risiko, dan satu angle kreatif (sudut cerita video, tanpa harga).",
+      "Jangan mengarang angka yang tidak ada. Kalau data produk gagal dibuka, nilai dari sinyal kompetitor saja dan sebutkan.",
+      "",
+      "Jawab HANYA JSON valid tanpa teks lain, format:",
+      '{"hasil":[{"id":"<id>","skor":0,"vonis":"COBA","alasan":["..."],"risiko":["..."],"angle":"..."}],"ringkasan":"1-2 kalimat: mana yang paling layak dan kenapa"}',
+    ].join("\n");
+  }
+
+  function parseDeep(text) {
+    const s = String(text || "").replace(/```(?:json)?/gi, "");
+    const a = s.indexOf("{"), b = s.lastIndexOf("}");
+    if (a < 0 || b <= a) return null;
+    try {
+      const j = JSON.parse(s.slice(a, b + 1));
+      if (!j || !Array.isArray(j.hasil)) return null;
+      j.hasil = j.hasil.map((h) => ({
+        id: String(h.id || ""), skor: Math.max(0, Math.min(100, Math.round(Number(h.skor) || 0))),
+        vonis: /COBA|UJI KECIL|LEWATI/.test(String(h.vonis || "").toUpperCase()) ? String(h.vonis).toUpperCase().match(/COBA|UJI KECIL|LEWATI/)[0] : "UJI KECIL",
+        alasan: [].concat(h.alasan || []).map(String).slice(0, 4),
+        risiko: [].concat(h.risiko || []).map(String).slice(0, 2),
+        angle: String(h.angle || "").replace(/Rp\s?[\d.,]+|\b(harga|murah|diskon|promo)\b/gi, "").trim(),
+      }));
+      j.ringkasan = String(j.ringkasan || "");
+      return j;
+    } catch (_) { return null; }
+  }
+
   global.RMFbAdLib = { isLibraryUrl, parseDocs, extractAds, extractFromText, filename, downloadsFor,
     signal, rank, trackDiff, shopeeLink, sanitizeBody, briefPrompt, cleanBrief, cardIdFromText, countCardIds, slug, CARD_ID_RE,
-    NICHES, CHAMPION_NICHES, nicheOf, competitorStats, polaScore };
+    NICHES, CHAMPION_NICHES, nicheOf, competitorStats, polaScore, deepPrompt, parseDeep };
   if (typeof module !== "undefined" && module.exports) module.exports = global.RMFbAdLib;
 })(typeof self !== "undefined" ? self : this);

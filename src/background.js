@@ -250,7 +250,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
           const r = await fetch(ai.baseUrl || "https://api.deepseek.com/v1/chat/completions", {
             method: "POST", signal: ctrl.signal,
             headers: { "Content-Type": "application/json", Authorization: "Bearer " + ai.apiKey },
-            body: JSON.stringify({ model: ai.model || "deepseek-chat", temperature: 0.8,
+            body: JSON.stringify({ model: ai.model || "deepseek-chat", temperature: msg.temperature != null ? msg.temperature : 0.8,
               messages: [{ role: "user", content: msg.prompt }] }) });
           clearTimeout(t);
           if (r.status === 429 || r.status >= 500) { last = "DeepSeek " + r.status; await new Promise((ok) => setTimeout(ok, 1000 * attempt)); continue; }
