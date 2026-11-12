@@ -335,9 +335,18 @@ Detail: documentation/2026-10-31-batch-v0.9.31.md
 ## v0.9.32 (2026-10-31) Launch pack
 🚀 satu blok: nama campaign Meta = `sub_id` dari short-link (syarat `campaign_to_tag()` di dashboard bisa memasangkan spend ke komisi), short-link, caption, prompt video, checklist. 🚀 dari Ad Library (`#rm-launch`) dan 📒 Cek semua kompetitor (maks 15 tab). Detail: documentation/2026-10-31-launch-pack-v0.9.32.md
 
-## Status repo & rilis (2026-11-07)
-- `main` = v0.9.32 (PR #1–#5 merge). `release/v0.9.0` di-fast-forward ke `main` 7 Nov (namanya lama, isinya v0.9.32).
+## v0.9.33 (2026-11-09) Caption engagement tanpa bait
+Struktur caption: kata kunci (SEO tetap pertama) → momen relatable → hal berguna → pertanyaan terbuka → cek link. Guard `stripEngagementBait()` membuang KALIMAT yang minta like/share/tag/komen kata/voting (FB/IG menurunkan jangkauan → CPC naik). ⚠️ Jangan tambahkan ajakan "like & share" ke prompt; engagement harus datang dari isi. Detail: documentation/2026-11-12-v0.9.33-v0.9.35.md
+
+## v0.9.34 (2026-11-12) Filter niche + 🧬 pola champion
+`nicheOf()`, `competitorStats()`, `polaScore()` di `src/fbadlib.js`. Baseline = data Fikri (8/8 champion casing HP atau rumah/dapur). ⚠️ Hook rate SENGAJA tidak dipakai (korelasi −0,12 dengan ROAS). Skor = penyaring, bukan ramalan.
+
+## v0.9.35 (2026-11-12) ☑ + 🔬 Analisa dalam
+Checkbox per kartu → `fbadlib-analyze` (tab latar, maks 12) → `pp-verdict` (kini + harga, review, favorit, stok, kategori, EPC, PRO) → `deepPrompt()` → DeepSeek (temp 0,3, lewat `fbadlib-brief`) → `parseDeep()` (JSON ketat tapi toleran). Butuh API key.
+
+## Status repo & rilis (2026-11-12)
+- `main` = v0.9.35 (PR #1–#8 merge). `release/v0.9.0` di-fast-forward ke `main` (namanya lama, isinya v0.9.35).
 - Alur kerja: branch `feat/vX.Y.Z-*` → PR ke `main`. Agen tidak push langsung ke `main`.
-- `bash test/run-all.sh`: 49/50 hijau. Langkah 49 merah karena data live Ad Library (5 iklan, tes minta 6), bukan bug plugin. Kandidat kerja: buat langkah 49 tidak bergantung jumlah iklan live.
-- Repo di folder Google Drive: Drive bisa menaruh file `Icon\r` di `.git` → `git fetch` gagal `bad object refs/Icon?`. Pindahkan file itu keluar `.git`.
-Detail: documentation/2026-11-07-dokumentasi-v0.9.32.md
+- `bash test/run-all.sh`: 52/53 hijau. Langkah 49 merah karena data live Ad Library (5 iklan, tes minta 6), bukan bug plugin. Kandidat kerja: buat langkah 49 tidak bergantung jumlah iklan live.
+- Repo di folder Google Drive: Drive bisa menaruh file `Icon\r` di `.git` → `git fetch` gagal `bad object refs/Icon?`. Hapus: `find .git -name $'Icon\r' -size 0 -delete` (tanpa `| head`).
+Detail: documentation/2026-11-12-v0.9.33-v0.9.35.md
