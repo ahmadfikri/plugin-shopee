@@ -58,6 +58,28 @@ function loadPlaywright() {
     const shop = await page.locator(".rm-fb-top a[href*='shopee']").count();
     console.log("top panel rows:", rows - 1, "| shopee links:", shop, "|", head.slice(0, 60));
     if (rows - 1 < nBtn || shop < 1) throw new Error("top panel incomplete");
+    // v0.9.34 pola champion column + niche filter
+    const polaCells = await page.locator(".rm-fb-top td .rm-fb-pola").count();
+    if (polaCells !== rows - 1) throw new Error("pola column missing (" + polaCells + " vs " + (rows - 1) + ")");
+    await page.locator(".rm-fb-top .rm-fb-x").click();
+    const nAna = await page.locator(".rm-fb-ana").count();
+    const anaTxt = await page.locator(".rm-fb-ana").first().innerText();
+    console.log("pola buttons:", nAna, "|", anaTxt);
+    if (nAna < nBtn || !/Analisa pola · \d+ (CHAMPION|MIRIP|LEMAH)/.test(anaTxt)) throw new Error("pola button missing/invalid");
+    await page.locator(".rm-fb-ana").first().click();
+    const box = await page.locator(".rm-fb-polabox").innerText();
+    if (!/\d+\/100/.test(box) || !/Pola kompetitor/.test(box) || /hook/i.test(box.split("Baseline")[0])) throw new Error("pola box invalid:\n" + box);
+    console.log("pola box ->", box.split("\n").slice(0, 3).join(" | "));
+    await page.locator(".rm-fb-polabox .rm-fb-x").click();
+    await page.selectOption(".rm-fb-niche", "beauty");
+    await page.waitForTimeout(800);
+    const dimmed = await page.locator(".rm-fb-dim").count();
+    console.log("niche filter beauty -> dimmed cards:", dimmed);
+    if (dimmed < 1) throw new Error("niche filter did not dim any card");
+    await page.selectOption(".rm-fb-niche", "");
+    await page.waitForTimeout(800);
+    if (await page.locator(".rm-fb-dim").count()) throw new Error("filter reset failed");
+    await page.locator(".rm-fb-topbtn").click();
     await page.locator(".rm-fb-top .rm-fb-x").click();
 
     // 2) one card

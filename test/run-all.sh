@@ -196,6 +196,9 @@ node test/e2e-tiktok.js || fail=1
 echo "=== 43. Test: FB Ad Library parser (payload asli inline + GraphQL) ==="
 node test/e2e-fbadlib.js || fail=1
 
+echo "=== 43b. Test: niche + skor pola champion (v0.9.34) ==="
+node test/e2e-pola-champion.js || fail=1
+
 echo "=== 44. Browser E2E: TikTok downloader (TikTok live, file 1080p tersimpan) ==="
 node test/e2e-browser-tiktok.js || fail=1
 

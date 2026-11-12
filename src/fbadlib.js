@@ -217,7 +217,72 @@
   function cardIdFromText(t) { const m = CARD_ID_RE.exec(String(t || "")); return m ? m[1] : null; }
   function countCardIds(t) { const m = String(t || "").match(new RegExp(CARD_ID_RE.source, "gi")); return m ? m.length : 0; }
 
+  /* ---- niche + "pola champion" score (v0.9.34, Fikri 12 Nov 2026) ----
+   * Baseline = Fikri's own data, 43 campaigns with spend >= Rp60rb:
+   *  - all 8 champions (ROAS >= 1,4) were casing HP or rumah/dapur;
+   *    fashion/kecantikan tests failed (shellaSaukia, niigelFlatshoes:
+   *    komisi/order ~Rp1.350) -> niche is the strongest signal visible here.
+   *  - hook rate does NOT separate winners (rank corr -0,12), so it is NOT
+   *    used. CPR and order-per-click separate them best, but those only exist
+   *    after OUR ad runs, so they cannot be scored from the Ad Library.
+   * Public proxies used instead: days running (nobody pays weeks for a loser),
+   * variations (advertiser is scaling it), and how many DIFFERENT advertisers
+   * push the same Shopee link (independent validation).
+   * This is a shortlist filter, not a prediction. 7-day test + twin date decide. */
+  const NICHES = [
+    ["hp", "Casing HP", /\b(case|casing|kesing|softcase|hardcase|iphone|samsung|xiaomi|redmi|oppo|vivo|realme|infinix|magsafe|tempered|anti ?gores|pelindung layar|lanyard|popsocket|holder hp)\b/i],
+    ["rumah", "Rumah/Dapur", /\b(dapur|rak|wadah|toples|kulkas|tumbler|botol|termos|mug|gelas|piring|mangkok|panci|wajan|spatula|talenan|organizer|keranjang|lemari|gantungan|alat pel|pel|sapu|kamar mandi|wastafel|rice cooker|blender|food container|lunch ?box|kotak makan|penyimpanan|storage|sendok|teflon)\b/i],
+    ["gadget", "Gadget", /\b(earphone|tws|headset|earbuds?|powerbank|power bank|charger|kabel data|speaker|smartwatch|kipas|lampu|mouse|keyboard|webcam)\b/i],
+    ["fashion", "Fashion", /\b(gamis|hijab|jilbab|khimar|baju|kaos|kemeja|celana|dress|rok|sepatu|sandal|sneakers|tas|dompet|jaket|hoodie|mukena|flatshoes|heels)\b/i],
+    ["beauty", "Kecantikan", /\b(skincare|serum|parfum|perfume|lipstik|lip tint|masker|sunscreen|toner|bedak|cushion|body mist|facial wash)\b/i],
+  ];
+  const NICHE_PTS = { hp: 25, rumah: 25, gadget: 10, lainnya: 5, fashion: 0, beauty: 0 };
+  const CHAMPION_NICHES = ["hp", "rumah"];
+
+  function nicheOf(ad) {
+    const t = String((ad && ad.body) || "") + " " + String((ad && ad.linkUrl) || "");
+    for (const [id, label, re] of NICHES) if (re.test(t)) return { id, label };
+    return { id: "lainnya", label: "Lainnya" };
+  }
+
+  // Competitor pattern across everything captured on this page view.
+  function competitorStats(list) {
+    const byLink = {}, byNiche = {};
+    for (const ad of list || []) {
+      const n = nicheOf(ad).id, link = shopeeLink(ad);
+      const s = byNiche[n] || (byNiche[n] = { ads: 0, terbukti: 0, pages: new Set() });
+      s.ads++; s.pages.add(ad.pageId || ad.pageName);
+      if ((ad.days || 0) >= 14) s.terbukti++;
+      if (link) (byLink[link] || (byLink[link] = new Set())).add(ad.pageId || ad.pageName);
+    }
+    return { byLink, byNiche };
+  }
+
+  function polaScore(ad, stats) {
+    stats = stats || competitorStats([ad]);
+    const d = ad.days || 0, v = ad.variants || 1;
+    const niche = nicheOf(ad), link = shopeeLink(ad);
+    const advertisers = link && stats.byLink[link] ? stats.byLink[link].size : 0;
+    const ns = stats.byNiche[niche.id] || { ads: 0, terbukti: 0, pages: new Set() };
+    const parts = [
+      ["Lama tayang " + d + " hari", Math.round(Math.min(d, 30) / 30 * 35), 35],
+      ["Variasi " + v + (v >= 3 ? " (di-scale)" : ""), Math.round(Math.min(v - 1, 4) / 4 * 15), 15],
+      ["Niche " + niche.label + (CHAMPION_NICHES.includes(niche.id) ? " (niche champion kita)" : ""), NICHE_PTS[niche.id], 25],
+      [link ? "Ada link Shopee (bisa dianalisa)" : "Tanpa link Shopee", link ? 10 : 0, 10],
+      ["Link sama dipakai " + advertisers + " pengiklan", advertisers >= 2 ? 10 : 0, 10],
+      ["Niche ini: " + ns.terbukti + " iklan TERBUKTI di halaman", ns.terbukti >= 3 ? 5 : 0, 5],
+    ];
+    const score = parts.reduce((a, p) => a + p[1], 0);
+    const tier = score >= 70 ? "CHAMPION" : score >= 45 ? "MIRIP" : "LEMAH";
+    const warn = [];
+    if (niche.id === "fashion" || niche.id === "beauty")
+      warn.push("Niche ini di data kita komisi/order kecil atau jarang belanja (shellaSaukia, niigelFlatshoes).");
+    if (d < 14) warn.push("Belum 14 hari: iklan kompetitor belum terbukti untung.");
+    return { score, tier, niche, parts, warn, advertisers };
+  }
+
   global.RMFbAdLib = { isLibraryUrl, parseDocs, extractAds, extractFromText, filename, downloadsFor,
-    signal, rank, trackDiff, shopeeLink, sanitizeBody, briefPrompt, cleanBrief, cardIdFromText, countCardIds, slug, CARD_ID_RE };
+    signal, rank, trackDiff, shopeeLink, sanitizeBody, briefPrompt, cleanBrief, cardIdFromText, countCardIds, slug, CARD_ID_RE,
+    NICHES, CHAMPION_NICHES, nicheOf, competitorStats, polaScore };
   if (typeof module !== "undefined" && module.exports) module.exports = global.RMFbAdLib;
 })(typeof self !== "undefined" ? self : this);

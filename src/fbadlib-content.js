@@ -72,10 +72,44 @@
     return out;
   }
 
+  // --- v0.9.34: niche filter + "🧬 Analisa pola" -------------------------
+  const NICHE_KEY = "rm_fb_niche_filter";
+  let nicheFilter = "";
+  try { nicheFilter = localStorage.getItem(NICHE_KEY) || ""; } catch (_) {}
+  const passNiche = (ad) => !nicheFilter ||
+    (nicheFilter === "champion" ? A.CHAMPION_NICHES.includes(A.nicheOf(ad).id) : A.nicheOf(ad).id === nicheFilter);
+  const statsNow = () => A.competitorStats([...ads.values()]);
+
+  let polaBox;
+  function showPola(ad) {
+    if (!polaBox) {
+      polaBox = document.createElement("div");
+      polaBox.className = "rm-fb-polabox";
+      document.body.appendChild(polaBox);
+      polaBox.addEventListener("click", (e) => { if (e.target.classList.contains("rm-fb-x")) polaBox.style.display = "none"; });
+    }
+    const st = statsNow(), p = A.polaScore(ad, st);
+    const ns = st.byNiche[p.niche.id];
+    const rows = p.parts.map((x) => "<tr><td>" + esc(x[0]) + "</td><td><b>" + x[1] + "</b> / " + x[2] + "</td></tr>").join("");
+    polaBox.innerHTML = "<div class='rm-fb-top-h'><b>🧬 Pola champion</b> " + esc(ad.pageName) +
+      " <button type='button' class='rm-fb-x'>✕</button></div>" +
+      "<div class='rm-fb-pola rm-fb-pola-" + p.tier.toLowerCase() + "'>" + p.score + "/100 · " + p.tier + "</div>" +
+      "<table>" + rows + "</table>" +
+      "<div class='rm-fb-track'>Pola kompetitor di halaman ini (niche " + esc(p.niche.label) + "): " +
+      (ns ? ns.ads + " iklan dari " + ns.pages.size + " pengiklan, " + ns.terbukti + " TERBUKTI (≥14 hari)" : "–") + ".</div>" +
+      (p.warn.length ? "<div class='rm-fb-note'>⚠ " + p.warn.map(esc).join("<br>⚠ ") + "</div>" : "") +
+      "<div class='rm-fb-note'>Baseline: 8 champion kita semuanya casing HP / rumah-dapur. Hook rate tidak dipakai " +
+      "(di data kita tidak membedakan pemenang). Skor ini penyaring awal, bukan ramalan: CPR ≤ Rp150 dan " +
+      "≥6 order per 100 klik baru kelihatan setelah iklan kita sendiri jalan; vonis tetap tes 7 hari + tanggal kembar.</div>";
+    polaBox.style.display = "block";
+  }
+
   function decorate() {
+    const st = statsNow();
     for (const { id, card, label } of findCards()) {
       const ad = ads.get(id);
       if (!ad) continue;
+      card.classList.toggle("rm-fb-dim", !passNiche(ad));
       if (!card.querySelector(".rm-fb-sig")) {
         const sg = A.signal(ad);
         const t = document.createElement("div");
@@ -84,6 +118,16 @@
         t.title = "Lama tayang = sinyal untung (orang gak bayar iklan rugi berminggu-minggu). Variasi banyak = lagi di-scale.";
         label.insertAdjacentElement("afterend", t);
       }
+      let pb = card.querySelector(".rm-fb-ana");
+      if (!pb) {
+        pb = document.createElement("button");
+        pb.className = "rm-fb-ana"; pb.type = "button";
+        pb.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); showPola(ad); });
+        card.querySelector(".rm-fb-sig").insertAdjacentElement("afterend", pb);
+      }
+      const p = A.polaScore(ad, st);
+      pb.textContent = "🧬 Analisa pola · " + p.score + " " + p.tier;
+      pb.className = "rm-fb-ana rm-fb-pola-" + p.tier.toLowerCase();
       if (!ad.videos.length) continue;
       if (card.querySelector(".rm-fb-dl")) continue;
       const b = document.createElement("button");
@@ -179,6 +223,8 @@
         if (go) { const ad = ads.get(go); if (ad) downloadAds([ad], t).then((r) => { t.disabled = false; t.textContent = r.ok ? "✅" : "❌"; }); }
         const br = t.getAttribute("data-brief");
         if (br) { const ad = ads.get(br); if (ad) makeBrief(ad, t); }
+        const po = t.getAttribute("data-pola");
+        if (po) { const ad = ads.get(po); if (ad) showPola(ad); }
       });
     }
     const cell = (ad) => {
@@ -193,11 +239,15 @@
         esc(v.action) + (v.roas != null ? " · " + v.roas.toFixed(2) + "x" : "") +
         (v.maxCpc != null ? " · maks Rp" + v.maxCpc : "") + "</span>" + go;
     };
-    const rows = A.rank([...ads.values()]).slice(0, 60).map((ad, i) => {
-      const sg = A.signal(ad), link = shopeeOf(ad);
+    const st = statsNow();
+    const shown = A.rank([...ads.values()]).filter(passNiche);
+    const rows = shown.slice(0, 60).map((ad, i) => {
+      const sg = A.signal(ad), link = shopeeOf(ad), p = A.polaScore(ad, st);
       const isNew = track && track.baru.includes(ad.id) && !track.firstVisit;
       return "<tr class='rm-fb-" + sg.tier.toLowerCase() + "'><td>" + (i + 1) + "</td><td>" + esc(sg.label) +
         (isNew ? " <span class='rm-fb-new'>BARU</span>" : "") + "</td>" +
+        "<td><span class='rm-fb-pola rm-fb-pola-" + p.tier.toLowerCase() + "' data-pola='" + esc(ad.id) +
+        "' title='Klik untuk rincian'>" + p.score + "</span> " + esc(p.niche.label) + "</td>" +
         "<td>" + esc(ad.pageName) + "</td><td>" + esc(ad.body.replace(/\s+/g, " ").slice(0, 70)) + "</td>" +
         "<td>" + (link ? "<a href='" + esc(link) + "' target='_blank' rel='noopener'>Shopee ↗</a>" : "–") + "</td>" +
         "<td>" + cell(ad) + "</td>" +
@@ -213,7 +263,8 @@
     top.innerHTML = "<div class='rm-fb-top-h'><b>🏆 Top iklan</b> " + nWin + " terbukti (≥14 hari) dari " + ads.size +
       ". " + anBtn + " <button type='button' class='rm-fb-x'>✕</button></div>" +
       trackHtml() +
-      "<table><tr><th>#</th><th>Sinyal</th><th>Page</th><th>Teks iklan</th><th>Produk</th><th>Vonis kita</th><th></th></tr>" + rows + "</table>";
+      "<table><tr><th>#</th><th>Sinyal</th><th>Pola</th><th>Page</th><th>Teks iklan</th><th>Produk</th><th>Vonis kita</th><th></th></tr>" + rows + "</table>" +
+      (nicheFilter ? "<div class='rm-fb-note'>Filter niche aktif: " + shown.length + " dari " + ads.size + " iklan tampil.</div>" : "");
     top.style.display = "block";
   }
 
@@ -265,11 +316,22 @@
       bar = document.createElement("div");
       bar.className = "rm-fb-bar";
       bar.innerHTML = '<b>🎬 syabab</b> <span class="rm-fb-count"></span>' +
+        '<select class="rm-fb-niche" title="Filter niche: iklan di luar niche jadi pudar & disembunyikan dari Top iklan">' +
+        '<option value="">Semua niche</option><option value="champion">⭐ Niche champion (HP + Rumah)</option>' +
+        A.NICHES.map((n) => '<option value="' + n[0] + '">' + n[1] + '</option>').join("") +
+        '<option value="lainnya">Lainnya</option></select>' +
         '<button type="button" class="rm-fb-all"></button>' +
         '<button type="button" class="rm-fb-topbtn">🏆 Top iklan</button>' +
         '<button type="button" class="rm-fb-opentracked" title="Buka lagi semua halaman pengiklan yang pernah kamu lihat (maks 15), urut dari yang paling lama tidak dicek">📒 Cek semua kompetitor</button>' +
         '<button type="button" class="rm-fb-json">⬇ Data iklan (JSON)</button>';
       document.body.appendChild(bar);
+      const sel = bar.querySelector(".rm-fb-niche");
+      sel.value = nicheFilter;
+      sel.addEventListener("change", () => {
+        nicheFilter = sel.value;
+        try { localStorage.setItem(NICHE_KEY, nicheFilter); } catch (_) {}
+        decorate();
+      });
       bar.querySelector(".rm-fb-opentracked").addEventListener("click", async (e) => {
         const b = e.currentTarget;
         const r = await send({ type: "fbadlib-open-tracked" });
@@ -309,7 +371,7 @@
 
   scanInline();
   // ignore mutations caused by our own bar/buttons, otherwise decorate() re-triggers itself
-  const OURS = ".rm-fb-bar, .rm-fb-dl, .rm-fb-sig, .rm-fb-top, .rm-fb-brief";
+  const OURS = ".rm-fb-bar, .rm-fb-dl, .rm-fb-sig, .rm-fb-top, .rm-fb-brief, .rm-fb-ana, .rm-fb-polabox";
   const ours = (n) => n && n.nodeType === 1 && !!n.closest(OURS);
   new MutationObserver((muts) => {
     for (const m of muts) {
