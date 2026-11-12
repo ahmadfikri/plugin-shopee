@@ -1,13 +1,13 @@
-# syabab-affiliathor — STATUS (2026-11-07, v0.9.32)
+# syabab-affiliathor — STATUS (2026-11-12, v0.9.35)
 
-Chrome MV3 extension, 29 content scripts + service worker, self-contained (tanpa
-backend, tanpa dependency npm). Verifikasi: `bash test/run-all.sh` (50 langkah) →
-harus `SEMUA VERIFIKASI LULUS`.
+Chrome MV3 extension, content scripts + service worker, self-contained (tanpa
+backend, tanpa dependency npm). Verifikasi: `bash test/run-all.sh` (53 langkah) →
+harus `SEMUA VERIFIKASI LULUS`. Panduan pasang + config: `docs/SETUP.md`.
 
-**Status tes per 7 Nov 2026:** 49/50 hijau. Langkah 49 (`e2e-browser-fbadlib2.js`)
-merah karena halaman Ad Library live Beyond.shopcart sekarang menampilkan 5 iklan,
+**Status tes per 12 Nov 2026:** 52/53 hijau. Langkah 49 (`e2e-browser-fbadlib2.js`)
+merah karena halaman Ad Library live Beyond.shopcart menampilkan 5 iklan,
 sedangkan tes mengharapkan 6. Kode plugin tidak berubah; yang berubah data live.
-Detail: `documentation/2026-11-07-dokumentasi-v0.9.32.md`.
+Detail: `documentation/2026-11-12-v0.9.33-v0.9.35.md`.
 
 👉 **Sesi/device baru: baca `HANDOFF.md` lebih dulu.**
 
@@ -64,7 +64,7 @@ rating <3,8. Aksi: ≥70 IKLANKAN · ≥55 LAYAK COBA · ≥40 HATI-HATI · <40 
     correct array 4–5★, dead saturation scoring dan dead Shopee API dihapus,
     detail price scan dipersempit.
 
-### v0.9.14 – v0.9.32 (ringkas; detail per file di `documentation/`)
+### v0.9.14 – v0.9.35 (ringkas; detail per file di `documentation/`)
 17. **Aturan konten**: video 10 detik (v0.9.14), **larangan harga** di caption &
     prompt + `stripPrice` di output (v0.9.15/0.9.17), **tanpa rating** (v0.9.20),
     hashtag per niche (v0.9.23), caption SEO-first + disclaimer (v0.9.24).
@@ -82,6 +82,13 @@ rating <3,8. Aksi: ≥70 IKLANKAN · ≥55 LAYAK COBA · ≥40 HATI-HATI · <40 
     kompetitor, ✍ brief kreatif, 💰 panel payout (v0.9.31).
 27. **🚀 Launch pack** (campaign = `sub_id`) + 🚀 dari Ad Library + 📒 Cek semua
     kompetitor (v0.9.32).
+28. **Caption engagement** — momen relatable + hal berguna + pertanyaan penutup;
+    `stripEngagementBait()` membuang kalimat minta like/share/tag/komen kata (v0.9.33).
+29. **Ad Library: filter niche + 🧬 Analisa pola champion** skor 0–100 dari lama
+    tayang, variasi, niche, link multi-pengiklan; tanpa hook rate (v0.9.34).
+30. **Ad Library: ☑ checkbox + 🔬 Analisa dalam** — buka link Shopee yang dicentang
+    di tab latar, DeepSeek menilai skor + COBA / UJI KECIL / LEWATI (v0.9.35).
+31. **`docs/SETUP.md`** — pasang, semua field config + default, troubleshooting.
 
 ## RIWAYAT PERBAIKAN PENTING (jangan diulang)
 - **Panel sering tidak muncul**: debounce di-reset tiap mutasi DOM (Shopee React SPA
@@ -102,7 +109,7 @@ rating <3,8. Aksi: ≥70 IKLANKAN · ≥55 LAYAK COBA · ≥40 HATI-HATI · <40 
   yang dia buka manual.
 
 ## TES
-`test/run-all.sh` menjalankan 50 langkah: syntax semua JS · validasi manifest · cek
+`test/run-all.sh` menjalankan 53 langkah: syntax semua JS · validasi manifest · cek
 semua file yang dirujuk manifest ada · tes Node (pipeline, kalibrasi, bulk scan,
 scheduler, aturan konten, EPC, niche, bandit, parser TikTok/Ad Library, affiliate ID)
 · tes Chromium asli (bulk scan, sort, CSV, modal, Gahwa, caption, TikTok, Ad Library,

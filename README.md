@@ -1,4 +1,4 @@
-# syabab-affiliathor — v0.9.32
+# syabab-affiliathor — v0.9.35
 
 Chrome extension (Manifest V3) untuk riset produk **Shopee affiliate**: menyuntik
 panel analisa ke halaman offer & halaman produk, memberi **vonis + prediksi ROAS
@@ -23,13 +23,13 @@ selector terverifikasi, jebakan yang sudah pernah menipu, dan daftar kerja berik
 ```bash
 bash test/run-all.sh
 ```
-Harus berakhir `SEMUA VERIFIKASI LULUS` (50 langkah, beberapa memakai Chromium asli).
+Harus berakhir `SEMUA VERIFIKASI LULUS` (53 langkah, beberapa memakai Chromium asli).
 
 ⚠️ Langkah 49 (`test/e2e-browser-fbadlib2.js`) membuka halaman Ad Library **live**
 milik Beyond.shopcart dan mengharapkan tepat 6 iklan aktif. Kalau pengiklan itu
-menambah/mematikan iklan, langkah ini gagal walau plugin benar. Per 7 Nov 2026
-halaman itu menampilkan 5 iklan, jadi langkah 49 merah. Lihat
-`documentation/2026-11-07-dokumentasi-v0.9.32.md`.
+menambah/mematikan iklan, langkah ini gagal walau plugin benar. Per 12 Nov 2026
+halaman itu masih menampilkan 5 iklan, jadi langkah 49 merah. Lihat
+`documentation/2026-11-12-v0.9.33-v0.9.35.md`.
 
 ## 🔌 Pasang
 Panduan lengkap (pasang, semua field config + default, halaman yang didukung,
@@ -46,8 +46,11 @@ Klik ikon ekstensi → **Admin Panel**. Isi:
 - **Ekonomi**: komisi %, break-even CPC, conversion rate, **PPN Meta (11%)** dan
   **WHT Shopee (2,5%)** untuk hitungan setelah pajak
 - **Affiliate ID**: default `11300901968` (diisi otomatis, nilai manual tidak ditimpa)
-- **DeepSeek**: API key + model (wajib untuk tombol Caption & Prompt Video)
+- **DeepSeek**: API key + model (wajib untuk Caption, Prompt Video, brief, 🔬 Analisa dalam).
+  Biarkan **Prompt Caption kosong** supaya template bawaan terbaru yang dipakai.
 - **Feedback Loop**: tempel `export/performance-snapshot.json` → **Impor Snapshot**
+
+Semua field + default: [docs/SETUP.md](docs/SETUP.md).
 
 ## 🎯 Fitur
 - **PRO SCORE** 4 pilar (ekonomi-klik, daya-klik, konversi, permintaan) + **Max CPC**
@@ -80,15 +83,21 @@ Klik ikon ekstensi → **Admin Panel**. Isi:
 - **🎬 Prompt Video**: prompt Veo/Gemini 9:16, 10 detik, hook 3 detik, framing
   menurut ukuran produk, tanpa harga dan tanpa rating
 - **✨ Caption**: satu caption SEO-first + disclaimer + hashtag niche/FYP, tanpa
-  harga dan tanpa rating. Satu request per produk (klik dobel aman, v0.9.31)
+  harga dan tanpa rating. Satu request per produk (klik dobel aman, v0.9.31).
+  **v0.9.33**: momen relatable + hal berguna + pertanyaan penutup supaya orang
+  like/share sendiri; kalimat engagement bait ("like & share", "tag teman",
+  "komen MAU") dibuang otomatis karena FB/IG menurunkan jangkauannya
 - **🚀 Launch pack (v0.9.32)**: satu blok siap tempel berisi nama campaign Meta
   (= `sub_id` dari short-link), short-link affiliate, caption, prompt video, dan
   checklist (CPC > Rp200, vonis 2x24 jam, scale +20% kalau ROAS ≥ 1,4)
-- **Meta Ad Library (v0.9.29–0.9.32)**: download video HD per iklan / semua,
+- **Meta Ad Library (v0.9.29–0.9.35)**: download video HD per iklan / semua,
   export data iklan JSON, badge **🏆 TERBUKTI / 📈 MENJANJIKAN / 🆕 BARU / SCALING**
   dari lama tayang + variasi, panel **🏆 Top iklan**, **🔍 Analisa produk TERBUKTI**
   (buka link Shopee di tab latar, ambil vonis plugin), **✍ brief kreatif**,
-  **pelacak kompetitor** (iklan baru / tidak terlihat lagi), **📒 Cek semua kompetitor**
+  **pelacak kompetitor** (iklan baru / tidak terlihat lagi), **📒 Cek semua kompetitor**,
+  **filter niche** + **🧬 Analisa pola champion** skor 0–100 (v0.9.34), dan
+  **☑ checkbox + 🔬 Analisa dalam**: DeepSeek menilai produk yang dicentang dari
+  sinyal kompetitor + data halaman Shopee + baseline champion kita (v0.9.35)
 - **TikTok downloader**: 1080p tanpa watermark (lewat offscreen blob)
 - **💰 Payout Shopee (v0.9.31)**: di detail payout, simpan payout, tarif WHT nyata,
   export CSV per hari + JSON (rekening/nama bank tidak disimpan)
@@ -112,13 +121,16 @@ python3 export_perf_snapshot.py
   input/tombol yang salah, signature collision, dan React submit yang tertelan;
   selector DOM tetap perlu diverifikasi kalau Shopee mengubah markup.
 - Ikon masih placeholder.
-- Sinyal Ad Library adalah **proxy** (lama tayang), bukan data profit. Validasi
-  produk lewat panel EPC sebelum bikin campaign. Video kompetitor untuk riset
+- Sinyal Ad Library adalah **proxy** (lama tayang), bukan data profit. Skor
+  🧬 pola champion dan 🔬 Analisa dalam = penyaring sebelum tes, bukan ramalan.
+  Hook rate sengaja tidak dipakai (di data kita tidak membedakan pemenang).
+  Validasi produk lewat panel EPC sebelum bikin campaign. Video kompetitor untuk riset
   angle saja; jangan iklankan ulang.
 - URL video Ad Library kedaluwarsa (`oe=`): refresh halaman lama sebelum download.
 - Repo ada di folder yang disinkron Google Drive. Drive bisa menaruh file `Icon\r`
-  kosong di `.git` sehingga `git fetch` gagal (`bad object refs/Icon?`). Pindahkan
-  file itu keluar dari `.git`, atau keluarkan `.git` dari sinkronisasi.
+  kosong di `.git` sehingga `git fetch` gagal (`bad object refs/Icon?`). Hapus dengan
+  `find .git -name $'Icon\r' -size 0 -delete` (jangan pipe ke `head`), atau
+  keluarkan `.git` dari sinkronisasi.
 
 - **Audit hardening v0.9:** concept win-rate hanya memakai exact Experiment ID;
   broad-tag log lama diabaikan. Product→tag matcher menolak tag generik satu kata.
@@ -129,9 +141,10 @@ python3 export_perf_snapshot.py
 ## 📁 Struktur
 ```
 manifest.json  HANDOFF.md  STATUS.md  DESIGN.md  README.md
-src/            29 content script (3 grup: Shopee, affiliate, FB Ad Library)
+docs/SETUP.md   panduan pasang + semua field config
+src/            content script (3 grup: Shopee, affiliate, FB Ad Library)
                 + background.js (service worker) + offscreen + admin/ + popup/
-test/           run-all.sh (50 langkah) + fixtures/
+test/           run-all.sh (53 langkah) + fixtures/
 documentation/  satu file .md per perubahan
 export/         performance-snapshot.json (feedback loop)
 assets/         icon16/48/128.png (placeholder)
@@ -139,7 +152,7 @@ assets/         icon16/48/128.png (placeholder)
 
 ## 🌿 Branch & rilis
 ```
-feat/vX.Y.Z-*   kerja per batch → PR ke main (PR #1–#5 sudah merge)
-main            versi terbaru (sekarang v0.9.32)
-release/v0.9.0  di-fast-forward ke main tiap rilis (nama lama, isi v0.9.32)
+feat/vX.Y.Z-*   kerja per batch → PR ke main (PR #1–#8 sudah merge)
+main            versi terbaru (sekarang v0.9.35)
+release/v0.9.0  di-fast-forward ke main tiap rilis (nama lama, isi v0.9.35)
 ```
