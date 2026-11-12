@@ -50,3 +50,22 @@
 .rm-fb-brief .rm-fb-x, .rm-fb-brief .rm-fb-copy { border: 0; background: #eee; border-radius: 6px; cursor: pointer; padding: 4px 8px; }
 .rm-fb-brief .rm-fb-copy { margin-left: auto; background: #ee4d2d; color: #fff; }
 .rm-fb-note { color: #666; margin: 2px 0 6px; }
+/* v0.9.34 niche filter + pola champion */
+.rm-fb-bar .rm-fb-niche { padding: 5px 6px; border: 1px solid #ddd; border-radius: 6px; font: 12px system-ui, sans-serif; background: #fff; color: #222; }
+.rm-fb-dim { opacity: .25; transition: opacity .2s; }
+.rm-fb-dim:hover { opacity: .8; }
+.rm-fb-ana { display: block; margin: 6px 0; padding: 6px 10px; border: 0; border-radius: 6px; cursor: pointer;
+  font: 600 12px/1.2 system-ui, sans-serif; background: #eee; color: #333; }
+.rm-fb-pola { display: inline-block; padding: 2px 7px; border-radius: 5px; font-weight: 700; cursor: pointer; background: #eee; color: #333; }
+.rm-fb-pola-champion { background: #1b5e20 !important; color: #fff !important; }
+.rm-fb-pola-mirip { background: #fff3cd !important; color: #6d4c00 !important; }
+.rm-fb-pola-lemah { background: #f1f1f1 !important; color: #777 !important; }
+.rm-fb-polabox { position: fixed; left: 16px; bottom: 16px; z-index: 2147483001; width: min(460px, 92vw);
+  background: #fff; color: #222; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.3);
+  font: 12px/1.4 system-ui, sans-serif; padding: 10px; }
+.rm-fb-polabox .rm-fb-top-h b { color: #ee4d2d; }
+.rm-fb-polabox .rm-fb-x { margin-left: auto; border: 0; background: #eee; border-radius: 6px; cursor: pointer; padding: 4px 8px; }
+.rm-fb-polabox > .rm-fb-pola { font-size: 15px; margin: 2px 0 8px; cursor: default; }
+.rm-fb-polabox table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+.rm-fb-polabox td { padding: 3px 4px; border-bottom: 1px solid #eee; }
+.rm-fb-polabox td:last-child { text-align: right; white-space: nowrap; }

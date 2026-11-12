@@ -32,6 +32,9 @@ halaman itu menampilkan 5 iklan, jadi langkah 49 merah. Lihat
 `documentation/2026-11-07-dokumentasi-v0.9.32.md`.
 
 ## 🔌 Pasang
+Panduan lengkap (pasang, semua field config + default, halaman yang didukung,
+troubleshooting): **[docs/SETUP.md](docs/SETUP.md)**.
+
 1. `chrome://extensions` → **Developer mode** ON
 2. **Load unpacked** → pilih folder `riset-plugin/`
 3. Buka `affiliate.shopee.co.id/offer/product_offer` → panel muncul otomatis

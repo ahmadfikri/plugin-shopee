@@ -155,6 +155,10 @@ echo "=== 29. Test: caption SEO-first + niche tag + disclaimer ==="
 node test/e2e-caption-seo.js || fail=1
 
 echo
+echo "=== 29b. Test: caption engagement tanpa engagement bait (v0.9.33) ==="
+node test/e2e-caption-engage.js || fail=1
+
+echo
 echo "=== 30. Test: larangan harga ditegakkan di OUTPUT caption & prompt video ==="
 node test/e2e-price-guard.js || fail=1
 
@@ -191,6 +195,9 @@ node test/e2e-tiktok.js || fail=1
 
 echo "=== 43. Test: FB Ad Library parser (payload asli inline + GraphQL) ==="
 node test/e2e-fbadlib.js || fail=1
+
+echo "=== 43b. Test: niche + skor pola champion (v0.9.34) ==="
+node test/e2e-pola-champion.js || fail=1
 
 echo "=== 44. Browser E2E: TikTok downloader (TikTok live, file 1080p tersimpan) ==="
 node test/e2e-browser-tiktok.js || fail=1
