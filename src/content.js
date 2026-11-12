@@ -857,6 +857,11 @@
           maxCpc: dv && dv.maxCpc != null ? Math.round(dv.maxCpc) : null,
           niche: product.niche || null, basis: dv ? dv.basis : null,
           rating: d.rating || null, sold: d.historicalSold || null,
+          // v0.9.35: extra facts for the Ad Library "🔬 Analisa dalam" (DeepSeek)
+          price: price || null, reviews: d.totalReviews || null, liked: d.likedCount || null,
+          inStock: d.inStock != null ? !!d.inStock : null, categoryL1: d.categoryL1 || null,
+          epc: epcPred && epcPred.epc != null ? Math.round(epcPred.epc) : null,
+          pro: product.pro && product.pro.score != null ? Math.round(product.pro.score) : null,
           reasons: dv ? dv.reasons.slice(0, 2) : [] } }, () => void chrome.runtime.lastError);
       } catch (_) {}
       // AUTO-CAPTURE (Fikri: "biarkan data collector jalan tanpa pencet save").

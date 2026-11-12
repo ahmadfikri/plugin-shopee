@@ -79,6 +79,74 @@
   const passNiche = (ad) => !nicheFilter ||
     (nicheFilter === "champion" ? A.CHAMPION_NICHES.includes(A.nicheOf(ad).id) : A.nicheOf(ad).id === nicheFilter);
   const statsNow = () => A.competitorStats([...ads.values()]);
+  const picked = new Set();   // v0.9.35 ad ids ticked for "🔬 Analisa dalam"
+
+  // --- v0.9.35 "🔬 Analisa dalam": open Shopee links in background tabs,
+  // then DeepSeek aggregates everything into a worth-testing score ----------
+  let deepBox, deepRunning = false;
+  const DEEP_CLS = { "COBA": "ok", "UJI KECIL": "mid", "LEWATI": "bad" };
+  function deepShow(html) {
+    if (!deepBox) {
+      deepBox = document.createElement("div");
+      deepBox.className = "rm-fb-deep";
+      document.body.appendChild(deepBox);
+      deepBox.addEventListener("click", (e) => {
+        if (e.target.classList.contains("rm-fb-x")) deepBox.style.display = "none";
+        if (e.target.classList.contains("rm-fb-copy")) {
+          navigator.clipboard.writeText(deepBox.getAttribute("data-raw") || "").then(() => { e.target.textContent = "✓ Tersalin"; });
+        }
+      });
+    }
+    deepBox.innerHTML = "<div class='rm-fb-top-h'><b>🔬 Analisa dalam</b> <button type='button' class='rm-fb-copy'>Copy</button>" +
+      "<button type='button' class='rm-fb-x'>✕</button></div>" + html;
+    deepBox.style.display = "block";
+  }
+  async function deepAnalyze(btn) {
+    if (deepRunning || analyzing) return;
+    const sel = [...picked].map((id) => ads.get(id)).filter(Boolean);
+    if (!sel.length) return;
+    const noLink = sel.filter((a) => !shopeeOf(a));
+    const seen = new Set();
+    const withLink = sel.filter((a) => { const l = shopeeOf(a); if (!l || seen.has(l)) return false; seen.add(l); return true; }).slice(0, 12);
+    deepRunning = true; analyzing = true; btn.disabled = true;
+    deepShow("<div>⏳ Membuka " + withLink.length + " link Shopee di tab latar, satu per satu…</div>");
+    const need = withLink.filter((a) => !verdicts.has(a.id) || verdicts.get(a.id).error)
+      .map((a) => ({ adId: a.id, page: a.pageName, days: a.days, link: shopeeOf(a) }));
+    if (need.length) {
+      const r = await send({ type: "fbadlib-analyze", items: need });
+      for (const x of (r && r.results) || []) verdicts.set(x.adId, x.ok ? Object.assign({ finalUrl: x.finalUrl }, x.verdict) : { error: x.error });
+    }
+    analyzing = false;
+    deepShow("<div>⏳ DeepSeek menggabungkan sinyal kompetitor + data produk + baseline kita…</div>");
+    const st = statsNow();
+    const entries = withLink.concat(noLink).map((ad) => {
+      const p = A.polaScore(ad, st);
+      return { ad, pola: p, verdict: shopeeOf(ad) ? verdicts.get(ad.id) : { error: "iklan tanpa link Shopee" }, nicheStats: st.byNiche[p.niche.id] };
+    });
+    const r = await send({ type: "fbadlib-brief", prompt: A.deepPrompt(entries), temperature: 0.3 });
+    deepRunning = false; btn.disabled = false;
+    if (!r || !r.ok) { deepShow("<div class='rm-fb-v bad'>❌ " + esc((r && r.error) || "DeepSeek gagal") + "</div>"); renderBar(); return; }
+    const j = A.parseDeep(r.text);
+    deepBox && deepBox.setAttribute("data-raw", r.text);
+    if (!j) { deepShow("<div class='rm-fb-note'>Jawaban AI bukan JSON, ditampilkan apa adanya:</div><pre>" + esc(r.text) + "</pre>"); return; }
+    const byId = new Map(entries.map((e) => [e.ad.id, e]));
+    const rows = j.hasil.slice().sort((a, b) => b.skor - a.skor).map((h) => {
+      const e = byId.get(h.id), ad = e && e.ad, v = e && e.verdict, link = ad && shopeeOf(ad);
+      return "<tr><td><span class='rm-fb-v " + (DEEP_CLS[h.vonis] || "mid") + "'>" + h.skor + " · " + esc(h.vonis) + "</span></td>" +
+        "<td><b>" + esc((v && v.name) || (ad && ad.pageName) || h.id) + "</b><br><span class='rm-fb-note'>" +
+        (ad ? esc(ad.pageName) + " · " + ad.days + " hari · pola " + e.pola.score : "") +
+        (v && v.roas != null ? " · prediksi ROAS bersih " + v.roas : "") + "</span>" +
+        (link ? " <a href='" + esc((v && v.finalUrl) || link) + "' target='_blank' rel='noopener'>Shopee ↗</a>" : "") + "</td>" +
+        "<td><ul>" + h.alasan.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>" +
+        (h.risiko.length ? "<div class='rm-fb-note'>⚠ " + h.risiko.map(esc).join(" · ") + "</div>" : "") +
+        (h.angle ? "<div>🎬 " + esc(h.angle) + "</div>" : "") + "</td></tr>";
+    }).join("");
+    deepShow((j.ringkasan ? "<div class='rm-fb-track'>" + esc(j.ringkasan) + "</div>" : "") +
+      "<table><tr><th>Layak</th><th>Produk</th><th>Alasan · risiko · angle</th></tr>" + rows + "</table>" +
+      (noLink.length ? "<div class='rm-fb-note'>" + noLink.length + " iklan tanpa link Shopee: dinilai dari sinyal kompetitor saja.</div>" : "") +
+      "<div class='rm-fb-note'>Skor AI = saringan sebelum tes, bukan jaminan. Tetap jalankan 2x24 jam dengan aturan CPR, lalu tes 7 hari + tanggal kembar.</div>");
+    renderBar();
+  }
 
   let polaBox;
   function showPola(ad) {
@@ -128,6 +196,17 @@
       const p = A.polaScore(ad, st);
       pb.textContent = "🧬 Analisa pola · " + p.score + " " + p.tier;
       pb.className = "rm-fb-ana rm-fb-pola-" + p.tier.toLowerCase();
+      // v0.9.35: tick ads for "🔬 Analisa dalam"
+      if (!card.querySelector(".rm-fb-pick")) {
+        const lb = document.createElement("label");
+        lb.className = "rm-fb-pick";
+        lb.innerHTML = "<input type='checkbox'> Pilih untuk 🔬 Analisa dalam";
+        const cb = lb.querySelector("input");
+        cb.checked = picked.has(id);
+        lb.addEventListener("click", (e) => e.stopPropagation());
+        cb.addEventListener("change", () => { if (cb.checked) picked.add(id); else picked.delete(id); renderBar(); });
+        pb.insertAdjacentElement("afterend", lb);
+      }
       if (!ad.videos.length) continue;
       if (card.querySelector(".rm-fb-dl")) continue;
       const b = document.createElement("button");
@@ -178,7 +257,10 @@
     renderTop();
   }
   chrome.runtime.onMessage.addListener((m) => {
-    if (m && m.type === "fbadlib-analyze-progress") { anProgress = m.i + "/" + m.n; if (top) renderTop(); }
+    if (m && m.type === "fbadlib-analyze-progress") {
+      anProgress = m.i + "/" + m.n; if (top && top.style.display !== "none") renderTop();
+      if (deepRunning) deepShow("<div>⏳ Membuka link Shopee " + m.i + "/" + m.n + "…</div>");
+    }
   });
 
   // creative brief box (separate element so table re-renders never wipe it)
@@ -321,6 +403,7 @@
         A.NICHES.map((n) => '<option value="' + n[0] + '">' + n[1] + '</option>').join("") +
         '<option value="lainnya">Lainnya</option></select>' +
         '<button type="button" class="rm-fb-all"></button>' +
+        '<button type="button" class="rm-fb-deepbtn" title="Buka link Shopee iklan yang dicentang di tab latar, lalu DeepSeek menilai seberapa layak dites"></button>' +
         '<button type="button" class="rm-fb-topbtn">🏆 Top iklan</button>' +
         '<button type="button" class="rm-fb-opentracked" title="Buka lagi semua halaman pengiklan yang pernah kamu lihat (maks 15), urut dari yang paling lama tidak dicek">📒 Cek semua kompetitor</button>' +
         '<button type="button" class="rm-fb-json">⬇ Data iklan (JSON)</button>';
@@ -338,6 +421,7 @@
         b.textContent = r && r.opened ? "📒 " + r.opened + " page dibuka" : "📒 belum ada page dilacak";
         setTimeout(() => { b.textContent = "📒 Cek semua kompetitor"; }, 5000);
       });
+      bar.querySelector(".rm-fb-deepbtn").addEventListener("click", (e) => deepAnalyze(e.currentTarget));
       bar.querySelector(".rm-fb-topbtn").addEventListener("click", () => {
         if (top && top.style.display !== "none") top.style.display = "none"; else renderTop();
       });
@@ -359,6 +443,9 @@
       });
     }
     bar.querySelector(".rm-fb-count").textContent = ads.size + " iklan · " + withVid.length + " video";
+    const db = bar.querySelector(".rm-fb-deepbtn");
+    if (!deepRunning) { db.disabled = !picked.size; db.textContent = "🔬 Analisa dalam (" + picked.size + ")"; }
+    else db.textContent = "⏳ Analisa dalam…";
     const all = bar.querySelector(".rm-fb-all");
     if (!all.disabled) {
       const left = withVid.filter((a) => !done.has(a.id)).length;
@@ -371,7 +458,7 @@
 
   scanInline();
   // ignore mutations caused by our own bar/buttons, otherwise decorate() re-triggers itself
-  const OURS = ".rm-fb-bar, .rm-fb-dl, .rm-fb-sig, .rm-fb-top, .rm-fb-brief, .rm-fb-ana, .rm-fb-polabox";
+  const OURS = ".rm-fb-bar, .rm-fb-dl, .rm-fb-sig, .rm-fb-top, .rm-fb-brief, .rm-fb-ana, .rm-fb-polabox, .rm-fb-pick, .rm-fb-deep";
   const ours = (n) => n && n.nodeType === 1 && !!n.closest(OURS);
   new MutationObserver((muts) => {
     for (const m of muts) {
