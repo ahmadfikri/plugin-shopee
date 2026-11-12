@@ -22,6 +22,9 @@ bash test/run-all.sh
 Harus berakhir `SEMUA VERIFIKASI LULUS`.
 
 ## 🔌 Pasang
+Panduan lengkap (pasang, semua field config + default, halaman yang didukung,
+troubleshooting): **[docs/SETUP.md](docs/SETUP.md)**.
+
 1. `chrome://extensions` → **Developer mode** ON
 2. **Load unpacked** → pilih folder `riset-plugin/`
 3. Buka `affiliate.shopee.co.id/offer/product_offer` → panel muncul otomatis
