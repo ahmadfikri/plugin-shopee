@@ -1,4 +1,4 @@
-# syabab-affiliathor — v0.9.35
+# syabab-affiliathor — v0.9.36
 
 Chrome extension (Manifest V3) untuk riset produk **Shopee affiliate**: menyuntik
 panel analisa ke halaman offer & halaman produk, memberi **vonis + prediksi ROAS
@@ -97,7 +97,8 @@ Semua field + default: [docs/SETUP.md](docs/SETUP.md).
   **pelacak kompetitor** (iklan baru / tidak terlihat lagi), **📒 Cek semua kompetitor**,
   **filter niche** + **🧬 Analisa pola champion** skor 0–100 (v0.9.34), dan
   **☑ checkbox + 🔬 Analisa dalam**: DeepSeek menilai produk yang dicentang dari
-  sinyal kompetitor + data halaman Shopee + baseline champion kita (v0.9.35)
+  sinyal kompetitor + data halaman Shopee + baseline champion kita (v0.9.35),
+  **angle + hook + tempo peluncuran** per pengiklan di Top iklan (v0.9.36)
 - **TikTok downloader**: 1080p tanpa watermark (lewat offscreen blob)
 - **💰 Payout Shopee (v0.9.31)**: di detail payout, simpan payout, tarif WHT nyata,
   export CSV per hari + JSON (rekening/nama bank tidak disimpan)
@@ -152,7 +153,7 @@ assets/         icon16/48/128.png (placeholder)
 
 ## 🌿 Branch & rilis
 ```
-feat/vX.Y.Z-*   kerja per batch → PR ke main (PR #1–#8 sudah merge)
-main            versi terbaru (sekarang v0.9.35)
-release/v0.9.0  di-fast-forward ke main tiap rilis (nama lama, isi v0.9.35)
+feat/vX.Y.Z-*   kerja per batch → PR ke main (PR #1–#10 sudah merge)
+main            versi terbaru (sekarang v0.9.36)
+release/v0.9.0  di-fast-forward ke main tiap rilis (nama lama, isi v0.9.36)
 ```

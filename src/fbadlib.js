@@ -239,6 +239,52 @@
   const NICHE_PTS = { hp: 25, rumah: 25, gadget: 10, lainnya: 5, fashion: 0, beauty: 0 };
   const CHAMPION_NICHES = ["hp", "rumah"];
 
+  /* ---- angle + hook + launch velocity (v0.9.36) ------------------------
+   * Ideas borrowed from dansugc/reverse-engineer-marketing (MIT): classify each
+   * ad's angle, quote its hook (first line), and count how many ads a page
+   * launched in the last 30 days (creative-volume strategy). Their impression
+   * sort is NOT available here (Meta only publishes reach for EU/political ads).
+   * Order = priority when several match; "promo" is tagged so we can see it,
+   * but Fikri never copies price angles. */
+  const ANGLES = [
+    ["promo", "Promo/harga", /\b(diskon|promo|potongan|cashback|gratis ongkir|free ongkir|murah|termurah|flash ?sale|harga)\b|rp\s?\d/i],
+    ["pov", "POV/skit", /\bpov\b|^\s*(pas|waktu|ketika) (lagi|kamu|aku)\b/im],
+    ["beforeafter", "Before/after", /\b(before|after|sebelum|sesudah)\b|dulu\b[^.\n]{0,40}\bsekarang\b/i],
+    ["listicle", "Listicle", /\b\d+\s+(barang|alasan|tips|cara|rekomendasi|hal|produk)\b/i],
+    ["comparison", "Perbandingan", /\b(dibanding(?:kan)?|vs\.?|versus|kalah sama|beda(?:nya)? sama)\b/i],
+    ["testimoni", "Testimoni", /\b(aku|gue|gw|saya) (udah|sudah|baru) (pakai|pake|coba|beli)\b|\bjujur\b|\bnyesel baru\b|\breview (jujur|aku|gue)\b/i],
+    ["socialproof", "Bukti sosial", /\b(terjual|ribuan|viral|best ?seller|laris|semua orang|banyak yang|udah dipakai)\b/i],
+    ["problem", "Masalah", /\b(capek|cape|ribet|repot|susah|sering|bocor|jatuh|retak|pegel|kesel|bingung|berantakan|sempit|lecet|kotor|bau|takut|ga perlu lagi|gak perlu lagi|nggak perlu lagi)\b/i],
+    ["demo", "Demo fitur", /\b(tinggal|cukup|cara pakai|bisa (dipakai|dilipat|dicuci)|praktis|otomatis|anti|tahan|muat)\b/i],
+  ];
+  function angleOf(ad) {
+    const t = String((ad && ad.body) || "");
+    const all = ANGLES.filter((a) => a[2].test(t)).map((a) => a[0]);
+    const main = all.find((id) => id !== "promo") || all[0] || "lain";
+    const label = (id) => (ANGLES.find((a) => a[0] === id) || [0, "Lainnya"])[1];
+    return { id: main, label: label(main), all, promo: all.includes("promo") };
+  }
+  function hookOf(ad) {
+    const line = String((ad && ad.body) || "").split(/\n+/).map((l) => l.trim())
+      .find((l) => l && !/^https?:\/\//i.test(l) && !/^#/.test(l)) || "";
+    const h = sanitizeBody(line).replace(/\s+/g, " ").trim();
+    return h.length > 90 ? h.slice(0, 89) + "…" : h;
+  }
+  const DAY = 86400000;
+  function pageVelocity(list, nowMs) {
+    const now = nowMs || Date.now(), out = {};
+    for (const ad of list || []) {
+      const k = ad.pageId || ad.pageName;
+      const v = out[k] || (out[k] = { total: 0, active: 0, last30: 0, variants: 0 });
+      v.total++; if (ad.active !== false) v.active++;
+      v.variants += ad.variants || 1;
+      const st = ad.startDate ? Date.parse(ad.startDate + "T00:00:00Z") : NaN;
+      if (!isNaN(st) && now - st <= 30 * DAY) v.last30++;
+    }
+    for (const k in out) out[k].tempo = out[k].last30 >= 10 ? "TINGGI" : out[k].last30 >= 4 ? "SEDANG" : "RENDAH";
+    return out;
+  }
+
   function nicheOf(ad) {
     const t = String((ad && ad.body) || "") + " " + String((ad && ad.linkUrl) || "");
     for (const [id, label, re] of NICHES) if (re.test(t)) return { id, label };
@@ -246,30 +292,42 @@
   }
 
   // Competitor pattern across everything captured on this page view.
-  function competitorStats(list) {
+  function competitorStats(list, nowMs) {
     const byLink = {}, byNiche = {};
     for (const ad of list || []) {
       const n = nicheOf(ad).id, link = shopeeLink(ad);
-      const s = byNiche[n] || (byNiche[n] = { ads: 0, terbukti: 0, pages: new Set() });
+      const s = byNiche[n] || (byNiche[n] = { ads: 0, terbukti: 0, pages: new Set(), angles: {} });
       s.ads++; s.pages.add(ad.pageId || ad.pageName);
-      if ((ad.days || 0) >= 14) s.terbukti++;
+      if ((ad.days || 0) >= 14) {
+        s.terbukti++;
+        const an = angleOf(ad).id;
+        s.angles[an] = (s.angles[an] || 0) + 1;   // angles among PROVEN ads only
+      }
       if (link) (byLink[link] || (byLink[link] = new Set())).add(ad.pageId || ad.pageName);
     }
-    return { byLink, byNiche };
+    for (const n in byNiche) {
+      const top = Object.entries(byNiche[n].angles).filter(([id]) => id !== "promo" && id !== "lain")
+        .sort((a, b) => b[1] - a[1])[0];
+      byNiche[n].topAngle = top && top[1] >= 2 ? top[0] : null;
+    }
+    return { byLink, byNiche, pages: pageVelocity(list, nowMs) };
   }
 
   function polaScore(ad, stats) {
     stats = stats || competitorStats([ad]);
     const d = ad.days || 0, v = ad.variants || 1;
-    const niche = nicheOf(ad), link = shopeeLink(ad);
+    const niche = nicheOf(ad), link = shopeeLink(ad), angle = angleOf(ad), hook = hookOf(ad);
     const advertisers = link && stats.byLink[link] ? stats.byLink[link].size : 0;
-    const ns = stats.byNiche[niche.id] || { ads: 0, terbukti: 0, pages: new Set() };
+    const ns = stats.byNiche[niche.id] || { ads: 0, terbukti: 0, pages: new Set(), angles: {}, topAngle: null };
+    const pv = (stats.pages || {})[ad.pageId || ad.pageName] || null;
+    const angleMatch = !!ns.topAngle && ns.topAngle === angle.id;
     const parts = [
-      ["Lama tayang " + d + " hari", Math.round(Math.min(d, 30) / 30 * 35), 35],
+      ["Lama tayang " + d + " hari" + (ad.active === false ? " (sudah berhenti)" : ""), Math.round(Math.min(d, 30) / 30 * 35), 35],
       ["Variasi " + v + (v >= 3 ? " (di-scale)" : ""), Math.round(Math.min(v - 1, 4) / 4 * 15), 15],
       ["Niche " + niche.label + (CHAMPION_NICHES.includes(niche.id) ? " (niche champion kita)" : ""), NICHE_PTS[niche.id], 25],
-      [link ? "Ada link Shopee (bisa dianalisa)" : "Tanpa link Shopee", link ? 10 : 0, 10],
+      [link ? "Ada link Shopee (bisa dianalisa)" : "Tanpa link Shopee", link ? 5 : 0, 5],
       ["Link sama dipakai " + advertisers + " pengiklan", advertisers >= 2 ? 10 : 0, 10],
+      ["Angle " + angle.label + (angleMatch ? " = angle TERBUKTI terbanyak di niche ini" : ""), angleMatch ? 5 : 0, 5],
       ["Niche ini: " + ns.terbukti + " iklan TERBUKTI di halaman", ns.terbukti >= 3 ? 5 : 0, 5],
     ];
     const score = parts.reduce((a, p) => a + p[1], 0);
@@ -278,7 +336,8 @@
     if (niche.id === "fashion" || niche.id === "beauty")
       warn.push("Niche ini di data kita komisi/order kecil atau jarang belanja (shellaSaukia, niigelFlatshoes).");
     if (d < 14) warn.push("Belum 14 hari: iklan kompetitor belum terbukti untung.");
-    return { score, tier, niche, parts, warn, advertisers };
+    if (angle.promo) warn.push("Iklan ini jualan harga/promo. Pelajari angle lainnya saja, jangan tiru harga (aturan kita).");
+    return { score, tier, niche, parts, warn, advertisers, angle, hook, velocity: pv };
   }
 
   /* ---- "🔬 Analisa dalam" (v0.9.35, Fikri 12 Nov 2026) ------------------
@@ -295,7 +354,10 @@
         `  Kompetitor: page "${a.pageName}", tayang ${a.days} hari, ${a.variants} variasi, link sama dipakai ${p.advertisers} pengiklan`,
         `  Teks iklan: "${sanitizeBody(a.body).replace(/\s+/g, " ").slice(0, 300)}"`,
         `  Skor pola (aturan): ${p.score}/100 ${p.tier}, niche ${p.niche.label}`,
-        `  Niche ini di halaman: ${e.nicheStats ? e.nicheStats.ads + " iklan, " + e.nicheStats.terbukti + " TERBUKTI" : "?"}`,
+        `  Angle: ${p.angle.label}${p.angle.promo ? " (+ jualan harga, jangan ditiru)" : ""}; hook: "${p.hook}"`,
+        p.velocity ? `  Pengiklan ini: ${p.velocity.total} iklan terlihat, ${p.velocity.active} aktif, ${p.velocity.last30} diluncurkan 30 hari terakhir (tempo ${p.velocity.tempo})` : "",
+        `  Niche ini di halaman: ${e.nicheStats ? e.nicheStats.ads + " iklan, " + e.nicheStats.terbukti + " TERBUKTI" +
+          (e.nicheStats.topAngle ? ", angle TERBUKTI terbanyak: " + (ANGLES.find((x) => x[0] === e.nicheStats.topAngle) || [0, "?"])[1] : "") : "?"}`,
         v.error ? `  Produk Shopee: GAGAL dibuka (${v.error})` :
           `  Produk Shopee: "${v.name || "?"}", harga ${v.price != null ? "Rp" + v.price : "?"}, rating ${v.rating || "?"}, ` +
           `${v.reviews != null ? v.reviews + " review" : "review ?"}, terjual ${v.sold || "?"}, favorit ${v.liked || "?"}, ` +
@@ -315,6 +377,8 @@
       "- ~95% komisi datang dari barang LAIN yang dibeli setelah klik: produk yang menarik orang dalam mode belanja kebutuhan lebih penting dari produk itu sendiri laku.",
       "- Hook rate TIDAK membedakan pemenang. Jangan dipakai sebagai alasan.",
       "- Iklan kompetitor yang tayang >= 14 hari dan punya banyak variasi kemungkinan besar untung. Link sama dipakai banyak pengiklan = tervalidasi.",
+      "- Angle yang paling sering ada di iklan TERBUKTI satu niche = angle yang layak dites duluan. Pengiklan dengan banyak iklan baru 30 hari = lagi scale lewat volume kreatif.",
+      "- Iklan yang sudah berhenti tapi sempat tayang lama tetap bukti pernah untung.",
       "- Prediksi 'Model kita' berasal dari EPC nyata akun kita; beri bobot besar kalau ada.",
       "",
       "PRODUK:",
@@ -350,6 +414,7 @@
 
   global.RMFbAdLib = { isLibraryUrl, parseDocs, extractAds, extractFromText, filename, downloadsFor,
     signal, rank, trackDiff, shopeeLink, sanitizeBody, briefPrompt, cleanBrief, cardIdFromText, countCardIds, slug, CARD_ID_RE,
-    NICHES, CHAMPION_NICHES, nicheOf, competitorStats, polaScore, deepPrompt, parseDeep };
+    NICHES, CHAMPION_NICHES, nicheOf, competitorStats, polaScore, deepPrompt, parseDeep,
+    ANGLES, angleOf, hookOf, pageVelocity };
   if (typeof module !== "undefined" && module.exports) module.exports = global.RMFbAdLib;
 })(typeof self !== "undefined" ? self : this);

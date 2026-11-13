@@ -85,5 +85,48 @@ for (const r of real) {
   assert.strictEqual(A.parseDeep('{"foo":1}'), null);
 }
 
+// 8. v0.9.36 angle + hook + launch velocity
+{
+  const AO = (body) => A.angleOf(ad({ body })).id;
+  assert.strictEqual(AO("Capek HP sering jatuh dari kasur? Ini solusinya"), "problem");
+  assert.strictEqual(AO("POV: kamu baru pindah kos"), "pov");
+  assert.strictEqual(AO("Dulu dapurku berantakan, sekarang rapi"), "beforeafter");
+  assert.strictEqual(AO("5 barang dapur yang wajib punya"), "listicle");
+  assert.strictEqual(AO("Jujur aku udah pakai 3 bulan"), "testimoni");
+  assert.strictEqual(AO("Udah terjual ribuan, viral banget"), "socialproof");
+  assert.strictEqual(AO("Tinggal putar, air langsung terperas"), "demo");
+  assert.strictEqual(AO("Casing lucu motif bunga"), "lain");
+  const pr = A.angleOf(ad({ body: "Diskon 50%! Capek HP retak?" }));
+  assert.strictEqual(pr.id, "problem", "promo is recorded but never the main angle when another exists");
+  assert.ok(pr.promo);
+  assert.ok(A.polaScore(ad({ body: "Promo murah casing iPhone" })).warn.some((w) => /jangan tiru harga/.test(w)));
+
+  assert.strictEqual(A.hookOf(ad({ body: "\n  HP sering jatuh?  Rp25.000 aja\nBaris kedua\n#fyp" })), "HP sering jatuh? aja");
+  assert.strictEqual(A.hookOf(ad({ body: "https://s.shopee.co.id/x\nIni hook" })), "Ini hook");
+  assert.ok(A.hookOf(ad({ body: "x".repeat(200) })).length <= 90);
+
+  const now = Date.parse("2026-11-13T00:00:00Z");
+  const mk = (pid, start, active) => ad({ pageId: pid, startDate: start, active });
+  const vel = A.pageVelocity([mk("a", "2026-11-10", true), mk("a", "2026-11-01", false), mk("a", "2026-09-01", true), mk("b", "2026-11-12", true)], now);
+  assert.deepStrictEqual([vel.a.total, vel.a.active, vel.a.last30, vel.a.tempo], [3, 2, 2, "RENDAH"]);
+  const many = Array.from({ length: 12 }, () => mk("c", "2026-11-05", true));
+  assert.strictEqual(A.pageVelocity(many, now).c.tempo, "TINGGI");
+
+  // angle match bonus: two proven "problem" ads in the HP niche -> a third gets +5
+  const p1 = ad({ pageId: "x", days: 20, body: "Casing iPhone, HP sering jatuh?" });
+  const p2 = ad({ pageId: "y", days: 20, body: "Case Samsung, capek layar retak?" });
+  const p3 = ad({ pageId: "z", days: 20, body: "Casing HP biar nggak lecet lagi" });
+  const st = A.competitorStats([p1, p2, p3]);
+  assert.strictEqual(st.byNiche.hp.topAngle, "problem");
+  assert.strictEqual(A.polaScore(p3, st).parts.find((x) => /^Angle/.test(x[0]))[1], 5);
+  const pDemo = ad({ pageId: "w", days: 20, body: "Casing HP tinggal pasang" });
+  assert.strictEqual(A.polaScore(pDemo, A.competitorStats([p1, p2, pDemo])).parts.find((x) => /^Angle/.test(x[0]))[1], 0);
+  // max score is still 100
+  assert.strictEqual(A.polaScore(p3, st).parts.reduce((a, x) => a + x[2], 0), 100);
+  // deep prompt now carries angle, hook and tempo
+  const P2 = A.deepPrompt([{ ad: p3, pola: A.polaScore(p3, st), nicheStats: st.byNiche.hp, verdict: { error: "x" } }]);
+  assert.ok(/Angle: Masalah/.test(P2) && /hook: "/.test(P2) && /tempo/.test(P2) && /angle TERBUKTI terbanyak: Masalah/.test(P2));
+}
+
 console.log("OK   pola champion: niche classifier, skor sesuai baseline, bonus multi-pengiklan, tanpa hook rate, " +
-  "prompt + parser analisa dalam (" + real.length + " iklan asli dinilai)");
+  "prompt + parser analisa dalam, angle + hook + tempo peluncuran (" + real.length + " iklan asli dinilai)");

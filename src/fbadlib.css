@@ -85,3 +85,6 @@
 .rm-fb-deep ul { margin: 0 0 4px 16px; padding: 0; }
 .rm-fb-deep a { color: #ee4d2d; }
 .rm-fb-deep pre { white-space: pre-wrap; }
+/* v0.9.36 angle + hook */
+.rm-fb-angle { display: inline-block; padding: 1px 6px; border-radius: 4px; background: #e8eaf6; color: #283593; font-weight: 600; font-size: 11px; }
+.rm-fb-stop { display: inline-block; padding: 1px 5px; border-radius: 4px; background: #eee; color: #777; font-size: 10px; }

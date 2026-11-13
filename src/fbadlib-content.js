@@ -163,6 +163,9 @@
       " <button type='button' class='rm-fb-x'>✕</button></div>" +
       "<div class='rm-fb-pola rm-fb-pola-" + p.tier.toLowerCase() + "'>" + p.score + "/100 · " + p.tier + "</div>" +
       "<table>" + rows + "</table>" +
+      "<div class='rm-fb-track'><b>Hook:</b> “" + esc(p.hook || "–") + "” · <b>Angle:</b> " + esc(p.angle.label) +
+      (p.velocity ? "<br><b>" + esc(ad.pageName) + ":</b> " + p.velocity.total + " iklan terlihat, " + p.velocity.active +
+        " aktif, " + p.velocity.last30 + " diluncurkan 30 hari terakhir (tempo " + p.velocity.tempo + ")" : "") + "</div>" +
       "<div class='rm-fb-track'>Pola kompetitor di halaman ini (niche " + esc(p.niche.label) + "): " +
       (ns ? ns.ads + " iklan dari " + ns.pages.size + " pengiklan, " + ns.terbukti + " TERBUKTI (≥14 hari)" : "–") + ".</div>" +
       (p.warn.length ? "<div class='rm-fb-note'>⚠ " + p.warn.map(esc).join("<br>⚠ ") + "</div>" : "") +
@@ -292,6 +295,17 @@
     briefBox.querySelector("textarea").value = body;
   }
 
+  // v0.9.36: which angles the PROVEN ads (>=14 days) in view use
+  function angleHtml(list) {
+    const proven = list.filter((a) => (a.days || 0) >= 14);
+    if (!proven.length) return "";
+    const c = {};
+    for (const a of proven) { const an = A.angleOf(a); c[an.label] = (c[an.label] || 0) + 1; }
+    const s = Object.entries(c).sort((x, y) => y[1] - x[1]).map(([l, n]) => esc(l) + " " + n).join(" · ");
+    return "<div class='rm-fb-track'>🎯 Angle di " + proven.length + " iklan TERBUKTI yang tampil: " + s +
+      ". Promo/harga hanya dicatat, jangan ditiru.</div>";
+  }
+
   function renderTop() {
     if (!top) {
       top = document.createElement("div");
@@ -330,7 +344,9 @@
         (isNew ? " <span class='rm-fb-new'>BARU</span>" : "") + "</td>" +
         "<td><span class='rm-fb-pola rm-fb-pola-" + p.tier.toLowerCase() + "' data-pola='" + esc(ad.id) +
         "' title='Klik untuk rincian'>" + p.score + "</span> " + esc(p.niche.label) + "</td>" +
-        "<td>" + esc(ad.pageName) + "</td><td>" + esc(ad.body.replace(/\s+/g, " ").slice(0, 70)) + "</td>" +
+        "<td>" + esc(ad.pageName) + (p.velocity ? "<br><span class='rm-fb-note'>" + p.velocity.last30 + " baru/30h · tempo " + p.velocity.tempo + "</span>" : "") + "</td>" +
+        "<td><span class='rm-fb-angle' title='Angle iklan'>" + esc(p.angle.label) + "</span>" + (ad.active === false ? " <span class='rm-fb-stop'>berhenti</span>" : "") +
+        "<br><b>“" + esc(p.hook || "–") + "”</b></td>" +
         "<td>" + (link ? "<a href='" + esc(link) + "' target='_blank' rel='noopener'>Shopee ↗</a>" : "–") + "</td>" +
         "<td>" + cell(ad) + "</td>" +
         "<td>" + (ad.videos.length ? "<button type='button' data-dl='" + esc(ad.id) + "' title='Download video HD'>⬇</button> " : "") +
@@ -344,8 +360,9 @@
       : "<button type='button' class='rm-fb-analyze' title='Buka tiap link Shopee di tab latar (satu per satu, maks 12) dan ambil vonis panel produk'>🔍 Analisa produk TERBUKTI (" + nLink + ")</button>";
     top.innerHTML = "<div class='rm-fb-top-h'><b>🏆 Top iklan</b> " + nWin + " terbukti (≥14 hari) dari " + ads.size +
       ". " + anBtn + " <button type='button' class='rm-fb-x'>✕</button></div>" +
+      angleHtml(shown) +
       trackHtml() +
-      "<table><tr><th>#</th><th>Sinyal</th><th>Pola</th><th>Page</th><th>Teks iklan</th><th>Produk</th><th>Vonis kita</th><th></th></tr>" + rows + "</table>" +
+      "<table><tr><th>#</th><th>Sinyal</th><th>Pola</th><th>Page</th><th>Angle · hook</th><th>Produk</th><th>Vonis kita</th><th></th></tr>" + rows + "</table>" +
       (nicheFilter ? "<div class='rm-fb-note'>Filter niche aktif: " + shown.length + " dari " + ads.size + " iklan tampil.</div>" : "");
     top.style.display = "block";
   }
