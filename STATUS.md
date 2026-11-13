@@ -1,4 +1,4 @@
-# syabab-affiliathor — STATUS (2026-11-12, v0.9.35)
+# syabab-affiliathor — STATUS (2026-11-13, v0.9.36)
 
 Chrome MV3 extension, content scripts + service worker, self-contained (tanpa
 backend, tanpa dependency npm). Verifikasi: `bash test/run-all.sh` (53 langkah) →
@@ -89,6 +89,7 @@ rating <3,8. Aksi: ≥70 IKLANKAN · ≥55 LAYAK COBA · ≥40 HATI-HATI · <40 
 30. **Ad Library: ☑ checkbox + 🔬 Analisa dalam** — buka link Shopee yang dicentang
     di tab latar, DeepSeek menilai skor + COBA / UJI KECIL / LEWATI (v0.9.35).
 31. **`docs/SETUP.md`** — pasang, semua field config + default, troubleshooting.
+32. **Angle + hook + tempo peluncuran** di Top iklan & Analisa pola (v0.9.36).
 
 ## RIWAYAT PERBAIKAN PENTING (jangan diulang)
 - **Panel sering tidak muncul**: debounce di-reset tiap mutasi DOM (Shopee React SPA

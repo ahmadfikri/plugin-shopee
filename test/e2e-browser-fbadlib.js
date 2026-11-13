@@ -61,6 +61,11 @@ function loadPlaywright() {
     // v0.9.34 pola champion column + niche filter
     const polaCells = await page.locator(".rm-fb-top td .rm-fb-pola").count();
     if (polaCells !== rows - 1) throw new Error("pola column missing (" + polaCells + " vs " + (rows - 1) + ")");
+    // v0.9.36 angle chip + hook in every row
+    const angleCells = await page.locator(".rm-fb-top td .rm-fb-angle").count();
+    const hdr = await page.locator(".rm-fb-top tr").first().innerText();
+    console.log("angle chips:", angleCells, "| header has Angle:", /Angle/.test(hdr));
+    if (angleCells !== rows - 1 || !/Angle · hook/.test(hdr)) throw new Error("angle/hook column missing");
     await page.locator(".rm-fb-top .rm-fb-x").click();
     const nAna = await page.locator(".rm-fb-ana").count();
     const anaTxt = await page.locator(".rm-fb-ana").first().innerText();
@@ -68,7 +73,8 @@ function loadPlaywright() {
     if (nAna < nBtn || !/Analisa pola · \d+ (CHAMPION|MIRIP|LEMAH)/.test(anaTxt)) throw new Error("pola button missing/invalid");
     await page.locator(".rm-fb-ana").first().click();
     const box = await page.locator(".rm-fb-polabox").innerText();
-    if (!/\d+\/100/.test(box) || !/Pola kompetitor/.test(box) || /hook/i.test(box.split("Baseline")[0])) throw new Error("pola box invalid:\n" + box);
+    if (!/\d+\/100/.test(box) || !/Pola kompetitor/.test(box) || /hook rate/i.test(box.split("Baseline")[0])) throw new Error("pola box invalid:\n" + box);
+    if (!/Hook:/.test(box) || !/tempo (TINGGI|SEDANG|RENDAH)/.test(box)) throw new Error("pola box missing hook/tempo:\n" + box);
     console.log("pola box ->", box.split("\n").slice(0, 3).join(" | "));
     await page.locator(".rm-fb-polabox .rm-fb-x").click();
     await page.selectOption(".rm-fb-niche", "beauty");

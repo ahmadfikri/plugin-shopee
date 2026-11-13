@@ -344,6 +344,9 @@ Struktur caption: kata kunci (SEO tetap pertama) → momen relatable → hal ber
 ## v0.9.35 (2026-11-12) ☑ + 🔬 Analisa dalam
 Checkbox per kartu → `fbadlib-analyze` (tab latar, maks 12) → `pp-verdict` (kini + harga, review, favorit, stok, kategori, EPC, PRO) → `deepPrompt()` → DeepSeek (temp 0,3, lewat `fbadlib-brief`) → `parseDeep()` (JSON ketat tapi toleran). Butuh API key.
 
+## v0.9.36 (2026-11-13) Angle + hook + tempo peluncuran
+`angleOf()`, `hookOf()`, `pageVelocity()`; angle TERBUKTI terbanyak per niche (+5 di pola, link turun 10→5, total tetap 100). Ide dari dansugc/reverse-engineer-marketing (MIT), kode tidak dipakai. ⚠️ Angle belum divalidasi ke ROAS kita; jangan naikkan bobotnya sebelum ada data. Detail: documentation/2026-11-13-angle-hook-v0.9.36.md
+
 ## Status repo & rilis (2026-11-12)
 - `main` = v0.9.35 (PR #1–#8 merge). `release/v0.9.0` di-fast-forward ke `main` (namanya lama, isinya v0.9.35).
 - Alur kerja: branch `feat/vX.Y.Z-*` → PR ke `main`. Agen tidak push langsung ke `main`.
